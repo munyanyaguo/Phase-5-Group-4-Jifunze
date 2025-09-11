@@ -1,0 +1,62 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:            #manual deployment
+
+jobs:
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
+        cache: 'npm'
+        cache-dependency-path: client/package-lock.json
+    
+    - name: Install and build
+      working-directory: client
+      run: |
+        npm ci
+        npm run build
+      env:
+        # Safe placeholder to be replaced with the actual URL later on as we progress
+        REACT_APP_API_URL: ${{ secrets.PRODUCTION_API_URL || 'https://placeholder-api.example.com/api' }}
+    
+    - name: Build verification
+      working-directory: client
+      run: |
+        echo "✅ Build completed successfully"
+        ls -la build/
+        echo "Build size: $(du -sh build/ | cut -f1)"
+    
+    # Commented out until we set up actual Render services
+    # - name: Deploy frontend to Render
+    #   run: |
+    #     curl -X POST "${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}"
+    #     echo "✅ Frontend deployment triggered"
+
+  deploy-backend:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Verify backend files
+      working-directory: server
+      run: |
+        echo "✅ Backend files verified"
+        ls -la
+        echo "Requirements:"
+        cat requirements.txt
+    
+    # Commented out until we set up actual Render services  
+    # - name: Deploy backend to Render
+    #   run: |
+    #     curl -X POST "${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}"
+    #     echo "✅ Backend deployment triggered"
