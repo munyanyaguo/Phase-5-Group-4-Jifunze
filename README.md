@@ -72,7 +72,6 @@ jifunze/
 - Marshmallow for serialization
 
 #### Database
-- SQLite for development
 - PostgreSQL for production
 - Comprehensive relational schema
 
