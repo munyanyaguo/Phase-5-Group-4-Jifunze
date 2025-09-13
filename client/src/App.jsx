@@ -1,36 +1,38 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import { API_URL } from "./config";
+import { useEffect, useState } from "react";
+import { fetchSchools, fetchCourses, fetchHealth } from "./api";
+import Schools from "./components/Schools";
+import Courses from "./components/Courses";
+import Health from "./components/Health";
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [schools, setSchools] = useState([]);
+  const [courses, setCourses] = useState([]);
+  const [health, setHealth] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      const [schoolsData, coursesData, healthData] = await Promise.all([
+        fetchSchools(),
+        fetchCourses(),
+        fetchHealth(),
+      ]);
+      setSchools(schoolsData.schools || []);
+      setCourses(coursesData.courses || []);
+      setHealth(healthData || {});
+      setLoading(false);
+    }
+    fetchData();
+  }, []);
+  if (loading) return <p>Loading kindly wait...</p>;
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Welcome to Jifunze 🎓</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <div>
+      <h1>Welcome to Jifunze 🎓 learning platform</h1>
 
-export default App
+      <Health data={health} />
+      <Schools schools={schools} />
+      <Courses courses={courses} />
+    </div>
+  );
+}

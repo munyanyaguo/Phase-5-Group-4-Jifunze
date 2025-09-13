@@ -3,7 +3,7 @@ name: Deploy to Production
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:            #manual deployment
+  workflow_dispatch:            
 
 jobs:
   deploy-frontend:
@@ -25,8 +25,8 @@ jobs:
         npm ci
         npm run build
       env:
-        # Safe placeholder to be replaced with the actual URL later on as we progress
-        REACT_APP_API_URL: ${{ secrets.PRODUCTION_API_URL || 'https://placeholder-api.example.com/api' }}
+        # Safe placeholder to be replaced with the actual URL 
+        VITE_API_URL: http://localhost:5000  
     
     - name: Build verification
       working-directory: client
@@ -51,12 +51,24 @@ jobs:
       working-directory: server
       run: |
         echo "✅ Backend files verified"
-        ls -la
-        echo "Requirements:"
-        cat requirements.txt
+       
     
     # Commented out until we set up actual Render services  
     # - name: Deploy backend to Render
     #   run: |
     #     curl -X POST "${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}"
     #     echo "✅ Backend deployment triggered"
+
+
+test-deployment-readiness:
+    runs-on: ubuntu-latest
+    needs: [deploy-frontend, deploy-backend]
+    steps:
+    - name: Deployment readiness check
+      run: |
+        echo "🚀 Deployment pipeline completed"
+        echo "📋 Next steps:"
+        echo "1. Set up Render services"
+        echo "2. Configure deployment hooks"
+        echo "3. Uncomment deployment steps"
+        echo "4. Set GitHub secrets"

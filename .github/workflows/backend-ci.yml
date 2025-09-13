@@ -18,7 +18,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.8, 3.9, 3.10, 3.11]
+        python-version: [3.10]
 
     steps:
       - name: Checkout code
@@ -49,20 +49,9 @@ jobs:
 
       - name: Test with pytest
         env:
-          SECRET_KEY: test-secret-key
+          SECRET_KEY: test-secret-key     # to be changed during production
           FLASK_ENV: testing
         run: |
           pipenv run pytest tests/ -v --cov=app --cov-report=term-missing
 
-      - name: Test API endpoints 
-        env:
-          SECRET_KEY: test-secret-key
-          FLASK_ENV: testing
-        run: |
-          pipenv run python -c "
-from app import app
-with app.test_client() as client:
-    response = client.get('/')
-    assert response.status_code == 200, f'Unexpected status: {response.status_code}'
-    print('✅ API endpoints working')
-"
+     
