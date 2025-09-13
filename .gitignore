@@ -1,0 +1,4 @@
+# Ignore the environment variables
+.env
+server/.env
+client/.env

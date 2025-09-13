@@ -38,14 +38,14 @@ jobs:
         # `--if-present` avoids error if no lint script exists
         run: npm run lint --if-present
 
-      - name: Run tests
+      - name: Run tests with Vitest
+        run: npm run test:ci
         env:
           CI: true
-        run: npm test -- --coverage --watchAll=false
 
       - name: Build application
         env:
-          REACT_APP_API_URL: url_used    # enter the url
+          VITE_API_URL: http://localhost:5000     # enter the url
         run: npm run build
 
       - name: Test build
