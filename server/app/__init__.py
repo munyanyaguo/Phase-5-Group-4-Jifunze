@@ -3,19 +3,24 @@ from flask_cors import CORS
 import os
 from datetime import datetime, timedelta
 import random
-from flask_sqlalchemy import SQLAlchemy
+# from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 
-app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "connect_args": {"sslmode": "require"}
-}
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+# app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
+# app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
+# app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+#     "connect_args": {"sslmode": "require"}
+# }
+# app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-
-CORS(app, origins=os.getenv("CORS_ORIGINS").split(","))
+# ✅ Fixed CORS configuration - handle missing environment variable
+cors_origins = os.getenv("CORS_ORIGINS")
+if cors_origins:
+    CORS(app, origins=cors_origins.split(","))
+else:
+    # Allow all origins if CORS_ORIGINS is not set (good for development)
+    CORS(app)
 
 @app.route("/ping")
 def ping():
