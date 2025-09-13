@@ -3,11 +3,17 @@ from flask_cors import CORS
 import os
 from datetime import datetime, timedelta
 import random
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "connect_args": {"sslmode": "require"}
+}
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
 
 CORS(app, origins=os.getenv("CORS_ORIGINS").split(","))
 

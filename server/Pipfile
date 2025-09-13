@@ -13,6 +13,7 @@ python-dotenv = "==1.0.0"
 pytest = "==7.4.2"
 pytest-cov = "==4.1.0"
 flake8 = "==6.1.0"
+flask-sqlalchemy = "*"
 
 [dev-packages]
 
