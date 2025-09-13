@@ -18,7 +18,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [16, 18, 20]
+        node-version: [22]
 
     steps:
       - name: Checkout code
@@ -39,7 +39,7 @@ jobs:
         run: npm run lint --if-present
 
       - name: Run tests with Vitest
-        run: npm run test:ci
+        run: npm test -- --coverage
         env:
           CI: true
 
@@ -50,6 +50,6 @@ jobs:
 
       - name: Test build
         run: |
-          ls -la build/
-          test -f build/index.html
+          ls -la dist/
+          test -f dist/index.html
           echo "✅ Build successful"
