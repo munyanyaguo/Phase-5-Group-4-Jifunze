@@ -38,7 +38,6 @@ jifunze/
 │   │   └── __init__.py        # App factory
 │   ├── migrations/            # Database migration files
 │   ├── tests/                 # Backend tests
-│   ├── requirements.txt
 │   ├── config.py              # Configuration settings
 │   └── app.py                 # Entry point
 │
