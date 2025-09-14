@@ -1,5 +1,5 @@
+from .base import BaseModel, db
 
-from .base import db, BaseModel
 
 class Message(BaseModel):
     __tablename__ = "messages"
@@ -13,7 +13,9 @@ class Message(BaseModel):
     # Relationships
     user = db.relationship("User", back_populates="messages")
     course = db.relationship("Course", back_populates="messages")
-    replies = db.relationship("Message", backref=db.backref("parent", remote_side="Message.id"))
+    replies = db.relationship(
+        "Message", backref=db.backref("parent", remote_side="Message.id")
+    )
 
     def __repr__(self):
         return f"<Message user={self.user_id}, course={self.course_id}, ts={self.timestamp}>"

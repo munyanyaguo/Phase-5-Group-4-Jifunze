@@ -1,14 +1,12 @@
-
-from .base import db, BaseModel
-
-# Import all models here so they register with SQLAlchemy
-from .user import User
-from .school import School
+from .attendance import Attendance
+from .base import BaseModel, db
 from .course import Course
 from .enrollment import Enrollment
-from .attendance import Attendance
-from .resource import Resource
 from .message import Message
+from .resource import Resource
+from .school import School
+# Import all models here so they register with SQLAlchemy
+from .user import User
 
 __all__ = [
     "db",

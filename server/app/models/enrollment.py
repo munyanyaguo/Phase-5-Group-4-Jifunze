@@ -1,6 +1,7 @@
-
-from .base import db, BaseModel
 from sqlalchemy.orm import validates
+
+from .base import BaseModel, db
+
 
 class Enrollment(BaseModel):
     __tablename__ = "enrollments"

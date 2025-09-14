@@ -1,9 +1,10 @@
+from datetime import datetime, timezone
 
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy_serializer import SerializerMixin
-from datetime import datetime, timezone
 
 db = SQLAlchemy()
+
 
 class BaseModel(db.Model, SerializerMixin):
     __abstract__ = True  # prevents table creation for this base class
@@ -13,7 +14,7 @@ class BaseModel(db.Model, SerializerMixin):
     updated_at = db.Column(
         db.DateTime,
         default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc)
+        onupdate=lambda: datetime.now(timezone.utc),
     )
 
     def save(self):

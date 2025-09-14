@@ -1,5 +1,5 @@
+from .base import BaseModel, db
 
-from .base import db, BaseModel
 
 class Attendance(BaseModel):
     __tablename__ = "attendance"
@@ -11,7 +11,9 @@ class Attendance(BaseModel):
     verified_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
 
     # Relationships
-    student = db.relationship("User", foreign_keys=[user_id], back_populates="attendance")
+    student = db.relationship(
+        "User", foreign_keys=[user_id], back_populates="attendance"
+    )
     course = db.relationship("Course", back_populates="attendance")
     verifier = db.relationship("User", foreign_keys=[verified_by])
 

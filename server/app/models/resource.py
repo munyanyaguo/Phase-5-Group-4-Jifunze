@@ -1,5 +1,5 @@
+from .base import BaseModel, db
 
-from .base import db, BaseModel
 
 class Resource(BaseModel):
     __tablename__ = "resources"

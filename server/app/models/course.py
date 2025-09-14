@@ -1,5 +1,5 @@
+from .base import BaseModel, db
 
-from .base import db, BaseModel
 
 class Course(BaseModel):
     __tablename__ = "courses"
@@ -12,10 +12,18 @@ class Course(BaseModel):
     # Relationships
     educator = db.relationship("User", back_populates="courses")
     school = db.relationship("School", back_populates="courses")
-    enrollments = db.relationship("Enrollment", back_populates="course", cascade="all, delete-orphan")
-    attendance = db.relationship("Attendance", back_populates="course", cascade="all, delete-orphan")
-    resources = db.relationship("Resource", back_populates="course", cascade="all, delete-orphan")
-    messages = db.relationship("Message", back_populates="course", cascade="all, delete-orphan")
+    enrollments = db.relationship(
+        "Enrollment", back_populates="course", cascade="all, delete-orphan"
+    )
+    attendance = db.relationship(
+        "Attendance", back_populates="course", cascade="all, delete-orphan"
+    )
+    resources = db.relationship(
+        "Resource", back_populates="course", cascade="all, delete-orphan"
+    )
+    messages = db.relationship(
+        "Message", back_populates="course", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<Course {self.title}>"
