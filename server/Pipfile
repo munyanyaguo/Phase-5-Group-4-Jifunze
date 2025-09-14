@@ -16,6 +16,8 @@ flake8 = "==6.1.0"
 # flask-sqlalchemy = "*"
 
 [dev-packages]
+black = "*"
+isort = "*"
 
 [requires]
 python_version = "3.12"
