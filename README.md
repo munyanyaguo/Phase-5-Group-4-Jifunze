@@ -18,10 +18,11 @@ Jifunze addresses the following requirements:
 Communication: Class-based messaging and discussion threads
 
 ## Server Link
-https://jifunze-31gc.onrender.com
+[Server](https://jifunze-31gc.onrender.com)
+
 
 ## Client Link
-https://phase-5-group-4-jifunze.onrender.com
+[Client](https://phase-5-group-4-jifunze.onrender.com)
 
 
 ## 📁Folder structure
