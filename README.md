@@ -17,6 +17,12 @@ Jifunze addresses the following requirements:
 - `Resource Sharing` - Upload and organize course materials
 Communication: Class-based messaging and discussion threads
 
+## Server Link
+https://jifunze-31gc.onrender.com
+
+## Client Link
+https://phase-5-group-4-jifunze.onrender.com
+
 
 ## 📁Folder structure
 ```
