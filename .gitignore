@@ -1,4 +1,6 @@
 # Ignore the environment variables
-.env
 server/.env
+server/.env.production
+server/.env.development
 client/.env
+node_modules
