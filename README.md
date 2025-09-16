@@ -38,7 +38,7 @@ Jifunze addresses the following requirements:
 ### Frontend Setup
 ```bash
    cd client
-   npm ci
+   npm ci || npm run build
    cp .env.example .env
    npm run dev
 ```

@@ -26,14 +26,15 @@ jobs:
           npm run build
         env:
           # Safe placeholder to be replaced with the actual URL
-          VITE_API_URL: http://localhost:5000
+          VITE_API_URL: https://jifunze-31gc.onrender.comhttp://localhost:5000
           
       - name: Build verification
         working-directory: client
         run: |
           echo "✅ Build completed successfully"
-          ls -la build/
-          echo "Build size: $(du -sh build/ | cut -f1)"
+          ls -la dist/
+          test -f dist/index.html
+          echo "Build size: $(du -sh dist/ | cut -f1)"
           
       # Commented out until we set up actual Render services
       # - name: Deploy frontend to Render
