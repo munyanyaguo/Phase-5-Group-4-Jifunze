@@ -1,6 +1,7 @@
 # Environment Variables
 .env
-server/.env
+server/.env.production
+server/.env.development
 client/.env
 
 # Node.js
