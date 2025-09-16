@@ -3,72 +3,71 @@ name: Deploy to Production
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:            
+  workflow_dispatch:
 
 jobs:
   deploy-frontend:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 18
-        cache: 'npm'
-        cache-dependency-path: client/package-lock.json
-    
-    - name: Install and build
-      working-directory: client
-      run: |
-        npm ci
-        npm run build
-      env:
-        # Safe placeholder to be replaced with the actual URL 
-        VITE_API_URL: http://localhost:5000  
-    
-    - name: Build verification
-      working-directory: client
-      run: |
-        echo "✅ Build completed successfully"
-        ls -la build/
-        echo "Build size: $(du -sh build/ | cut -f1)"
-    
-    # Commented out until we set up actual Render services
-    # - name: Deploy frontend to Render
-    #   run: |
-    #     curl -X POST "${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}"
-    #     echo "✅ Frontend deployment triggered"
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: client/package-lock.json
+          
+      - name: Install and build
+        working-directory: client
+        run: |
+          npm ci
+          npm run build
+        env:
+          # Safe placeholder to be replaced with the actual URL
+          VITE_API_URL: https://jifunze-31gc.onrender.comhttp://localhost:5000
+          
+      - name: Build verification
+        working-directory: client
+        run: |
+          echo "✅ Build completed successfully"
+          ls -la dist/
+          test -f dist/index.html
+          echo "Build size: $(du -sh dist/ | cut -f1)"
+          
+      # Commented out until we set up actual Render services
+      # - name: Deploy frontend to Render
+      #   run: |
+      #     curl -X POST "${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}"
+      #     echo "✅ Frontend deployment triggered"
 
   deploy-backend:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Verify backend files
-      working-directory: server
-      run: |
-        echo "✅ Backend files verified"
-       
-    
-    # Commented out until we set up actual Render services  
-    # - name: Deploy backend to Render
-    #   run: |
-    #     curl -X POST "${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}"
-    #     echo "✅ Backend deployment triggered"
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Verify backend files
+        working-directory: server
+        run: |
+          echo "✅ Backend files verified"
+          
+      # Commented out until we set up actual Render services
+      # - name: Deploy backend to Render
+      #   run: |
+      #     curl -X POST "${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}"
+      #     echo "✅ Backend deployment triggered"
 
-
-test-deployment-readiness:
+  test-deployment-readiness:
     runs-on: ubuntu-latest
     needs: [deploy-frontend, deploy-backend]
     steps:
-    - name: Deployment readiness check
-      run: |
-        echo "🚀 Deployment pipeline completed"
-        echo "📋 Next steps:"
-        echo "1. Set up Render services"
-        echo "2. Configure deployment hooks"
-        echo "3. Uncomment deployment steps"
-        echo "4. Set GitHub secrets"
+      - name: Deployment readiness check
+        run: |
+          echo "🚀 Deployment pipeline completed"
+          echo "📋 Next steps:"
+          echo "1. Set up Render services"
+          echo "2. Configure deployment hooks"
+          echo "3. Uncomment deployment steps"
+          echo "4. Set GitHub secrets"
