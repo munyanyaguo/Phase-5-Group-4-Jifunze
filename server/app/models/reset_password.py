@@ -46,4 +46,4 @@ class ResetPassword(BaseModel):
         expired_tokens = cls.query.filter(cls.expires_at < datetime.now(timezone.utc)).all()
         for token in expired_tokens:
             token.delete()
-        return len(expired_tokens) 
+        return len(expired_tokens)
