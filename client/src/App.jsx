@@ -12,6 +12,7 @@ import StudentLayout from "./layouts/StudentLayout";
 // Auth Pages
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
+import ResetPassword from "./pages/Auth/ResetPassword";
 
 // Dashboards
 import OwnerDashboard from "./pages/SchoolOwner/Dashboard";
@@ -40,6 +41,7 @@ function App() {
         {/* Auth */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* School Owner Routes */}
         <Route

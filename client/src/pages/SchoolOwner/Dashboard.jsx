@@ -1,72 +1,80 @@
-// src/pages/schoolOwner/Dashboard.jsx
-import React, { useState } from "react";
-import { Users, BookOpen, School, BarChart3, LogOut } from "lucide-react";
-import DashboardCard from "../../components/DashboardCard";
-import { logout } from "../../services/authServices";
-import { useNavigate } from "react-router-dom";
+// src/pages/SchoolOwner/Dashboard.jsx
+import React from "react";
+import { Users, BookOpen, School, FileText, CalendarCheck } from "lucide-react";
 
-const Dashboard = () => {
-  const navigate = useNavigate();
-  const [stats] = useState([
-    {
-      title: "Total Schools",
-      value: "12",
-      icon: School,
-      color: "bg-gradient-to-r from-indigo-500 to-purple-500",
-    },
-    {
-      title: "Educators",
-      value: "48",
-      icon: Users,
-      color: "bg-gradient-to-r from-green-400 to-emerald-600",
-    },
-    {
-      title: "Students",
-      value: "1,230",
-      icon: BookOpen,
-      color: "bg-gradient-to-r from-pink-400 to-rose-600",
-    },
-    {
-      title: "Attendance Rate",
-      value: "92%",
-      icon: BarChart3,
-      color: "bg-gradient-to-r from-orange-400 to-yellow-600",
-    },
-  ]);
+const stats = [
+  { title: "Total Students", value: 320, icon: Users, color: "bg-blue-100 text-blue-600" },
+  { title: "Educators", value: 25, icon: BookOpen, color: "bg-green-100 text-green-600" },
+  { title: "Classes", value: 12, icon: School, color: "bg-purple-100 text-purple-600" },
+  { title: "Resources", value: 140, icon: FileText, color: "bg-orange-100 text-orange-600" },
+  { title: "Attendance Today", value: "92%", icon: CalendarCheck, color: "bg-pink-100 text-pink-600" },
+];
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
-
+export default function OwnerDashboard() {
   return (
-    <div className="p-6">
-      {/* Header with Logout */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">📊 School Owner Dashboard</h1>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg shadow hover:bg-red-600 transition"
-        >
-          <LogOut className="w-4 h-4" />
-          Logout
-        </button>
+    <div>
+      {/* Header */}
+      <h1 className="text-2xl font-bold mb-6">Owner Dashboard</h1>
+
+      {/* Stats Section */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
+        {stats.map((item, idx) => (
+          <div key={idx} className="bg-white rounded-xl shadow-md p-5 flex items-center gap-4">
+            <div className={`p-3 rounded-full ${item.color}`}>
+              <item.icon className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-gray-500 text-sm">{item.title}</p>
+              <p className="text-xl font-semibold">{item.value}</p>
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Dashboard Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((item, index) => (
-          <DashboardCard
-            key={index}
-            title={item.title}
-            value={item.value}
-            icon={item.icon}
-            color={item.color}
-          />
-        ))}
+      {/* Quick Actions */}
+      <div className="bg-white rounded-xl shadow-md p-6 mb-8">
+        <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
+        <div className="flex flex-wrap gap-4">
+          <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+            + Add School
+          </button>
+          <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+            + Add Educator
+          </button>
+          <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">
+            + Add Student
+          </button>
+          <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg">
+            + Add Class
+          </button>
+          <button className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg">
+            + Upload Resource
+          </button>
+        </div>
+      </div>
+
+      {/* Recent Activity & Resources */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Activity */}
+        <div className="bg-white rounded-xl shadow-md p-6">
+          <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
+          <ul className="space-y-3 text-sm text-gray-700">
+            <li>✅ Educator John added a new resource for Class 8.</li>
+            <li>📚 Student Mary joined Class 7 Science.</li>
+            <li>👩‍🏫 New educator Jane was added to Class 5.</li>
+          </ul>
+        </div>
+
+        {/* Resource Repository */}
+        <div className="bg-white rounded-xl shadow-md p-6">
+          <h2 className="text-lg font-semibold mb-4">Latest Resources</h2>
+          <ul className="space-y-3 text-sm text-gray-700">
+            <li>📄 Math Revision Paper (Class 8)</li>
+            <li>📄 Science Notes (Class 7)</li>
+            <li>📄 English Essay Guide (Class 6)</li>
+          </ul>
+        </div>
       </div>
     </div>
   );
-};
-
-export default Dashboard;
+}

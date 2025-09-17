@@ -31,3 +31,21 @@ html {
 .card {
   @apply bg-white rounded-2xl shadow-md p-6 transition duration-200 hover:shadow-lg;
 }
+
+.animated-bg {
+  background: linear-gradient(-45deg, #6366f1, #a855f7, #ec4899, #6366f1);
+  background-size: 400% 400%;
+  animation: gradientShift 10s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}

@@ -1,15 +1,12 @@
-// src/components/common/DashboardCard.jsx
 import React from "react";
 
-const DashboardCard = ({ title, value, Icon, color }) => {
+const DashboardCard = ({ title, value, icon }) => {
   return (
-    <div className={`rounded-2xl shadow-md p-6 flex items-center gap-4 ${color}`}>
-      <div className="p-4 bg-white/20 rounded-full">
-        <div className="w-8 h-8 text-white" >{Icon}</div>
-      </div>
+    <div className="bg-white p-6 rounded-xl shadow-md flex items-center space-x-4">
+      <div className="p-3 bg-gray-100 rounded-lg">{icon}</div>
       <div>
-        <h3 className="text-sm text-gray-200">{title}</h3>
-        <p className="text-2xl font-bold text-white">{value}</p>
+        <h3 className="text-sm text-gray-500">{title}</h3>
+        <p className="text-xl font-bold text-gray-800">{value}</p>
       </div>
     </div>
   );
