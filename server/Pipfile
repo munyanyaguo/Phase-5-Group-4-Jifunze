@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-flask = "==3.0.0"
+flask = "*"
 gunicorn = "==21.2.0"
 psycopg2-binary = "*"
 sqlalchemy = "*"
@@ -13,6 +13,8 @@ python-dotenv = "*"
 flask-sqlalchemy = "*"
 flask-migrate = "*"
 sqlalchemy-serializer = "*"
+flask-restful = "*"
+flask-jwt-extended = "*"
 
 [dev-packages]
 black = "*"
