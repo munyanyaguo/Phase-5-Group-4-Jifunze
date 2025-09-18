@@ -45,7 +45,7 @@ jobs:
 
       - name: Build application
         env:
-          VITE_API_URL: http://localhost:5000     # enter the url
+          VITE_API_URL: https://phase-5-group-4-jifunze.onrender.com     
         run: npm run build
 
       - name: Test build
