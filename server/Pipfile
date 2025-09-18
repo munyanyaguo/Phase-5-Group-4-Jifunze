@@ -13,6 +13,7 @@ python-dotenv = "==1.0.0"
 flask-sqlalchemy = "*"
 flask-migrate = "*"
 sqlalchemy-serializer = "*"
+flask-bcrypt = "*"
 
 [dev-packages]
 black = "*"

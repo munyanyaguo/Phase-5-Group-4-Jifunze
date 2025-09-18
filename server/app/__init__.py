@@ -25,7 +25,8 @@ def create_app():
     app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-    if app.config["SQLALCHEMY_DATABASE_URI"].startswith("postgresql"):
+    db_uri = app.config.get("SQLALCHEMY_DATABASE_URI")
+    if db_uri and isinstance(db_uri, str) and db_uri.startswith("postgresql"):
         app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"connect_args": {"sslmode": "require"}}
 
     # Init extensions
