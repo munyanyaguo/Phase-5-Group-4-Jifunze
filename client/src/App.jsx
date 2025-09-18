@@ -1,7 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
-// landing Page
+// Landing Page
 import LandingPage from "./pages/LandingPage";
 
 // Layouts
@@ -18,6 +18,12 @@ import ResetPassword from "./pages/Auth/ResetPassword";
 import OwnerDashboard from "./pages/SchoolOwner/Dashboard";
 import EducatorDashboard from "./pages/Educator/Dashboard";
 import StudentDashboard from "./pages/Student/Dashboard";
+
+// Owner Pages
+import Schools from "./pages/SchoolOwner/Schools";
+import Students from "./pages/SchoolOwner/Students";
+import Resources from "./pages/SchoolOwner/Resources";
+import Educators from "./pages/SchoolOwner/Educators";
 
 // Utils
 import { getRole } from "./services/authServices";
@@ -38,6 +44,7 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />
+
         {/* Auth */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -53,6 +60,10 @@ function App() {
           }
         >
           <Route path="dashboard" element={<OwnerDashboard />} />
+          <Route path="schools" element={<Schools />} />
+          <Route path="students" element={<Students />} />
+          <Route path="resources" element={<Resources />} />
+          <Route path="educators" element={<Educators />} />
         </Route>
 
         {/* Educator Routes */}

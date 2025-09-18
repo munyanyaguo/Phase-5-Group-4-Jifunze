@@ -1,78 +1,56 @@
-// src/pages/SchoolOwner/Dashboard.jsx
-import React from "react";
-import { Users, BookOpen, School, FileText, CalendarCheck } from "lucide-react";
+// src/pages/schoolOwner/Dashboard.jsx
+import { Users, UserCheck, BookOpen, CalendarCheck } from "lucide-react";
+import { Link } from "react-router-dom";
 
-const stats = [
-  { title: "Total Students", value: 320, icon: Users, color: "bg-blue-100 text-blue-600" },
-  { title: "Educators", value: 25, icon: BookOpen, color: "bg-green-100 text-green-600" },
-  { title: "Classes", value: 12, icon: School, color: "bg-purple-100 text-purple-600" },
-  { title: "Resources", value: 140, icon: FileText, color: "bg-orange-100 text-orange-600" },
-  { title: "Attendance Today", value: "92%", icon: CalendarCheck, color: "bg-pink-100 text-pink-600" },
-];
+export default function Dashboard() {
+  const stats = [
+    { title: "Total Students", value: 350, icon: <Users size={28} className="text-white" />, color: "bg-blue-500" },
+    { title: "Total Educators", value: 25, icon: <UserCheck size={28} className="text-white" />, color: "bg-purple-500" },
+    { title: "Attendance Rate", value: "92%", icon: <CalendarCheck size={28} className="text-white" />, color: "bg-green-500" },
+    { title: "Resources Uploaded", value: 120, icon: <BookOpen size={28} className="text-white" />, color: "bg-yellow-500" },
+  ];
 
-export default function OwnerDashboard() {
+  const quickLinks = [
+    { name: "Manage Students", path: "/owner/students", color: "bg-blue-600" },
+    { name: "Manage Educators", path: "/owner/educators", color: "bg-purple-600" },
+    { name: "Manage Schools", path: "/owner/schools", color: "bg-green-600" },
+    { name: "Resources", path: "/owner/resources", color: "bg-yellow-600" },
+  ];
+
   return (
-    <div>
-      {/* Header */}
-      <h1 className="text-2xl font-bold mb-6">Owner Dashboard</h1>
+    <div className="space-y-8">
+      {/* Welcome */}
+      <div>
+        <h2 className="text-3xl font-bold text-gray-800">Welcome, School Owner</h2>
+        <p className="text-gray-500 mt-1">Here’s an overview of your school management system.</p>
+      </div>
 
-      {/* Stats Section */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
-        {stats.map((item, idx) => (
-          <div key={idx} className="bg-white rounded-xl shadow-md p-5 flex items-center gap-4">
-            <div className={`p-3 rounded-full ${item.color}`}>
-              <item.icon className="h-6 w-6" />
-            </div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {stats.map((s, idx) => (
+          <div key={idx} className={`flex items-center p-6 rounded-xl shadow hover:shadow-lg transition ${s.color}`}>
+            <div className="p-3 rounded-full bg-white/25 mr-4">{s.icon}</div>
             <div>
-              <p className="text-gray-500 text-sm">{item.title}</p>
-              <p className="text-xl font-semibold">{item.value}</p>
+              <p className="text-white text-lg font-semibold">{s.value}</p>
+              <p className="text-white/90 text-sm">{s.title}</p>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white rounded-xl shadow-md p-6 mb-8">
-        <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
-        <div className="flex flex-wrap gap-4">
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
-            + Add School
-          </button>
-          <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
-            + Add Educator
-          </button>
-          <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">
-            + Add Student
-          </button>
-          <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg">
-            + Add Class
-          </button>
-          <button className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg">
-            + Upload Resource
-          </button>
-        </div>
-      </div>
-
-      {/* Recent Activity & Resources */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Activity */}
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
-          <ul className="space-y-3 text-sm text-gray-700">
-            <li>✅ Educator John added a new resource for Class 8.</li>
-            <li>📚 Student Mary joined Class 7 Science.</li>
-            <li>👩‍🏫 New educator Jane was added to Class 5.</li>
-          </ul>
-        </div>
-
-        {/* Resource Repository */}
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h2 className="text-lg font-semibold mb-4">Latest Resources</h2>
-          <ul className="space-y-3 text-sm text-gray-700">
-            <li>📄 Math Revision Paper (Class 8)</li>
-            <li>📄 Science Notes (Class 7)</li>
-            <li>📄 English Essay Guide (Class 6)</li>
-          </ul>
+      {/* Quick Links */}
+      <div>
+        <h3 className="text-2xl font-semibold text-gray-800 mb-4">Quick Links</h3>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {quickLinks.map((link, idx) => (
+            <Link
+              key={idx}
+              to={link.path}
+              className={`flex items-center justify-center h-24 rounded-xl text-white font-semibold shadow hover:shadow-lg transition ${link.color}`}
+            >
+              {link.name}
+            </Link>
+          ))}
         </div>
       </div>
     </div>
