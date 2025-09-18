@@ -8,6 +8,8 @@ flask_env = os.getenv("FLASK_ENV", "production")
 
 if flask_env == "development":
     dotenv_file = ".env.development"
+elif flask_env == "testing":
+    dotenv_file = ".env.testing"    
 else:
     dotenv_file = ".env.production"
 
