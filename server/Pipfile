@@ -15,6 +15,7 @@ flask-migrate = "*"
 sqlalchemy-serializer = "*"
 flask-bcrypt = "*"
 faker = "*"
+flask-restful = "*"
 
 [dev-packages]
 black = "*"

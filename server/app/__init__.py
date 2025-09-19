@@ -85,5 +85,7 @@ def create_app(config_name=None):
         cors.init_app(app, origins=["*"])
     else:
         cors.init_app(app, origins=os.getenv("CORS_ORIGINS", "*").split(","))
-
+    # Register blueprints
+    from .routes import api_bp
+    app.register_blueprint(api_bp) 
     return app
