@@ -1,6 +1,7 @@
 from datetime import datetime, timezone, timedelta
-
 from .base import BaseModel, db
+from .user import User
+
 
 class ResetPassword(BaseModel):
     __tablename__ = "reset_passwords"

@@ -1,4 +1,6 @@
 from .base import BaseModel, db
+from .user import User
+from .course import Course
 
 
 class Message(BaseModel):
@@ -11,8 +13,8 @@ class Message(BaseModel):
     timestamp = db.Column(db.DateTime, nullable=False)
 
     # Relationships
-    user = db.relationship("User", back_populates="messages")
-    course = db.relationship("Course", back_populates="messages")
+    user = db.relationship("User", back_populates="messages", foreign_keys="Message.user_id")
+    course = db.relationship("Course", back_populates="messages", foreign_keys="Message.course_id")
     replies = db.relationship(
         "Message", backref=db.backref("parent", remote_side="Message.id")
     )
