@@ -1,6 +1,8 @@
 from sqlalchemy.orm import validates
 
 from .base import BaseModel, db
+from .user import User
+from .course import Course
 
 
 class Enrollment(BaseModel):

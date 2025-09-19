@@ -10,7 +10,7 @@ class Course(BaseModel):
     school_id = db.Column(db.Integer, db.ForeignKey("schools.id"), nullable=False)
 
     # Relationships
-    educator = db.relationship("User", back_populates="courses")
+    educator = db.relationship("User", back_populates="courses", foreign_keys="Course.educator_id")
     school = db.relationship("School", back_populates="courses")
     enrollments = db.relationship(
         "Enrollment", back_populates="course", cascade="all, delete-orphan"

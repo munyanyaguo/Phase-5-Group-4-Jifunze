@@ -1,9 +1,8 @@
 from datetime import datetime, timezone
 
-from flask_sqlalchemy import SQLAlchemy
+from app.extensions import db
 from sqlalchemy_serializer import SerializerMixin
 
-db = SQLAlchemy()
 
 
 class BaseModel(db.Model, SerializerMixin):

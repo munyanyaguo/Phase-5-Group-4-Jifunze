@@ -1,4 +1,6 @@
 from .base import BaseModel, db
+from .user import User
+from .course import Course
 
 
 class Resource(BaseModel):
@@ -12,7 +14,7 @@ class Resource(BaseModel):
 
     # Relationships
     course = db.relationship("Course", back_populates="resources")
-    uploader = db.relationship("User", back_populates="resources")
+    uploader = db.relationship("User", back_populates="resources", foreign_keys="Resource.uploaded_by")
 
     def __repr__(self):
         return f"<Resource {self.title} ({self.type})>"

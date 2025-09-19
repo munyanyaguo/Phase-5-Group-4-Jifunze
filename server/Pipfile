@@ -13,6 +13,8 @@ python-dotenv = "*"
 flask-sqlalchemy = "*"
 flask-migrate = "*"
 sqlalchemy-serializer = "*"
+flask-bcrypt = "*"
+faker = "*"
 
 [dev-packages]
 black = "*"
