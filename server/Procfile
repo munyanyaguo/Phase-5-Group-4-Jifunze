@@ -1,1 +1,2 @@
+release: FLASK_APP=manage.py flask db upgrade
 web: gunicorn wsgi:app
