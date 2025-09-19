@@ -15,6 +15,7 @@ flask-migrate = "*"
 sqlalchemy-serializer = "*"
 flask-restful = "*"
 flask-jwt-extended = "*"
+flask-bcrypt = "*"
 
 [dev-packages]
 black = "*"
