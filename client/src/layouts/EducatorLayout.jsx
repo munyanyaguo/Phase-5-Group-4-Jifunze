@@ -10,6 +10,8 @@ const EducatorLayout = () => {
         <h2 className="text-2xl font-bold">Educator</h2>
         <nav className="space-y-2">
           <Link to="/educator/dashboard" className="block hover:text-yellow-300">Dashboard</Link>
+          <Link to="/educator/classes" className="block hover:text-yellow-300">My Classes</Link>
+          <Link to="/educator/Students" className="block hover:text-yellow-300">My Students</Link>
           <Link to="/educator/attendance" className="block hover:text-yellow-300">Attendance</Link>
           <Link to="/educator/resources" className="block hover:text-yellow-300">Resources</Link>
           <Link to="/educator/assessments" className="block hover:text-yellow-300">Assessments</Link>

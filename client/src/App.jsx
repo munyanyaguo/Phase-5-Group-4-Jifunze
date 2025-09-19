@@ -25,6 +25,12 @@ import Students from "./pages/SchoolOwner/Students";
 import Resources from "./pages/SchoolOwner/Resources";
 import Educators from "./pages/SchoolOwner/Educators";
 
+// Educator Pages
+import Classes from "./pages/Educator/Classes";
+import MyStudents from "./pages/Educator/Students";
+import EducatorResources from "./pages/Educator/Resources";
+
+
 // Utils
 import { getRole } from "./services/authServices";
 
@@ -76,6 +82,9 @@ function App() {
           }
         >
           <Route path="dashboard" element={<EducatorDashboard />} />
+          <Route path="classes" element={<Classes />} />
+          <Route path="students" element={<MyStudents />} />
+          <Route path="resources" element={<EducatorResources />} />
         </Route>
 
         {/* Student Routes */}

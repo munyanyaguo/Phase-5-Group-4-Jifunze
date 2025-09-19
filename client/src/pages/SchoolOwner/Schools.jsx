@@ -1,18 +1,21 @@
 // src/pages/schoolOwner/Schools.jsx
 import { useState } from "react";
 import SchoolForm from "../../components/owner/SchoolForm";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Users, BookOpen } from "lucide-react";
 
 export default function Schools() {
   const [schools, setSchools] = useState([
-    { id: 1, name: "Sunrise Academy" },
-    { id: 2, name: "Bright Future School" },
+    { id: 1, name: "Sunrise Academy", students: 120, educators: 15 },
+    { id: 2, name: "Bright Future School", students: 200, educators: 25 },
   ]);
 
   const [showForm, setShowForm] = useState(false);
 
   const addSchool = (school) => {
-    setSchools([...schools, { id: Date.now(), ...school }]);
+    setSchools([
+      ...schools,
+      { id: Date.now(), students: 0, educators: 0, ...school },
+    ]);
     setShowForm(false);
   };
 
@@ -40,6 +43,18 @@ export default function Schools() {
             <p className="text-sm text-gray-500 mt-2">
               Independent online school space
             </p>
+
+            {/* Stats */}
+            <div className="mt-4 flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2 text-gray-600">
+                <Users size={18} className="text-blue-500" />
+                <span>{s.students} Students</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-600">
+                <BookOpen size={18} className="text-green-500" />
+                <span>{s.educators} Educators</span>
+              </div>
+            </div>
           </div>
         ))}
       </div>
