@@ -1,11 +1,8 @@
 from datetime import datetime, timezone
-
 from app.extensions import db
-from sqlalchemy_serializer import SerializerMixin
 
 
-
-class BaseModel(db.Model, SerializerMixin):
+class BaseModel(db.Model):
     __abstract__ = True  # prevents table creation for this base class
 
     id = db.Column(db.Integer, primary_key=True)
@@ -26,9 +23,9 @@ class BaseModel(db.Model, SerializerMixin):
         db.session.delete(self)
         db.session.commit()
 
-    def to_dict(self):
-        """Serialize with timestamps in ISO format."""
-        data = super().to_dict()
-        data["created_at"] = self.created_at.isoformat() if self.created_at else None
-        data["updated_at"] = self.updated_at.isoformat() if self.updated_at else None
-        return data
+    # def to_dict(self):
+    #     """Serialize with timestamps in ISO format."""
+    #     data = super().to_dict()
+    #     data["created_at"] = self.created_at.isoformat() if self.created_at else None
+    #     data["updated_at"] = self.updated_at.isoformat() if self.updated_at else None
+    #     return data
