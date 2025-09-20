@@ -1,6 +1,6 @@
 from flask_restful import Api
 from flask import Blueprint
-from .course import CourseListResource, CourseResource
+from .courses import CourseListResource, CourseResource
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 api = Api(api_bp)
