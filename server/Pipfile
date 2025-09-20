@@ -18,6 +18,7 @@ faker = "*"
 flask-restful = "*"
 flask-marshmallow = "*"
 marshmallow-sqlalchemy = "*"
+flask-jwt-extended = "*"
 
 [dev-packages]
 black = "*"

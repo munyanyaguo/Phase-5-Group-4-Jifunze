@@ -114,4 +114,4 @@ class UserResource(Resource):
         except Exception as e:
             db.session.rollback()
             return {"message": "Something went wrong", "error": str(e)}, 500
-        
+
