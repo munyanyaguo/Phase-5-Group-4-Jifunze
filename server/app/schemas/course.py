@@ -16,11 +16,13 @@ class CourseSchema(ma.SQLAlchemySchema):
     created_at = ma.auto_field()
     updated_at = ma.auto_field()
 
+    @validates("title")
+    def validate_unique_title(self, value):
+        if Course.query.filter_by(title=value).first():
+            raise ValidationError("Course title must be unique per school.")
+
 # Single + multiple schemas
 course_schema = CourseSchema()
 courses_schema = CourseSchema(many=True)
 
-@validates("title")
-def validate_unique_title(self, value):
-    if Course.query.filter_by(title=value).first():
-        raise ValidationError("Course title must be unique per school.")
+    

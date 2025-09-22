@@ -22,10 +22,4 @@ class BaseModel(db.Model):
         """Delete instance from DB and commit."""
         db.session.delete(self)
         db.session.commit()
-
-    # def to_dict(self):
-    #     """Serialize with timestamps in ISO format."""
-    #     data = super().to_dict()
-    #     data["created_at"] = self.created_at.isoformat() if self.created_at else None
-    #     data["updated_at"] = self.updated_at.isoformat() if self.updated_at else None
-    #     return data
+        

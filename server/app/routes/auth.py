@@ -4,14 +4,13 @@ from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt, create_access_token, create_refresh_token
 from marshmallow import ValidationError
 
-from models.user import User, ROLES
-from models.reset_password import ResetPassword
-from models.base import db
-from schemas import (
-    RegisterSchema, UserSchema, ResetPasswordRequestSchema, 
-    ResetPasswordConfirmSchema, LoginSchema
-)
-from utils.responses import success_response, error_response
+from app.models.user import User, ROLES
+from app.models.reset_password import ResetPassword
+from app.models.base import db
+from app.schemas.auth import (RegisterSchema, ResetPasswordRequestSchema, 
+    ResetPasswordConfirmSchema, LoginSchema)
+from app.schemas.user import UserSchema
+from app.utils.responses import success_response, error_response
 
 # Initialize schemas
 register_schema = RegisterSchema()

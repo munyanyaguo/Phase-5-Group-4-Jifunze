@@ -41,6 +41,7 @@ import os
 from dotenv import load_dotenv
 from flask import Flask
 from .extensions import cors, db, migrate
+from flask_jwt_extended import JWTManager
 
 # Load the right .env file
 flask_env = os.getenv("FLASK_ENV", "production")
@@ -68,11 +69,15 @@ def create_app(config_name=None):
         app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
         app.config["TESTING"] = True
         app.config["WTF_CSRF_ENABLED"] = False
+        app.config["JWT_SECRET_KEY"] = "test_jwt_secret"
+        app.config["JWT_TOKEN_LOCATION"] = ["headers"]
     else:
         # Normal configuration (development/production)
         app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev_secret")
         app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
         app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+        app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "deV_jwt_secret")
+        app.config["JWT_TOKEN_LOCATION"] = ["headers"]
 
     db_uri = app.config.get("SQLALCHEMY_DATABASE_URI")
     if db_uri and isinstance(db_uri, str) and db_uri.startswith("postgresql"):
@@ -87,6 +92,9 @@ def create_app(config_name=None):
         cors.init_app(app, origins=["*"])
     else:
         cors.init_app(app, origins=os.getenv("CORS_ORIGINS", "*").split(","))
+    
+    # JWT setup
+    JWTManager(app)
     # Register blueprints
     from .routes import api_bp
     app.register_blueprint(api_bp) 

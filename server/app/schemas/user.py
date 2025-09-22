@@ -1,6 +1,6 @@
 from marshmallow import Schema, fields, validate, validates, ValidationError
-from models.user import User, ROLES
-from models.school import School
+from app.models.user import User, ROLES
+from app.models.school import School
 import re
 
 EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
@@ -97,5 +97,5 @@ class UserQuerySchema(Schema):
     role = fields.String(validate=validate.OneOf(ROLES))
     school_id = fields.Integer()
     search = fields.String()
-    page = fields.Integer(validate=validate.Range(min=1), missing=1)
-    per_page = fields.Integer(validate=validate.Range(min=1, max=100), missing=20)
+    page = fields.Integer(validate=validate.Range(min=1), load_default=1)
+    per_page = fields.Integer(validate=validate.Range(min=1, max=100), load_default=20)

@@ -1,10 +1,5 @@
 from marshmallow import Schema, fields, validate
-
-class BaseSchema(Schema):
-    """Base schema with common fields"""
-    id = fields.Integer(dump_only=True)
-    created_at = fields.DateTime(dump_only=True)
-    updated_at = fields.DateTime(dump_only=True)
+from .user import BaseSchema
 
 class SchoolSchema(BaseSchema):
     """Schema for School model"""
