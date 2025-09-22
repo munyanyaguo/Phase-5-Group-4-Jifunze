@@ -7,6 +7,7 @@ from .users import (UserResource, UserListResource, UserPasswordResource,
     UserProfileResource, UsersBySchoolResource, UserDashboardResource)
 from .schools import (SchoolResource, SchoolListResource, SchoolStatsResource,
     SchoolUsersResource, SchoolCoursesResource, SchoolDashboardResource)
+from .messages import MessageListResource, MessageResource
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 api = Api(api_bp)
@@ -40,3 +41,9 @@ api.add_resource(SchoolStatsResource, "/schools/stats", "/schools/<int:school_id
 api.add_resource(SchoolUsersResource, "/schools/<int:school_id>/users")
 api.add_resource(SchoolCoursesResource, "/schools/<int:school_id>/courses")
 api.add_resource(SchoolDashboardResource, "/schools/dashboard", "/schools/<int:school_id>/dashboard")
+
+# Message endpoints
+api.add_resource(MessageListResource, "/messages")
+api.add_resource(MessageResource, "/messages/<int:message_id>")
+
+
