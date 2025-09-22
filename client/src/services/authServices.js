@@ -2,9 +2,9 @@
 
 // 🔹 Mock users (acting like a fake DB)
 const users = {
-  "owner@example.com": { role: "owner", password: "1234" },
-  "educator@example.com": { role: "educator", password: "1234" },
-  "student@example.com": { role: "student", password: "1234" },
+  "owner@example.com": { role: "owner", password: "1234", name: "Owner Admin" },
+  "educator@example.com": { role: "educator", password: "1234", name: "Educator Jane" },
+  "student@example.com": { role: "student", password: "1234", name: "Student John" },
 };
 
 export const login = async (email, password) => {
@@ -14,7 +14,9 @@ export const login = async (email, password) => {
     const fakeToken = `fake-jwt-${user.role}`;
     localStorage.setItem("token", fakeToken);
     localStorage.setItem("role", user.role);
-    return { role: user.role, token: fakeToken };
+    localStorage.setItem("email", email);
+    localStorage.setItem("name", user.name);
+    return { role: user.role, token: fakeToken, email, name: user.name };
   }
 
   throw new Error("Invalid credentials");
@@ -23,6 +25,8 @@ export const login = async (email, password) => {
 export const logout = () => {
   localStorage.removeItem("token");
   localStorage.removeItem("role");
+  localStorage.removeItem("email");
+  localStorage.removeItem("name");
 };
 
 export const getRole = () => {
@@ -33,25 +37,34 @@ export const isAuthenticated = () => {
   return !!localStorage.getItem("token");
 };
 
+// 🔹 New: get current user info
+export const getCurrentUser = () => {
+  const token = localStorage.getItem("token");
+  if (!token) return null;
+
+  return {
+    token,
+    role: localStorage.getItem("role"),
+    email: localStorage.getItem("email"),
+    name: localStorage.getItem("name"),
+  };
+};
+
 // 🔹 Mock forgot-password (normally sends email)
 export const forgotPassword = async (email) => {
   if (!users[email]) {
     throw new Error("Email not found");
   }
 
-  // In real app → send email with token
-  // For mock → return a fake token
   return { message: "Reset link sent to email", token: "fake-reset-token" };
 };
 
 // 🔹 Mock reset-password
 export const resetPassword = async (token, newPassword) => {
-  // In real app → verify token & update DB
   if (token !== "fake-reset-token") {
     throw new Error("Invalid or expired reset token");
   }
 
-  // For demo → just update all users with new password
   Object.keys(users).forEach((email) => {
     users[email].password = newPassword;
   });

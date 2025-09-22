@@ -22,7 +22,7 @@ export default function Sidebar() {
         <Link to="/owner/resources" className="flex items-center gap-2 hover:text-blue-600">
           <BookOpen size={20}/> Resources
         </Link>
-        <Link to="/owner/reports" className="flex items-center gap-2 hover:text-blue-600">
+        <Link to="/owner/attendance" className="flex items-center gap-2 hover:text-blue-600">
           <BarChart3 size={20}/> Reports
         </Link>
         

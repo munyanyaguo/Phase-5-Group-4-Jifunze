@@ -21,14 +21,24 @@ import StudentDashboard from "./pages/Student/Dashboard";
 
 // Owner Pages
 import Schools from "./pages/SchoolOwner/Schools";
-import Students from "./pages/SchoolOwner/Students";
+import StudentsPage from "./pages/SchoolOwner/Students";
 import Resources from "./pages/SchoolOwner/Resources";
 import Educators from "./pages/SchoolOwner/Educators";
+import Attendance from "./pages/SchoolOwner/Attendance";
 
 // Educator Pages
 import Classes from "./pages/Educator/Classes";
 import MyStudents from "./pages/Educator/Students";
 import EducatorResources from "./pages/Educator/Resources";
+
+// Student Pages
+import StudentResources from "./pages/student/Resources";
+import StudentExams from "./pages/student/Exams";
+import ExamAttempt from "./pages/student/ExamAttempt";
+import StudentResults from "./pages/student/Results";
+import ResultDetail from "./pages/student/ResultDetail";
+
+
 
 
 // Utils
@@ -67,9 +77,10 @@ function App() {
         >
           <Route path="dashboard" element={<OwnerDashboard />} />
           <Route path="schools" element={<Schools />} />
-          <Route path="students" element={<Students />} />
+          <Route path="students" element={<StudentsPage />} />
           <Route path="resources" element={<Resources />} />
           <Route path="educators" element={<Educators />} />
+          <Route path ="attendance" element={<Attendance />} />
         </Route>
 
         {/* Educator Routes */}
@@ -96,7 +107,15 @@ function App() {
             </PrivateRoute>
           }
         >
-          <Route path="dashboard" element={<StudentDashboard />} />
+          
+            <Route path="dashboard" element={<StudentDashboard />} />
+            <Route path="resources" element={<StudentResources />} />
+            <Route path="exams" element={<StudentExams />} />
+            <Route path="exams/:id/attempt" element={<ExamAttempt />} />
+            <Route path="results" element={<StudentResults />} />
+            <Route path="results/:id" element={<ResultDetail />} />
+
+
         </Route>
 
         {/* Default redirect */}

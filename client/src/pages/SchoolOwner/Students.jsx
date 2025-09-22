@@ -44,7 +44,7 @@ export default function Students() {
           >
             <h3 className="text-xl font-semibold text-gray-700">{s.name}</h3>
             <p className="text-sm text-gray-500">{s.email}</p>
-            <p className="text-sm text-gray-400 mt-1">Class: {s.className}</p>
+            <p className="text-sm font-semibold text-gray-400 mt-1">Class: {s.className}</p>
 
             {/* Delete Button */}
             <button

@@ -1,13 +1,25 @@
 // src/components/owner/SchoolForm.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-export default function SchoolForm({ onAdd, onCancel }) {
+export default function SchoolForm({ onSave, onCancel, editingSchool }) {
   const [name, setName] = useState("");
+
+  // Pre-fill form when editing
+  useEffect(() => {
+    if (editingSchool) {
+      setName(editingSchool.name);
+    }
+  }, [editingSchool]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!name.trim()) return;
-    onAdd({ name });
+
+    const updatedSchool = editingSchool
+      ? { ...editingSchool, name }
+      : { name };
+
+    onSave(updatedSchool);
     setName("");
   };
 
@@ -33,7 +45,7 @@ export default function SchoolForm({ onAdd, onCancel }) {
           type="submit"
           className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
         >
-          Save
+          {editingSchool ? "Update" : "Save"}
         </button>
       </div>
     </form>

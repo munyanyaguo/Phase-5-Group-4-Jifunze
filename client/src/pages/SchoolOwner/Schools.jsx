@@ -1,22 +1,40 @@
 // src/pages/schoolOwner/Schools.jsx
 import { useState } from "react";
 import SchoolForm from "../../components/owner/SchoolForm";
-import { PlusCircle, Users, BookOpen } from "lucide-react";
+import { PlusCircle, Users, BookOpen, Edit, Trash2 } from "lucide-react";
 
 export default function Schools() {
   const [schools, setSchools] = useState([
     { id: 1, name: "Sunrise Academy", students: 120, educators: 15 },
     { id: 2, name: "Bright Future School", students: 200, educators: 25 },
+    { id: 3, name: "Greenfield High", students: 150, educators: 20 },
   ]);
 
   const [showForm, setShowForm] = useState(false);
+  const [editingSchool, setEditingSchool] = useState(null);
 
+  // CREATE
   const addSchool = (school) => {
     setSchools([
       ...schools,
       { id: Date.now(), students: 0, educators: 0, ...school },
     ]);
     setShowForm(false);
+  };
+
+  // UPDATE
+  const updateSchool = (updatedSchool) => {
+    setSchools(
+      schools.map((s) => (s.id === updatedSchool.id ? updatedSchool : s))
+    );
+    setEditingSchool(null);
+  };
+
+  // DELETE
+  const deleteSchool = (id) => {
+    if (confirm("Are you sure you want to delete this school?")) {
+      setSchools(schools.filter((s) => s.id !== id));
+    }
   };
 
   return (
@@ -55,16 +73,46 @@ export default function Schools() {
                 <span>{s.educators} Educators</span>
               </div>
             </div>
+
+            {/* Actions */}
+            <div className="mt-4 flex justify-end gap-3">
+              <button
+                onClick={() => setEditingSchool(s)}
+                className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
+              >
+                <Edit size={16} /> Edit
+              </button>
+              <button
+                onClick={() => deleteSchool(s.id)}
+                className="flex items-center gap-1 text-red-600 hover:text-red-800"
+              >
+                <Trash2 size={16} /> Delete
+              </button>
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Modal Form */}
+      {/* Add Modal Form */}
       {showForm && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
           <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
             <h3 className="text-xl font-bold mb-4">Create New School</h3>
             <SchoolForm onAdd={addSchool} onCancel={() => setShowForm(false)} />
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal Form */}
+      {editingSchool && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
+          <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4">Edit School</h3>
+            <SchoolForm
+              initialData={editingSchool}
+              onAdd={updateSchool}
+              onCancel={() => setEditingSchool(null)}
+            />
           </div>
         </div>
       )}
