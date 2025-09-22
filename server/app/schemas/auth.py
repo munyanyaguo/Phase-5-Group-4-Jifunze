@@ -1,6 +1,6 @@
 from marshmallow import Schema, fields, validate, validates, ValidationError
-from models.user import User, ROLES
-from models.school import School
+from app.models.user import User, ROLES
+from app.models.school import School
 import re
 
 EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
