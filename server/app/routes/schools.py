@@ -246,7 +246,7 @@ class SchoolCoursesResource(Resource):
                 search_term = search.lower()
                 query = [course for course in query if 
                           search_term in course.title.lower() or 
-                          (course.description and search_term in course.description.lower())]
+                          (course.descrip<<<<<<< feature/authtion and search_term in course.description.lower())]
             
             # Use your existing CourseSchema
             try:
