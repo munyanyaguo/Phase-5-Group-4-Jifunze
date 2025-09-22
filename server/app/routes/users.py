@@ -3,15 +3,15 @@ from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from marshmallow import ValidationError
 
-from models.user import User, ROLES
-from models.school import School
-from models.base import db
-from schemas import (
+from app.models.user import User, ROLES
+from app.models.school import School
+from app.models.base import db
+from app.schemas.user import (
     UserSchema, UserCreateSchema, UserUpdateSchema, PasswordChangeSchema,
-    UserListResponseSchema, UserStatsSchema, DashboardSchema, UserQuerySchema,
-    BaseSchema, PaginationSchema
+    UserListResponseSchema, UserStatsSchema, UserQuerySchema
 )
-from utils.responses import success_response, error_response
+from app.schemas.schools import SchoolSchema
+from app.utils.responses import success_response, error_response
 
 # Initialize schemas
 user_schema = UserSchema()
@@ -21,11 +21,7 @@ user_update_schema = UserUpdateSchema()
 password_change_schema = PasswordChangeSchema()
 user_list_response_schema = UserListResponseSchema()
 user_stats_schema = UserStatsSchema()
-dashboard_schema = DashboardSchema()
 user_query_schema = UserQuerySchema()
-
-# Import SchoolSchema for nested serialization
-from schemas import SchoolSchema
 
 
 class UserResource(Resource):
@@ -246,8 +242,11 @@ class UsersBySchoolResource(Resource):
                 query = query.filter(User.name.ilike(search_term) | User.email.ilike(search_term))
             
             # Pagination
-            page = int(request.args.get('page', 1))
-            per_page = min(int(request.args.get('per_page', 20)), 100)
+            try:
+                page = int(request.args.get('page', 1))
+                per_page = min(int(request.args.get('per_page', 20)), 100)
+            except ValueError:
+                return error_response("Invalid pagination parameters", status_code=400)
             
             users = query.paginate(page=page, per_page=per_page, error_out=False)
             
@@ -266,8 +265,6 @@ class UsersBySchoolResource(Resource):
             
             return success_response("School users retrieved successfully", response_data)
             
-        except ValueError:
-            return error_response("Invalid pagination parameters", status_code=400)
         except Exception as e:
             return error_response("Something went wrong", {"error": str(e)}, status_code=500)
 
@@ -308,44 +305,7 @@ class UsersBySchoolResource(Resource):
             
         except Exception as e:
             db.session.rollback()
-            return error_response("Something went wrong", {"error": str(e)}, status_code=500)_id = get_jwt_identity()
-            current_user = User.query.filter_by(public_id=current_user_public_id).first()
-            
-            # Only managers can add users, and only to their own school
-            if (current_user_claims.get('role') != 'manager' or 
-                current_user.school_id != school_id):
-                return {"message": "Not authorized to add users to this school"}, 403
-            
-            # Verify school exists
-            school = School.query.get(school_id)
-            if not school:
-                return {"message": "School not found"}, 404
-                
-            # Validate input data
-            try:
-                validated_data = user_create_schema.load(request.get_json() or {})
-            except ValidationError as err:
-                return {"message": "Validation error", "errors": err.messages}, 400
-
-            new_user = User(
-                name=validated_data['name'],
-                email=validated_data['email'],
-                role=validated_data['role'],
-                school_id=school_id
-            )
-            new_user.set_password(validated_data['password'])
-            new_user.save()
-
-            return {
-                "message": "User added successfully",
-                "user": user_schema.dump(new_user)
-            }, 201
-            
-        except ValueError as e:
-            return {"message": str(e)}, 400
-        except Exception as e:
-            db.session.rollback()
-            return {"message": "Something went wrong", "error": str(e)}, 500
+            return error_response("Something went wrong", {"error": str(e)}, status_code=500)
 
 
 class UserProfileResource(Resource):
@@ -410,9 +370,14 @@ class UserDashboardResource(Resource):
                 
             elif role == 'educator':
                 # Educator dashboard: teaching overview
-                from schemas import CourseSchema
-                course_schema = CourseSchema(many=True)
-                dashboard_data['my_courses'] = course_schema.dump(user.courses)
+                try:
+                    from schemas.course import CourseSchema
+                    course_schema = CourseSchema(many=True)
+                    dashboard_data['my_courses'] = course_schema.dump(user.courses)
+                except ImportError:
+                    # Fallback if CourseSchema doesn't exist
+                    dashboard_data['my_courses'] = [course.to_dict() for course in user.courses]
+                
                 dashboard_data['courses_count'] = len(user.courses)
                 
                 # Total students across all courses
