@@ -35,6 +35,8 @@
 #     cors.init_app(app, origins=os.getenv("CORS_ORIGINS", "*").split(","))
 
 #     return app
+
+
 import os
 from dotenv import load_dotenv
 from flask import Flask

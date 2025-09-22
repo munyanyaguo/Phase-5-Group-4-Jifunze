@@ -19,7 +19,7 @@ import OwnerDashboard from "./pages/SchoolOwner/Dashboard";
 import EducatorDashboard from "./pages/Educator/Dashboard";
 import StudentDashboard from "./pages/Student/Dashboard";
 
-// Owner Pages
+// Owner Pages 
 import Schools from "./pages/SchoolOwner/Schools";
 import StudentsPage from "./pages/SchoolOwner/Students";
 import Resources from "./pages/SchoolOwner/Resources";
