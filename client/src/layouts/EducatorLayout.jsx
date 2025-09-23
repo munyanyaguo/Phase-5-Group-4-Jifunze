@@ -1,29 +1,19 @@
 // src/layouts/EducatorLayout.jsx
 import React from "react";
-import { Outlet, Link } from "react-router-dom";
+import { Outlet } from "react-router-dom";
+import Sidebar from "../components/educator/Sidebar";
+import Navbar from "../components/educator/Navbar";
 
-const EducatorLayout = () => {
+export default function EducatorLayout() {
   return (
-    <div className="min-h-screen flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-indigo-600 text-white p-4 space-y-4">
-        <h2 className="text-2xl font-bold">Educator</h2>
-        <nav className="space-y-2">
-          <Link to="/educator/dashboard" className="block hover:text-yellow-300">Dashboard</Link>
-          <Link to="/educator/classes" className="block hover:text-yellow-300">My Classes</Link>
-          <Link to="/educator/Students" className="block hover:text-yellow-300">My Students</Link>
-          <Link to="/educator/attendance" className="block hover:text-yellow-300">Attendance</Link>
-          <Link to="/educator/resources" className="block hover:text-yellow-300">Resources</Link>
-          <Link to="/educator/assessments" className="block hover:text-yellow-300">Assessments</Link>
-        </nav>
-      </aside>
-
-      {/* Main content */}
-      <main className="flex-1 p-6 bg-gray-100">
-        <Outlet />
-      </main>
+    <div className="min-h-screen flex bg-gray-50">
+      <Sidebar />
+      <div className="flex-1 flex flex-col">
+        <Navbar />
+        <main className="p-6 max-h-screen overflow-auto">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
-};
-
-export default EducatorLayout;
+}

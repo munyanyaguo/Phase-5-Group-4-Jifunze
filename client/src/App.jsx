@@ -1,72 +1,66 @@
+// src/App.jsx
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-
-// Landing Page
-import LandingPage from "./pages/LandingPage";
 
 // Layouts
 import OwnerLayout from "./layouts/OwnerLayout";
 import EducatorLayout from "./layouts/EducatorLayout";
 import StudentLayout from "./layouts/StudentLayout";
 
-// Auth Pages
+// Public (you said these already exist)
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 import ResetPassword from "./pages/Auth/ResetPassword";
+import LandingPage from "./pages/LandingPage";
 
-// Dashboards
-import OwnerDashboard from "./pages/SchoolOwner/Dashboard";
-import EducatorDashboard from "./pages/Educator/Dashboard";
-import StudentDashboard from "./pages/Student/Dashboard";
+// Owner pages
+import OwnerDashboard from "./pages/owner/Dashboard";
+import Schools from "./pages/owner/Schools";
+import OwnerStudents from "./pages/owner/Students";
+import Educators from "./pages/owner/Educators";
+import ResourcesOwner from "./pages/owner/Resources";
+import Reports from "./pages/owner/Reports";
+import Users from "./pages/owner/Users";
 
-// Owner Pages 
-import Schools from "./pages/SchoolOwner/Schools";
-import StudentsPage from "./pages/SchoolOwner/Students";
-import Resources from "./pages/SchoolOwner/Resources";
-import Educators from "./pages/SchoolOwner/Educators";
-import Attendance from "./pages/SchoolOwner/Attendance";
+// Educator pages
+import EducatorDashboard from "./pages/educator/Dashboard";
+import EducatorStudents from "./pages/educator/Students";
+import EducatorResources from "./pages/educator/Resources";
+import Attendance from "./pages/educator/Attendance";
+import Classes from "./pages/educator/Classes";
+import ClassDetails from "./pages/educator/ClassDetails";
+import StudentProfile from "./pages/educator/StudentProfile";
 
-// Educator Pages
-import Classes from "./pages/Educator/Classes";
-import MyStudents from "./pages/Educator/Students";
-import EducatorResources from "./pages/Educator/Resources";
-
-// Student Pages
+// Student pages
+import StudentDashboard from "./pages/student/Dashboard";
 import StudentResources from "./pages/student/Resources";
 import StudentExams from "./pages/student/Exams";
 import ExamAttempt from "./pages/student/ExamAttempt";
 import StudentResults from "./pages/student/Results";
-import ResultDetail from "./pages/student/ResultDetail";
+import ResultDetail from "./pages/student/ResultDetails";
 
-
-
-
-// Utils
-import { getRole } from "./services/authServices";
+// utils
+import { getRole, isAuthenticated } from "./services/authServices";
 
 const PrivateRoute = ({ children, role }) => {
   const token = localStorage.getItem("token");
   const userRole = getRole();
-
-  if (!token) return <Navigate to="/login" />;
-  if (role && role !== userRole) return <Navigate to="/login" />;
-
+  if (!token || !isAuthenticated()) return <Navigate to="/login" replace />;
+  if (role && role !== userRole) return <Navigate to="/login" replace />;
   return children;
 };
 
-function App() {
+export default function App() {
   return (
     <Router>
       <Routes>
-        {/* Public Routes */}
+        {/* Public */}
         <Route path="/" element={<LandingPage />} />
-
-        {/* Auth */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* School Owner Routes */}
+        {/* Owner */}
         <Route
           path="/owner/*"
           element={
@@ -75,15 +69,17 @@ function App() {
             </PrivateRoute>
           }
         >
+          <Route index element={<OwnerDashboard />} />
           <Route path="dashboard" element={<OwnerDashboard />} />
           <Route path="schools" element={<Schools />} />
-          <Route path="students" element={<StudentsPage />} />
-          <Route path="resources" element={<Resources />} />
+          <Route path="students" element={<OwnerStudents />} />
           <Route path="educators" element={<Educators />} />
-          <Route path ="attendance" element={<Attendance />} />
+          <Route path="resources" element={<ResourcesOwner />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="users" element={<Users />} />
         </Route>
 
-        {/* Educator Routes */}
+        {/* Educator */}
         <Route
           path="/educator/*"
           element={
@@ -92,13 +88,17 @@ function App() {
             </PrivateRoute>
           }
         >
+          <Route index element={<EducatorDashboard />} />
           <Route path="dashboard" element={<EducatorDashboard />} />
-          <Route path="classes" element={<Classes />} />
-          <Route path="students" element={<MyStudents />} />
+          <Route path="students" element={<EducatorStudents />} />
           <Route path="resources" element={<EducatorResources />} />
+          <Route path="attendance" element={<Attendance />} />
+          <Route path="classes" element={<Classes />} />
+          <Route path="classes/:id" element={<ClassDetails />} />
+          <Route path="students/:id" element={<StudentProfile />} />
         </Route>
 
-        {/* Student Routes */}
+        {/* Student */}
         <Route
           path="/student/*"
           element={
@@ -107,22 +107,17 @@ function App() {
             </PrivateRoute>
           }
         >
-          
-            <Route path="dashboard" element={<StudentDashboard />} />
-            <Route path="resources" element={<StudentResources />} />
-            <Route path="exams" element={<StudentExams />} />
-            <Route path="exams/:id/attempt" element={<ExamAttempt />} />
-            <Route path="results" element={<StudentResults />} />
-            <Route path="results/:id" element={<ResultDetail />} />
-
-
+          <Route index element={<StudentDashboard />} />
+          <Route path="dashboard" element={<StudentDashboard />} />
+          <Route path="resources" element={<StudentResources />} />
+          <Route path="exams" element={<StudentExams />} />
+          <Route path="exams/:id/attempt" element={<ExamAttempt />} />
+          <Route path="results" element={<StudentResults />} />
+          <Route path="results/:id" element={<ResultDetail />} />
         </Route>
 
-        {/* Default redirect */}
-        <Route path="*" element={<Navigate to="/login" />} />
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
   );
 }
-
-export default App;

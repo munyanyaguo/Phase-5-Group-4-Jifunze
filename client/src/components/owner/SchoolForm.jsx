@@ -1,51 +1,33 @@
 // src/components/owner/SchoolForm.jsx
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 export default function SchoolForm({ onSave, onCancel, editingSchool }) {
   const [name, setName] = useState("");
 
-  // Pre-fill form when editing
   useEffect(() => {
-    if (editingSchool) {
-      setName(editingSchool.name);
-    }
+    if (editingSchool) setName(editingSchool.name || "");
   }, [editingSchool]);
 
-  const handleSubmit = (e) => {
+  const submit = (e) => {
     e.preventDefault();
     if (!name.trim()) return;
-
-    const updatedSchool = editingSchool
-      ? { ...editingSchool, name }
-      : { name };
-
-    onSave(updatedSchool);
+    const payload = editingSchool ? { ...editingSchool, name } : { name };
+    onSave(payload);
     setName("");
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={submit} className="space-y-4">
       <input
-        type="text"
-        placeholder="Enter school name"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="border border-gray-300 rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500"
+        className="w-full p-2 border rounded"
+        placeholder="School name"
       />
-
       <div className="flex justify-end gap-3">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 rounded-lg border hover:bg-gray-100"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-        >
-          {editingSchool ? "Update" : "Save"}
+        <button type="button" onClick={onCancel} className="px-3 py-2 border rounded">Cancel</button>
+        <button type="submit" className="px-3 py-2 bg-blue-600 text-white rounded">
+          {editingSchool ? "Update" : "Create"}
         </button>
       </div>
     </form>

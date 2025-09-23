@@ -14,9 +14,9 @@ export default function ResultDetail() {
       <p className="text-gray-600">Score: {attempt.score} / {attempt.total}</p>
 
       <div className="bg-white p-4 rounded shadow">
-        {attempt.answers && Object.keys(attempt.answers).map((qId, idx) => (
+        {Object.keys(attempt.answers || {}).map((qId, idx) => (
           <div key={qId} className="mb-3">
-            <p className="font-medium">Question {idx + 1}: Answered {attempt.answers[qId]}</p>
+            <p className="font-medium">Question {idx+1}: Answered {attempt.answers[qId]}</p>
           </div>
         ))}
       </div>

@@ -1,19 +1,17 @@
 // src/layouts/OwnerLayout.jsx
+import React from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "../components/owner/Sidebar";
 import Navbar from "../components/owner/Navbar";
 
 export default function OwnerLayout() {
   return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
+    <div className="min-h-screen flex bg-gray-50">
       <Sidebar />
-
-      {/* Main Content */}
       <div className="flex-1 flex flex-col">
         <Navbar />
-        <main className="p-6 overflow-y-auto">
-          <Outlet /> {/* Renders child pages */}
+        <main className="p-6 max-h-screen overflow-auto">
+          <Outlet />
         </main>
       </div>
     </div>
