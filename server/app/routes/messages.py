@@ -9,6 +9,8 @@ from app.extensions import db, paginate
 from app.schemas.message import message_schema, messages_schema
 from app.utils.responses import success_response, error_response
 from app.routes.attendance import require_roles, assert_same_school_or_forbidden
+from app.schemas.user import UserSchema
+from app.schemas.course import CourseSchema
 
 
 class MessageListResource(Resource):

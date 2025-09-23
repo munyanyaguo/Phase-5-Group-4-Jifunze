@@ -1,6 +1,7 @@
 from marshmallow import Schema, fields, validate, validates, ValidationError
 from app.models.user import User, ROLES
 from app.models.school import School
+from app.schemas.base import BaseSchema
 import re
 
 EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
@@ -13,13 +14,13 @@ class LoginSchema(Schema):
 class RegisterSchema(Schema):
     """Schema for user registration"""
     name = fields.String(required=True, validate=validate.Length(min=2, max=100))
-    email = fields.Email(required=True, validate=validate.Length(max=120))
+    email = fields.Email(required=True)
     role = fields.String(required=True, validate=validate.OneOf(ROLES))
     school_id = fields.Integer(required=True)
     password = fields.String(required=True, load_only=True, validate=validate.Length(min=6))
 
     @validates("email")
-    def validate_email_format(self, value):
+    def check_email_format_and_uniqueness(self, value, **kwargs):
         if not EMAIL_REGEX.match(value):
             raise ValidationError("Invalid email format")
         
@@ -29,7 +30,7 @@ class RegisterSchema(Schema):
             raise ValidationError("Email already registered")
     
     @validates("school_id")
-    def validate_school_exists(self, value):
+    def validate_school_exists(self, value, **kwargs):
         if not School.query.get(value):
             raise ValidationError("School not found")
 
