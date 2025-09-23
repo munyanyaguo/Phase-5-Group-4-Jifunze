@@ -1,5 +1,5 @@
 from marshmallow import Schema, fields, validate
-from .user import BaseSchema
+from app.schemas.base import BaseSchema
 
 class SchoolSchema(BaseSchema):
     """Schema for School model"""

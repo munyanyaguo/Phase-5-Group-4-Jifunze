@@ -1,8 +1,9 @@
 from app.extensions import ma
 from app.models.attendance import Attendance
+from app.schemas.base import BaseSchema
 from marshmallow import validate
 
-class AttendanceSchema(ma.SQLAlchemySchema):
+class AttendanceSchema(BaseSchema):
     class Meta:
         model = Attendance
         load_instance = True

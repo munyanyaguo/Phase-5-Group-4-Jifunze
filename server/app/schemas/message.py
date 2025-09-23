@@ -30,6 +30,7 @@ class MessageSchema(ma.SQLAlchemySchema):
         dump_only=True
     )
 
+
 # Single & multiple
 message_schema = MessageSchema()
 messages_schema = MessageSchema(many=True)

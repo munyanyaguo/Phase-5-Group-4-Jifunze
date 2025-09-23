@@ -1,15 +1,11 @@
 from marshmallow import Schema, fields, validate, validates, ValidationError
 from app.models.user import User, ROLES
 from app.models.school import School
+from app.schemas.base import BaseSchema
 import re
 
 EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
 
-class BaseSchema(Schema):
-    """Base schema with common fields"""
-    id = fields.Integer(dump_only=True)
-    created_at = fields.DateTime(dump_only=True)
-    updated_at = fields.DateTime(dump_only=True)
 
 class UserSchema(BaseSchema):
     """Schema for User model"""

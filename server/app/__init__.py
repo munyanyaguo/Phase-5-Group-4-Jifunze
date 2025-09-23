@@ -93,6 +93,8 @@ def create_app(config_name=None):
     
     # JWT setup
     JWTManager(app)
+
+    from app import schemas
     # Register blueprints
     from .routes import api_bp
     app.register_blueprint(api_bp) 

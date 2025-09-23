@@ -5,6 +5,7 @@ from sqlalchemy.orm import validates
 
 from .base import BaseModel, db
 
+
 bcrypt = Bcrypt()
 
 ROLES = ("student", "educator", "manager")
@@ -29,8 +30,8 @@ class User(BaseModel):
     messages = db.relationship("Message", back_populates="user", foreign_keys="Message.user_id")
     enrollments = db.relationship("Enrollment", back_populates="user")
     attendance = db.relationship("Attendance", back_populates="user",foreign_keys="Attendance.user_id")
-    verifications = db.relationship("Attendance",back_populates="verifier",foreign_keys="Attendance.verified_by"
-    )
+    verifications = db.relationship("Attendance",back_populates="verifier",foreign_keys="Attendance.verified_by")
+    reset_passwords = db.relationship("ResetPassword", back_populates="user")
     # Password methods
     def set_password(self, password: str):
         self.password_hash = bcrypt.generate_password_hash(password).decode("utf-8")
