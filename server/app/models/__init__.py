@@ -5,6 +5,7 @@ from .enrollment import Enrollment
 from .message import Message
 from .resource import Resource
 from .school import School
+from .reset_password import ResetPassword
 # Import all models here so they register with SQLAlchemy
 from .user import User
 
@@ -18,4 +19,5 @@ __all__ = [
     "Attendance",
     "Resource",
     "Message",
+    "ResetPassword",
 ]

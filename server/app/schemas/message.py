@@ -29,24 +29,6 @@ class MessageSchema(ma.SQLAlchemySchema):
     )
 
 
-# Minimal inline schemas for nesting
-class UserSchema(ma.SQLAlchemySchema):
-    class Meta:
-        model = User
-        load_instance = True
-
-    id = ma.auto_field()
-    name = ma.auto_field()
-
-
-class CourseSchema(ma.SQLAlchemySchema):
-    class Meta:
-        model = Course
-        load_instance = True
-
-    id = ma.auto_field()
-    title = ma.auto_field()
-
 
 # Single & multiple
 message_schema = MessageSchema()
