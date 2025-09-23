@@ -4,6 +4,8 @@ from app.extensions import ma
 from app.models.message import Message
 from app.models.user import User
 from app.models.course import Course
+from app.schemas.user import UserSchema
+from app.schemas.course import CourseSchema
 
 
 class MessageSchema(ma.SQLAlchemySchema):
@@ -27,26 +29,6 @@ class MessageSchema(ma.SQLAlchemySchema):
         lambda: CourseSchema(only=("id", "title")),
         dump_only=True
     )
-
-
-# Minimal inline schemas for nesting
-class UserSchema(ma.SQLAlchemySchema):
-    class Meta:
-        model = User
-        load_instance = True
-
-    id = ma.auto_field()
-    name = ma.auto_field()
-
-
-class CourseSchema(ma.SQLAlchemySchema):
-    class Meta:
-        model = Course
-        load_instance = True
-
-    id = ma.auto_field()
-    title = ma.auto_field()
-
 
 # Single & multiple
 message_schema = MessageSchema()
