@@ -3,10 +3,10 @@ name: Backend CI
 on:
   pull_request:
     branches: [ develop, main ]
-    paths: [ 'server/**' ]
+    paths: [ 'server/' ]
   push:
     branches: [ develop, main ]
-    paths: [ 'server/**' ]
+    paths: [ 'server/' ]
 
 jobs:
   test:
@@ -40,7 +40,7 @@ jobs:
 
       - name: Install dependencies with pipenv
         run: |
-          pipenv install --dev --deploy --system
+          pipenv install --dev --deploy
 
       - name: Lint with flake8
         run: |
@@ -49,9 +49,7 @@ jobs:
 
       - name: Test with pytest
         env:
-          SECRET_KEY: test-secret-key     # to be changed during production
+          SECRET_KEY: test-secret-key     # dummy key for testing
           FLASK_ENV: testing
         run: |
-          pipenv run python -m pytest tests/ -v
-
-     
+          pipenv run pytest tests/ -v
