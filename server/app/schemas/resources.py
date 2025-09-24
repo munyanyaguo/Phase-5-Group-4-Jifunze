@@ -1,15 +1,16 @@
+
 from marshmallow import validates, ValidationError, fields
 from app.extensions import ma
 from app.models.resource import Resource
 from app.schemas.base import BaseSchema
+
 
 class ResourceSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Resource
         include_fk = True
         load_instance = True
-        
-    
+   
     # Auto fields
     id = ma.auto_field()
     title = ma.auto_field()
@@ -32,3 +33,4 @@ class ResourceSchema(ma.SQLAlchemyAutoSchema):
 # Single + many
 resource_schema = ResourceSchema()
 resources_schema = ResourceSchema(many=True)
+

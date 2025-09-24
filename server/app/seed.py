@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from flask.cli import with_appcontext 
 import click
 from faker import Faker
+import uuid
 
 from app.extensions import db
 from app.models import (
@@ -12,7 +13,7 @@ from app.models import (
     Message,
     Resource,
     School,
-    User,
+    User,ResetPassword
 )
 
 fake = Faker()
@@ -110,6 +111,21 @@ def add_message(course_id: int, user_id: int, content: str, parent_id: int | Non
     db.session.add(msg)
     db.session.commit()
     return msg
+
+def create_reset_password(user_id: int) -> ResetPassword:
+    token = str(uuid.uuid4())
+    existing = ResetPassword.query.filter_by(user_id=user_id).first()
+    if existing:
+        return existing
+    reset = ResetPassword(
+        user_id=user_id,
+        token=token,
+        created_at=datetime.now(timezone.utc),
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
+    )
+    db.session.add(reset)
+    db.session.commit()
+    return reset
 
 
 @click.group(help="Seed database with demo data.")

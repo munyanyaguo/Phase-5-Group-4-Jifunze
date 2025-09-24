@@ -28,7 +28,7 @@ class User(BaseModel):
     courses = db.relationship("Course", back_populates="educator", foreign_keys="Course.educator_id")
     resources = db.relationship("Resource", back_populates="uploader", foreign_keys="Resource.uploaded_by")
     messages = db.relationship("Message", back_populates="user", foreign_keys="Message.user_id")
-    enrollments = db.relationship("Enrollment", back_populates="user")
+    enrollments = db.relationship("Enrollment", back_populates="user", cascade="all, delete-orphan",lazy="select")
     attendance = db.relationship("Attendance", back_populates="user",foreign_keys="Attendance.user_id")
     verifications = db.relationship("Attendance",back_populates="verifier",foreign_keys="Attendance.verified_by")
     reset_passwords = db.relationship("ResetPassword", back_populates="user")

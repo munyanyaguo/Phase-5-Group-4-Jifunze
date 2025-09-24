@@ -114,4 +114,6 @@ class ResourceDetailApi(ApiResource):
         resource = Resource.query.get_or_404(id)
         db.session.delete(resource)
         db.session.commit()
+
         return success_response("Resource deleted successfully")
+
