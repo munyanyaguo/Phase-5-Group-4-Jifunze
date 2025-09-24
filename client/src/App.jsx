@@ -7,7 +7,7 @@ import OwnerLayout from "./layouts/OwnerLayout";
 import EducatorLayout from "./layouts/EducatorLayout";
 import StudentLayout from "./layouts/StudentLayout";
 
-// Public (you said these already exist)
+// Public pages
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 import ResetPassword from "./pages/Auth/ResetPassword";
@@ -39,14 +39,22 @@ import ExamAttempt from "./pages/student/ExamAttempt";
 import StudentResults from "./pages/student/Results";
 import ResultDetail from "./pages/student/ResultDetails";
 
-// utils
-import { getRole, isAuthenticated } from "./services/authServices";
+// Utils
+import { isAuthenticated, getRole } from "./services/authServices";
 
+// 🔹 PrivateRoute wrapper
 const PrivateRoute = ({ children, role }) => {
-  const token = localStorage.getItem("token");
   const userRole = getRole();
-  if (!token || !isAuthenticated()) return <Navigate to="/login" replace />;
-  if (role && role !== userRole) return <Navigate to="/login" replace />;
+
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (role && role !== userRole) {
+    // role mismatch → redirect to that role’s dashboard
+    return <Navigate to={`/${userRole}/dashboard`} replace />;
+  }
+
   return children;
 };
 
@@ -54,13 +62,13 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        {/* Public */}
+        {/* Public routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* Owner */}
+        {/* Owner routes */}
         <Route
           path="/owner/*"
           element={
@@ -79,7 +87,7 @@ export default function App() {
           <Route path="users" element={<Users />} />
         </Route>
 
-        {/* Educator */}
+        {/* Educator routes */}
         <Route
           path="/educator/*"
           element={
@@ -98,7 +106,7 @@ export default function App() {
           <Route path="students/:id" element={<StudentProfile />} />
         </Route>
 
-        {/* Student */}
+        {/* Student routes */}
         <Route
           path="/student/*"
           element={
@@ -116,6 +124,7 @@ export default function App() {
           <Route path="results/:id" element={<ResultDetail />} />
         </Route>
 
+        {/* Catch-all redirect */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>

@@ -1,73 +1,58 @@
-// src/services/authServices.js
+const API_URL = "http://127.0.0.1:5000/api";
 
-// 🔹 Mock users (acting like a fake DB)
-const users = {
-  "owner@example.com": { role: "owner", password: "1234", name: "Owner Admin" },
-  "educator@example.com": { role: "educator", password: "1234", name: "Educator Jane" },
-  "student@example.com": { role: "student", password: "1234", name: "Student John" },
-};
+// 🔹 Login
+export async function login(email, password) {
+  const response = await fetch(`${API_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
 
-export const login = async (email, password) => {
-  const user = users[email];
-
-  if (user && user.password === password) {
-    const fakeToken = `fake-jwt-${user.role}`;
-    localStorage.setItem("token", fakeToken);
-    localStorage.setItem("role", user.role);
-    localStorage.setItem("email", email);
-    localStorage.setItem("name", user.name);
-    return { role: user.role, token: fakeToken, email, name: user.name };
+  if (!response.ok) {
+    throw new Error("Login failed");
   }
 
-  throw new Error("Invalid credentials");
-};
+  const result = await response.json();
+  const data = result.data; // 👈 backend wraps in { message, data }
 
-export const logout = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("role");
-  localStorage.removeItem("email");
-  localStorage.removeItem("name");
-};
+  // Save tokens + role in localStorage
+  localStorage.setItem("token", data.access_token);
+  localStorage.setItem("refresh_token", data.refresh_token);
+  localStorage.setItem("role", data.user.role);
+  localStorage.setItem("user", JSON.stringify(data.user));
 
-export const getRole = () => {
-  return localStorage.getItem("role");
-};
+  return data;
+}
 
-export const isAuthenticated = () => {
-  return !!localStorage.getItem("token");
-};
+// 🔹 Logout
+export async function logout() {
+  const token = localStorage.getItem("token");
+  await fetch(`${API_URL}/auth/logout`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  localStorage.clear();
+}
 
-// 🔹 New: get current user info
-export const getCurrentUser = () => {
+// 🔹 Current User
+export async function getCurrentUser() {
   const token = localStorage.getItem("token");
   if (!token) return null;
 
-  return {
-    token,
-    role: localStorage.getItem("role"),
-    email: localStorage.getItem("email"),
-    name: localStorage.getItem("name"),
-  };
-};
-
-// 🔹 Mock forgot-password (normally sends email)
-export const forgotPassword = async (email) => {
-  if (!users[email]) {
-    throw new Error("Email not found");
-  }
-
-  return { message: "Reset link sent to email", token: "fake-reset-token" };
-};
-
-// 🔹 Mock reset-password
-export const resetPassword = async (token, newPassword) => {
-  if (token !== "fake-reset-token") {
-    throw new Error("Invalid or expired reset token");
-  }
-
-  Object.keys(users).forEach((email) => {
-    users[email].password = newPassword;
+  const res = await fetch(`${API_URL}/users/me`, {
+    headers: { Authorization: `Bearer ${token}` },
   });
 
-  return { message: "Password reset successful" };
-};
+  if (!res.ok) throw new Error("Failed to fetch user");
+  return await res.json();
+}
+
+// 🔹 Role helper
+export function getRole() {
+  return localStorage.getItem("role");
+}
+
+// 🔹 Auth check
+export function isAuthenticated() {
+  return !!localStorage.getItem("token");
+}
