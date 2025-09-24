@@ -65,9 +65,9 @@ class ResourceListApi(ApiResource):
             url = f"/uploads/{filename}"
 
         # Validate course existence
-        course = Course.query.get(course_id)
+        course = db.session.get(Course, course_id)
         if not course:
-            return error_response("Invalid course_id", 404)
+            return error_response("Invalid course_id", status_code=404)
 
         user_id = get_jwt_identity()
         resource = Resource(
@@ -85,16 +85,20 @@ class ResourceListApi(ApiResource):
 
 class ResourceDetailApi(ApiResource):
     @jwt_required()
-    def get(self, id):
+    def get(self, resource_id):
         """Get a single resource"""
-        resource = Resource.query.get_or_404(id)
+        resource = db.session.get(Resource, resource_id)
+        if not resource:
+            return error_response("Resource not found", status_code=404)
         return success_response("Fetched resource", resource_schema.dump(resource))
 
     @jwt_required()
     @role_required("educator", "manager")
-    def put(self, id):
+    def put(self, resource_id):
         """Update resource (educator/manager only)"""
-        resource = Resource.query.get_or_404(id)
+        resource = db.session.get(Resource, resource_id)
+        if not resource:
+            return error_response("Resource not found", status_code=404)
         data = request.get_json()
 
         if not data:
@@ -109,9 +113,11 @@ class ResourceDetailApi(ApiResource):
 
     @jwt_required()
     @role_required("educator", "manager")
-    def delete(self, id):
+    def delete(self, resource_id):
         """Delete resource (educator/manager only)"""
-        resource = Resource.query.get_or_404(id)
+        resource = db.session.get(Resource, resource_id)
+        if not resource:
+            return error_response("Resource not found", status_code=404)
         db.session.delete(resource)
         db.session.commit()
 
