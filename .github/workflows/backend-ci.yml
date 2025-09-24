@@ -1,0 +1,57 @@
+name: Backend CI
+
+on:
+  pull_request:
+    branches: [ develop, main ]
+    paths: [ 'server/**' ]
+  push:
+    branches: [ develop, main ]
+    paths: [ 'server/**' ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: server
+
+    strategy:
+      matrix:
+        python-version: [3.12]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install pipenv
+        run: pip install pipenv 
+
+      - name: Cache pipenv dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pipenv
+          key: ${{ runner.os }}-pipenv-${{ hashFiles('server/Pipfile', 'server/Pipfile.lock') }}
+
+      - name: Install dependencies with pipenv
+        run: |
+          pipenv install --dev --deploy --system
+
+      - name: Lint with flake8
+        run: |
+          pipenv run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          pipenv run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Test with pytest
+        env:
+          SECRET_KEY: test-secret-key     # to be changed during production
+          FLASK_ENV: testing
+        run: |
+          pipenv run pytest tests/ -v --cov=app --cov-report=term-missing
+
+     

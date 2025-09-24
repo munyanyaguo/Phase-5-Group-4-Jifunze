@@ -5,9 +5,27 @@ name = "pypi"
 
 [packages]
 flask = "*"
+gunicorn = "==21.2.0"
+psycopg2-binary = "*"
+sqlalchemy = "*"
+flask-cors = "*"
+python-dotenv = "*"
 flask-sqlalchemy = "*"
+flask-migrate = "*"
+sqlalchemy-serializer = "*"
+flask-bcrypt = "*"
+faker = "*"
+flask-restful = "*"
+flask-marshmallow = "*"
+marshmallow-sqlalchemy = "*"
+flask-jwt-extended = "*"
 
 [dev-packages]
+black = "*"
+isort = "*"
+flake8 = "*"
+pytest = "==7.4.2"
+pytest-cov = "==4.1.0"
 
 [requires]
 python_version = "3.12"
