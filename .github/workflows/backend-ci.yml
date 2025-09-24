@@ -52,6 +52,6 @@ jobs:
           SECRET_KEY: test-secret-key     # to be changed during production
           FLASK_ENV: testing
         run: |
-          pipenv run pytest tests/ -v --cov=app --cov-report=term-missing
+          pipenv run python -m pytest tests/ -v
 
      
