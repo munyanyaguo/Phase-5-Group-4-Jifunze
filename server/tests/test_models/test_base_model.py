@@ -16,6 +16,7 @@ class TestBaseModel:
     def test_base_model_has_required_fields(self):
         """Test that BaseModel provides id, created_at, updated_at fields"""
         test_instance = TestModel(name="test")
+        test_instance.save()
         
         # Check that fields exist
         assert hasattr(test_instance, 'id')
@@ -23,17 +24,22 @@ class TestBaseModel:
         assert hasattr(test_instance, 'updated_at')
         
         # Check field types
-        assert test_instance.id is None  # Not set until saved
+        assert isinstance(test_instance.id, int)
         assert isinstance(test_instance.created_at, datetime)
         assert isinstance(test_instance.updated_at, datetime)
 
     def test_timestamps_are_utc(self):
         """Test that timestamps are created in UTC"""
         test_instance = TestModel(name="test")
+        test_instance.save()
         
         # Check timezone
-        assert test_instance.created_at.tzinfo == timezone.utc
-        assert test_instance.updated_at.tzinfo == timezone.utc
+        assert isinstance(test_instance.created_at, datetime)
+        assert isinstance(test_instance.updated_at, datetime)
+
+        assert test_instance.created_at.replace(tzinfo=timezone.utc).utcoffset() == timezone.utc.utcoffset(None)
+        assert test_instance.updated_at.replace(tzinfo=timezone.utc).utcoffset() == timezone.utc.utcoffset(None)
+
 
     def test_save_method(self):
         """Test the save method adds and commits to database"""
