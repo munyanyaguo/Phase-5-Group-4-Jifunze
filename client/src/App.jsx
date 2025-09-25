@@ -46,6 +46,11 @@ import { isAuthenticated, getRole } from "./services/authServices";
 const PrivateRoute = ({ children, role }) => {
   const userRole = getRole();
 
+   // normalize backend → frontend
+  if (userRole === "manager") {
+    userRole = "owner";
+  }
+
   if (!isAuthenticated()) {
     return <Navigate to="/login" replace />;
   }

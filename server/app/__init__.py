@@ -91,7 +91,14 @@ def create_app(config_name=None):
     if config_name == "testing":
         cors.init_app(app, origins=["*"])
     else:
-        cors.init_app(app, origins=os.getenv("CORS_ORIGINS", "*").split(","))
+        cors.init_app(
+    app,
+    resources={r"/api/*": {"origins": ["http://127.0.0.1:5173"]}},
+    supports_credentials=True,
+    allow_headers=["Content-Type", "Authorization"],
+    methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+)
+
     
     # JWT setup
     JWTManager(app)

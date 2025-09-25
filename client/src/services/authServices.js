@@ -1,21 +1,32 @@
 const API_URL = "http://127.0.0.1:5000/api";
 
+// 🔹 Register
+export async function register({ name, email, password, role, school_id }) {
+  const res = await fetch(`${API_URL}/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, email, password, role, school_id }),
+  });
+
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.message || "Registration failed");
+  return result.data;
+}
+
 // 🔹 Login
 export async function login(email, password) {
-  const response = await fetch(`${API_URL}/auth/login`, {
+  const res = await fetch(`${API_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
 
-  if (!response.ok) {
-    throw new Error("Login failed");
-  }
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.message || "Login failed");
 
-  const result = await response.json();
-  const data = result.data; // 👈 backend wraps in { message, data }
+  const data = result.data;
 
-  // Save tokens + role in localStorage
+  // Save tokens + user info in localStorage
   localStorage.setItem("token", data.access_token);
   localStorage.setItem("refresh_token", data.refresh_token);
   localStorage.setItem("role", data.user.role);
@@ -34,7 +45,33 @@ export async function logout() {
   localStorage.clear();
 }
 
-// 🔹 Current User
+// 🔹 Request Password Reset
+export async function resetPasswordRequest(email) {
+  const res = await fetch(`${API_URL}/auth/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.message || "Password reset request failed");
+  return result.data;
+}
+
+// 🔹 Confirm Password Reset
+export async function resetPasswordConfirm(token, new_password) {
+  const res = await fetch(`${API_URL}/auth/reset-password`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, new_password }),
+  });
+
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.message || "Password reset failed");
+  return result.data;
+}
+
+// 🔹 Get current user
 export async function getCurrentUser() {
   const token = localStorage.getItem("token");
   if (!token) return null;
