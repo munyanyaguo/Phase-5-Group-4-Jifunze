@@ -19,6 +19,7 @@ flask-restful = "*"
 marshmallow-sqlalchemy = "*"
 flask-jwt-extended = "*"
 flask-marshmallow = "*"
+pytest = "*"
 
 [dev-packages]
 black = "*"
