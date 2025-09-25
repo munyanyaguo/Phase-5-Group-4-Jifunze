@@ -13,7 +13,7 @@ class UserSchema(BaseSchema):
     name = fields.String(required=True, validate=validate.Length(min=2, max=100))
     email = fields.Email(required=True, validate=validate.Length(max=120))
     role = fields.String(required=True, validate=validate.OneOf(ROLES))
-    school_id = fields.Integer(required=True)
+    school_id = fields.Integer(required=False)
 
     # Password fields
     password = fields.String(load_only=True, required=True, validate=validate.Length(min=6))
@@ -37,8 +37,9 @@ class UserSchema(BaseSchema):
             
     @validates("school_id")
     def validate_school_exists(self, value):
-        if not School.query.get(value):
-            raise ValidationError("School not found")
+        if value is not None:
+            if not School.query.get(value):
+                raise ValidationError("School not found")
 
 class UserCreateSchema(UserSchema):
     """Schema for creating users"""
