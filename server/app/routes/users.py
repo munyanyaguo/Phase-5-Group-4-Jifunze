@@ -124,39 +124,65 @@ class UserListResource(Resource):
                 query_params = user_query_schema.load(request.args)
             except ValidationError as err:
                 return error_response("Invalid query parameters", err.messages, status_code=400)
-                
-            current_user_claims = get_jwt()
-            current_user_public_id = get_jwt_identity()
+
+            # Get current user information
+            try:
+                current_user_claims = get_jwt()
+                current_user_public_id = get_jwt_identity()
+            except Exception as jwt_error:
+                return error_response("Invalid or expired token", {"error": str(jwt_error)}, status_code=401)
+
+            # Get current user from database
             current_user = User.query.filter_by(public_id=current_user_public_id).first()
-            
+            if not current_user:
+                return error_response("User not found", status_code=404)
+
             # Build query based on user role
             query = User.query
-            
+
             # Non-managers can only see users from their school
             if current_user_claims.get('role') != 'manager':
-                query = query.filter(User.school_id == current_user.school_id)
-            
+                if current_user.school_id:
+                    query = query.filter(User.school_id == current_user.school_id)
+                else:
+                    # User has no school, return empty result
+                    response_data = {
+                        "users": [],
+                        "pagination": {
+                            "page": 1,
+                            "pages": 1,
+                            "per_page": query_params['per_page'],
+                            "total": 0,
+                            "has_next": False,
+                            "has_prev": False
+                        }
+                    }
+                    return success_response("Users retrieved successfully", response_data)
+
             # Apply filters
             if query_params.get('role'):
                 query = query.filter(User.role == query_params['role'])
-                
+
             if query_params.get('school_id'):
                 query = query.filter(User.school_id == query_params['school_id'])
-                
+
             if query_params.get('search'):
                 search_term = f"%{query_params['search']}%"
                 query = query.filter(
-                    User.name.ilike(search_term) | 
+                    User.name.ilike(search_term) |
                     User.email.ilike(search_term)
                 )
-            
+
             # Pagination
-            users = query.paginate(
-                page=query_params['page'], 
-                per_page=query_params['per_page'], 
-                error_out=False
-            )
-            
+            try:
+                users = query.paginate(
+                    page=query_params['page'],
+                    per_page=query_params['per_page'],
+                    error_out=False
+                )
+            except Exception as pagination_error:
+                return error_response("Pagination error", {"error": str(pagination_error)}, status_code=400)
+
             response_data = {
                 "users": users_schema.dump(users.items),
                 "pagination": {
@@ -168,9 +194,9 @@ class UserListResource(Resource):
                     "has_prev": users.has_prev
                 }
             }
-            
+
             return success_response("Users retrieved successfully", response_data)
-            
+
         except Exception as e:
             return error_response("Something went wrong", {"error": str(e)}, status_code=500)
 

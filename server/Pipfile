@@ -25,8 +25,8 @@ pytest = "*"
 black = "*"
 isort = "*"
 flake8 = "*"
-pytest = "==7.4.2"
-pytest-cov = "==4.1.0"
+pytest = "*"
+pytest-cov = "*"
 
 [requires]
 python_version = "3.12"
