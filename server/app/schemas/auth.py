@@ -16,7 +16,7 @@ class RegisterSchema(Schema):
     name = fields.String(required=True, validate=validate.Length(min=2, max=100))
     email = fields.Email(required=True)
     role = fields.String(required=True, validate=validate.OneOf(ROLES))
-    school_id = fields.Integer(required=True)
+    school_id = fields.Integer(required=False)
     password = fields.String(required=True, load_only=True, validate=validate.Length(min=6))
 
     @validates("email")
@@ -31,8 +31,9 @@ class RegisterSchema(Schema):
     
     @validates("school_id")
     def validate_school_exists(self, value, **kwargs):
-        if not School.query.get(value):
-            raise ValidationError("School not found")
+        if value is not None:  # Only validate if school_id is provided
+            if not School.query.get(value):
+                raise ValidationError("School not found")
 
 class ResetPasswordRequestSchema(Schema):
     """Schema for requesting password reset"""

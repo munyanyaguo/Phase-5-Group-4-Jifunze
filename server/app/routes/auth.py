@@ -32,12 +32,16 @@ class RegisterResource(Resource):
             return error_response("Validation error", err.messages, status_code=400)
 
         try:
-            new_user = User(
-                name=validated_data['name'],
-                email=validated_data['email'],
-                role=validated_data['role'],
-                school_id=validated_data['school_id']
-            )
+            # Create user with optional school_id
+            user_data = {
+                'name': validated_data['name'],
+                'email': validated_data['email'],
+                'role': validated_data['role'],
+                # Only include school_id if it's in validated_data
+                **({'school_id': validated_data['school_id']} if 'school_id' in validated_data else {})
+            }
+            
+            new_user = User(**user_data)
             new_user.set_password(validated_data['password'])
 
             db.session.add(new_user)
