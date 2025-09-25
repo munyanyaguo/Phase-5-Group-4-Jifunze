@@ -23,7 +23,7 @@ else:
 
 def create_app(config_name=None):
     app = Flask(__name__)
-    
+
     # Handle different configurations
     if config_name == "testing":
         # Testing configuration
