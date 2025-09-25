@@ -1,141 +1,116 @@
+// src/pages/Auth/ResetPassword.jsx
 import React, { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { motion as Motion} from "framer-motion";
 
-// Initial form state
-const initialState = {
-  password: "",
-  confirmPassword: "",
-};
+const API_URL = "http://127.0.0.1:5000/api";
 
 const ResetPassword = () => {
-  const [formData, setFormData] = useState(initialState);
-  const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState(1); // 1 = request token, 2 = reset password
+  const [email, setEmail] = useState("");
+  const [token, setToken] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [error, setError] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const [success, setSuccess] = useState("");
 
-  // Get reset token from query params
-  const resetToken = searchParams.get("token");
-
-  // Handle input changes
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  // Handle form submission
-  const handleSubmit = async (e) => {
+  // Step 1: Request reset token
+  const handleRequestToken = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
-
-    // Confirm password match
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
-      setLoading(false);
-      return;
-    }
-
-    // Password strength check
-    if (formData.password.length < 8) {
-      setError("Password must be at least 8 characters long.");
-      setLoading(false);
-      return;
-    }
+    setSuccess("");
 
     try {
-      // Simulate backend API call
-      await new Promise((resolve) => setTimeout(resolve, 1200));
+      const res = await fetch(`${API_URL}/auth/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
 
-      if (!resetToken) {
-        throw new Error("Invalid or missing reset token");
-      }
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || "Failed to request reset");
 
-      // On success redirect to login
-      navigate("/login", { replace: true });
+      setSuccess("If email exists, reset instructions have been sent.");
+      setStep(2);
     } catch (err) {
-      setError(err.message || "Failed to reset password. Please try again.");
-    } finally {
-      setLoading(false);
+      setError(err.message);
+    }
+  };
+
+  // Step 2: Submit token + new password
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    try {
+      const res = await fetch(`${API_URL}/auth/reset-password`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, new_password: newPassword }),
+      });
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || "Failed to reset password");
+
+      setSuccess("Password reset successfully! You can now log in.");
+      setStep(1);
+      setEmail("");
+      setToken("");
+      setNewPassword("");
+    } catch (err) {
+      setError(err.message);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-green-400 to-blue-500 p-6">
-      <Motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-10 transform transition-all hover:scale-[1.01]"
-      >
-        <h2 className="text-3xl font-bold text-center text-gray-800 mb-2">
-          Reset Password
-        </h2>
-        <p className="text-center text-gray-500 mb-6">
-          Enter your new password to reset your account
-        </p>
+    <div className="max-w-md mx-auto mt-10 p-6 border rounded-lg shadow-lg">
+      <h2 className="text-2xl font-bold mb-4">Reset Password</h2>
+      {error && <p className="text-red-500">{error}</p>}
+      {success && <p className="text-green-500">{success}</p>}
 
-        {error && (
-          <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* New Password */}
-          <div>
-            <label className="block text-gray-700 text-sm mb-1">
-              New Password
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-2 text-gray-500 hover:text-gray-700 text-sm"
-              >
-                {showPassword ? "Hide" : "Show"}
-              </button>
-            </div>
-          </div>
-
-          {/* Confirm Password */}
-          <div>
-            <label className="block text-gray-700 text-sm mb-1">
-              Confirm Password
-            </label>
-            <input
-              type={showPassword ? "text" : "password"}
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
-          </div>
-
+      {step === 1 && (
+        <form onSubmit={handleRequestToken} className="space-y-4">
+          <input
+            type="email"
+            placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full p-2 border rounded"
+            required
+          />
           <button
             type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 font-semibold transition duration-200 shadow-md hover:shadow-lg"
+            className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
           >
-            {loading ? "Resetting..." : "Reset Password"}
+            Request Reset Token
           </button>
         </form>
+      )}
 
-        <p className="text-center text-sm text-gray-600 mt-6">
-          Remembered your password?{" "}
-          <Link to="/login" className="text-blue-600 hover:underline">
-            Login here
-          </Link>
-        </p>
-      </Motion.div>
+      {step === 2 && (
+        <form onSubmit={handleResetPassword} className="space-y-4">
+          <input
+            type="text"
+            placeholder="Enter reset token"
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+            className="w-full p-2 border rounded"
+            required
+          />
+          <input
+            type="password"
+            placeholder="Enter new password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            className="w-full p-2 border rounded"
+            required
+          />
+          <button
+            type="submit"
+            className="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600"
+          >
+            Reset Password
+          </button>
+        </form>
+      )}
     </div>
   );
 };
