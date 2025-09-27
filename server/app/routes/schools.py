@@ -103,6 +103,57 @@ class SchoolListResource(Resource):
                 })
         except Exception as e:
             return error_response("Something went wrong", {"error": str(e)}, status_code=500)
+    
+    @jwt_required()
+    def post(self):
+        """Create a new school (managers only)"""
+        try:
+            current_user_claims = get_jwt()
+            current_user_public_id = get_jwt_identity()
+            current_user = User.query.filter_by(public_id=current_user_public_id).first()
+
+            # Only managers can create schools
+            if current_user_claims.get("role") != "manager":
+                return error_response("Only managers can create schools", status_code=403)
+
+            if not current_user:
+                return error_response("User not found", status_code=404)
+
+            # Get and validate request data
+            request_data = request.get_json()
+            if not request_data:
+                return error_response("No data provided", status_code=400)
+
+            try:
+                validated_data = school_schema.load(request_data)
+            except ValidationError as err:
+                return error_response("Validation error", err.messages, status_code=400)
+
+            # Create new school with the current manager as the owner
+            school = School(
+                name=validated_data['name'],
+                address=validated_data.get('address'),
+                phone=validated_data.get('phone'),
+                owner_id=current_user.id
+            )
+
+            # Save the school
+            db.session.add(school)
+            db.session.flush()  # This assigns an ID to the school without committing
+
+            # Update the current user's school_id to the new school
+            current_user.school_id = school.id
+            
+            # Commit all changes
+            db.session.commit()
+
+            return success_response("School created successfully", {
+                "school": school_schema.dump(school)
+            }, status_code=201)
+
+        except Exception as e:
+            db.session.rollback()
+            return error_response("Something went wrong", {"error": str(e)}, status_code=500)
         
 class SchoolStatsResource(Resource):
     @jwt_required()
