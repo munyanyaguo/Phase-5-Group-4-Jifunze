@@ -3,14 +3,14 @@ from flask import Blueprint
 from .courses import CourseListResource, CourseResource
 from .attendance import AttendanceListResource, AttendanceResource
 from .auth import RegisterResource, LoginResource, LogoutResource, ResetPasswordResource 
-from .users import (UserResource, UserListResource, UserPasswordResource, 
+from .users import (UserResource, UserListResource, 
     UserProfileResource, UsersBySchoolResource, UserDashboardResource)
 from .schools import (SchoolResource, SchoolListResource, SchoolStatsResource,
     SchoolUsersResource, SchoolCoursesResource, SchoolDashboardResource)
 from .messages import MessageListResource, MessageResource
 from .resources import ResourceListApi, ResourceDetailApi
 from .enrollment import EnrollmentListResource, EnrollmentResource
-
+from .resources import CourseResourcesApi
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 api = Api(api_bp)
 
@@ -31,7 +31,6 @@ api.add_resource(ResetPasswordResource, "/auth/reset-password")
 # User endpoints
 api.add_resource(UserListResource, "/users")
 api.add_resource(UserResource, "/users/me", "/users/<int:user_id>")
-api.add_resource(UserPasswordResource, "/users/password")
 api.add_resource(UserProfileResource, "/users/profile")
 api.add_resource(UserDashboardResource, "/users/dashboard")
 api.add_resource(UsersBySchoolResource, "/schools/<int:school_id>/users")
@@ -50,6 +49,8 @@ api.add_resource(MessageResource, "/messages/<int:message_id>")
 # Resource endpoints
 api.add_resource(ResourceListApi, "/resources")
 api.add_resource(ResourceDetailApi, "/resources/<int:resource_id>")
+api.add_resource(CourseResourcesApi, "/courses/<int:course_id>/resources")
+
 # Enrollment endpoints
 api.add_resource(EnrollmentListResource, "/enrollments")
 api.add_resource(EnrollmentResource, "/enrollments/<int:enrollment_id>")

@@ -5,7 +5,7 @@ from app.extensions import db, paginate
 from functools import wraps
 from werkzeug.utils import secure_filename  # For file uploads (if supported)
 
-from app.models import Resource, Course
+from app.models import Resource, Course, Enrollment
 from app.schemas.resources import resource_schema, resources_schema
 from app.utils.responses import success_response, error_response
 
@@ -69,13 +69,13 @@ class ResourceListApi(ApiResource):
         if not course:
             return error_response("Invalid course_id", status_code=404)
 
-        user_id = get_jwt_identity()
+        user_public_id = get_jwt_identity()
         resource = Resource(
             title=title,
             url=url,
             type=type_,
             course_id=course_id,
-            uploaded_by=user_id,
+            uploaded_by_public_id=user_public_id,
         )
         db.session.add(resource)
         db.session.commit()
@@ -123,3 +123,23 @@ class ResourceDetailApi(ApiResource):
 
         return success_response("Resource deleted successfully")
 
+
+class CourseResourcesApi(ApiResource):
+    @jwt_required()
+    def get(self, course_id):
+        """List all resources for a given course (students only, paginated)."""
+        user_public_id = get_jwt_identity()
+
+        # check enrollment
+        enrollment = Enrollment.query.filter_by(
+            user_public_id=user_public_id,
+            course_id=course_id
+        ).first()
+        if not enrollment:
+            return error_response("You are not enrolled in this course", 403)
+
+        # apply pagination
+        query = Resource.query.filter_by(course_id=course_id).order_by(Resource.created_at.desc())
+        result = paginate(query, resources_schema, resource_name="resources")
+
+        return success_response("Resources fetched successfully", result)

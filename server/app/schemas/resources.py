@@ -16,12 +16,12 @@ class ResourceSchema(ma.SQLAlchemyAutoSchema):
     title = ma.auto_field()
     url = ma.auto_field()
     course_id = ma.auto_field()
-    uploaded_by = ma.auto_field()
+    uploaded_by_public_id = ma.auto_field()
     created_at = ma.auto_field()
     updated_at = ma.auto_field()
 
     # Nested user (uploader) and course (title)
-    uploader = ma.Nested("UserSchema", only=("id", "name"), dump_only=True)
+    uploader = ma.Nested("UserSchema", only=("public_id", "name"), dump_only=True)
     course = ma.Nested("CourseSchema", only=("id", "title"), dump_only=True)
 
     @validates('course_id')

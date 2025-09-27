@@ -24,13 +24,27 @@ export async function login(email, password) {
   const result = await res.json();
   if (!res.ok) throw new Error(result.message || "Login failed");
 
+  // Debug: log the login response structure
+  console.log("Login response:", result);
+
   const data = result.data;
+  if (data && data.user) {
+    console.log("User object:", data.user);
+    console.log("User ID:", data.user.id);
+  } else {
+    console.warn("No user object in login response!");
+  }
 
   // Save tokens + user info in localStorage
   localStorage.setItem("token", data.access_token);
   localStorage.setItem("refresh_token", data.refresh_token);
-  localStorage.setItem("role", data.user.role);
+  localStorage.setItem("role", data.user && data.user.role);
   localStorage.setItem("user", JSON.stringify(data.user));
+  if (data.user && data.user.id) {
+    localStorage.setItem("user_id", data.user.id);
+  } else {
+    localStorage.removeItem("user_id");
+  }
 
   return data;
 }
