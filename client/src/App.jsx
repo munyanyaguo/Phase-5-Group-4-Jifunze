@@ -44,7 +44,8 @@ import { isAuthenticated, getRole } from "./services/authServices";
 
 // 🔹 PrivateRoute wrapper
 const PrivateRoute = ({ children, role }) => {
-  const userRole = getRole();
+  let userRole = getRole();
+
 
    // normalize backend → frontend
   if (userRole === "manager") {

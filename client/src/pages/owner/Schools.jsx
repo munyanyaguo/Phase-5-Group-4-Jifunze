@@ -1,89 +1,95 @@
-// src/pages/owner/Schools.jsx
-import React, { useState } from "react";
+// client/src/pages/owner/Schools.jsx
+import React, { useEffect, useState } from "react";
+import { getMySchool, deleteSchool } from "../../api";
 import SchoolForm from "../../components/owner/SchoolForm";
-import { PlusCircle, Users, BookOpen, Edit, Trash2 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Pencil, Trash2, PlusCircle } from "lucide-react";
 
 export default function Schools() {
-  const [schools, setSchools] = useState([
-    { id: 1, name: "Sunrise Academy", students: 120, educators: 15 },
-    { id: 2, name: "Bright Future School", students: 200, educators: 25 },
-    { id: 3, name: "Greenfield High", students: 150, educators: 20 },
-  ]);
+  const [school, setSchool] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editData, setEditData] = useState(null);
 
-  const [showCreate, setShowCreate] = useState(false);
-  const [editing, setEditing] = useState(null);
+  // Fetch owner’s school
+  useEffect(() => {
+    async function fetchSchool() {
+      try {
+        const data = await getMySchool();
+        setSchool(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchSchool();
+  }, []);
 
-  const create = (s) => {
-    setSchools((prev) => [...prev, { id: Date.now(), students: 0, educators: 0, ...s }]);
-    setShowCreate(false);
-  };
+  const handleDelete = async () => {
+    if (!school) return;
+    if (!confirm("Are you sure you want to delete this school?")) return;
 
-  const update = (updated) => {
-    setSchools((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
-    setEditing(null);
-  };
-
-  const remove = (id) => {
-    if (!confirm("Delete this school?")) return;
-    setSchools((prev) => prev.filter((s) => s.id !== id));
+    try {
+      await deleteSchool(school.id);
+      setSchool(null);
+    } catch (err) {
+      alert("Failed to delete school");
+    }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold">Schools</h2>
-        <div className="flex gap-3">
-          <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg">
-            <PlusCircle /> Add School
-          </button>
-        </div>
-      </div>
+    <div className="p-6 space-y-6">
+      <h2 className="text-2xl font-bold">My School</h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {schools.map((s) => (
-          <div key={s.id} className="bg-white p-6 rounded-xl shadow">
-            <h3 className="text-xl font-semibold">{s.name}</h3>
-            <p className="text-sm text-gray-500 mt-2">An independent online school space</p>
+      {loading ? (
+        <p>Loading...</p>
+      ) : school ? (
+        <Card className="shadow-lg rounded-2xl border p-4 max-w-md">
+          <CardContent className="space-y-3">
+            <h3 className="text-xl font-semibold">{school.name}</h3>
+            <p className="text-gray-600">{school.description}</p>
+            <p className="text-sm text-gray-500">Location: {school.location}</p>
 
-            <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
-              <div className="flex items-center gap-2">
-                <Users size={18} className="text-blue-500" />
-                <span>{s.students} Students</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <BookOpen size={18} className="text-green-500" />
-                <span>{s.educators} Educators</span>
-              </div>
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditData(school);
+                  setShowForm(true);
+                }}
+              >
+                <Pencil className="w-4 h-4 mr-1" /> Edit
+              </Button>
+              <Button variant="destructive" onClick={handleDelete}>
+                <Trash2 className="w-4 h-4 mr-1" /> Delete
+              </Button>
             </div>
-
-            <div className="mt-4 flex justify-end gap-4">
-              <button onClick={() => setEditing(s)} className="flex items-center gap-2 text-blue-600">
-                <Edit /> Edit
-              </button>
-              <button onClick={() => remove(s.id)} className="flex items-center gap-2 text-red-600">
-                <Trash2 /> Delete
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white p-6 rounded-xl w-full max-w-md">
-            <h3 className="text-xl font-semibold mb-4">Create School</h3>
-            <SchoolForm onSave={create} onCancel={() => setShowCreate(false)} />
-          </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="text-center">
+          <p className="mb-4">You don’t have a school yet.</p>
+          <Button onClick={() => setShowForm(true)}>
+            <PlusCircle className="w-4 h-4 mr-1" /> Create School
+          </Button>
         </div>
       )}
 
-      {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white p-6 rounded-xl w-full max-w-md">
-            <h3 className="text-xl font-semibold mb-4">Edit School</h3>
-            <SchoolForm editingSchool={editing} onSave={update} onCancel={() => setEditing(null)} />
-          </div>
-        </div>
+      {showForm && (
+        <SchoolForm
+          initialData={editData}
+          onClose={() => {
+            setShowForm(false);
+            setEditData(null);
+          }}
+          onSuccess={(newSchool) => {
+            setSchool(newSchool);
+            setShowForm(false);
+            setEditData(null);
+          }}
+        />
       )}
     </div>
   );
