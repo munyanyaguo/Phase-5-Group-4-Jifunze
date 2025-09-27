@@ -37,7 +37,7 @@ const Login = () => {
         throw new Error(data.message || "Login failed");
       }
 
-      // Save tokens + role
+      // Save tokens + role + user_id
       if (data.data?.access_token) {
         localStorage.setItem("token", data.data.access_token);
       }
@@ -50,6 +50,9 @@ const Login = () => {
       }
 
       localStorage.setItem("role", role);
+      if (data.data?.user?.id) {
+        localStorage.setItem("user_id", data.data.user.id);
+      }
 
       // Redirect to correct dashboard
       navigate(`/${role}/dashboard`);
