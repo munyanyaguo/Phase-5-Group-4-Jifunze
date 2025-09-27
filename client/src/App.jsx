@@ -31,13 +31,13 @@ import Classes from "./pages/educator/Classes";
 import ClassDetails from "./pages/educator/ClassDetails";
 import StudentProfile from "./pages/educator/StudentProfile";
 
-// Student pages
-import StudentDashboard from "./pages/student/Dashboard";
-import StudentResources from "./pages/student/Resources";
-import StudentExams from "./pages/student/Exams";
-import ExamAttempt from "./pages/student/ExamAttempt";
-import StudentResults from "./pages/student/Results";
-import ResultDetail from "./pages/student/ResultDetails";
+// Student pages (NEW)
+import StudentDashboard from "./pages/Student/StudentDashboard";
+import StudentCourses from "./pages/Student/StudentCourses";
+import StudentResources from "./pages/Student/StudentResources";
+import StudentEnrollments from "./pages/Student/StudentEnrollments";
+import StudentAttendance from "./pages/Student/StudentAttendance";
+import StudentMessages from "./pages/Student/StudentMessages";
 
 // Utils
 import { isAuthenticated, getRole } from "./services/authServices";
@@ -46,8 +46,7 @@ import { isAuthenticated, getRole } from "./services/authServices";
 const PrivateRoute = ({ children, role }) => {
   let userRole = getRole();
 
-
-   // normalize backend → frontend
+  // normalize backend → frontend
   if (userRole === "manager") {
     userRole = "owner";
   }
@@ -112,7 +111,7 @@ export default function App() {
           <Route path="students/:id" element={<StudentProfile />} />
         </Route>
 
-        {/* Student routes */}
+        {/* Student routes (NEW) */}
         <Route
           path="/student/*"
           element={
@@ -123,11 +122,11 @@ export default function App() {
         >
           <Route index element={<StudentDashboard />} />
           <Route path="dashboard" element={<StudentDashboard />} />
+          <Route path="courses" element={<StudentCourses />} />
           <Route path="resources" element={<StudentResources />} />
-          <Route path="exams" element={<StudentExams />} />
-          <Route path="exams/:id/attempt" element={<ExamAttempt />} />
-          <Route path="results" element={<StudentResults />} />
-          <Route path="results/:id" element={<ResultDetail />} />
+          <Route path="enrollments" element={<StudentEnrollments />} />
+          <Route path="attendance" element={<StudentAttendance />} />
+          <Route path="messages" element={<StudentMessages />} />
         </Route>
 
         {/* Catch-all redirect */}

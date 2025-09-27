@@ -15,9 +15,11 @@ export default function Sidebar() {
       <h3 className="font-bold mb-4">Student</h3>
       <nav className="flex flex-col gap-1">
         <Item to="/student/dashboard" icon={Home}>Dashboard</Item>
+        <Item to="/student/courses" icon={BookOpen}>Courses</Item>
         <Item to="/student/resources" icon={BookOpen}>Resources</Item>
-        <Item to="/student/exams" icon={FileText}>Exams</Item>
-        <Item to="/student/results" icon={FileText}>Results</Item>
+        <Item to="/student/enrollments" icon={FileText}>Enrollments</Item>
+        <Item to="/student/attendance" icon={FileText}>Attendance</Item>
+        <Item to="/student/messages" icon={FileText}>Messages</Item>
       </nav>
     </aside>
   );

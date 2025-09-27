@@ -28,7 +28,8 @@ class UserSchema(BaseSchema):
     # Nested fields (using strings to avoid circular imports)
     school = fields.Nested('SchoolSchema', dump_only=True, exclude=["users"])
     courses = fields.Nested("CourseSchema", many=True, dump_only=True, exclude=["educator"])
-    enrollments = fields.List(fields.Dict(), dump_only=True)
+    from app.schemas.enrollment import EnrollmentSchema
+    enrollments = fields.Nested(EnrollmentSchema, many=True, dump_only=True)
 
     @validates("email")
     def validate_email_format(self, value):

@@ -11,21 +11,21 @@ class EnrollmentSchema(ma.SQLAlchemySchema):
 
     # Auto fields from model
     id = ma.auto_field()
-    user_id = ma.auto_field()
+    user_public_id = ma.auto_field()
     course_id = ma.auto_field()
     created_at = ma.auto_field()
     updated_at = ma.auto_field()
     
 
     # Nested relationships (with circular reference protection)
-    user = fields.Nested('UserSchema', only=('id', 'name', 'email'))
+    user = fields.Nested('UserSchema', only=('public_id', 'name', 'email'))
     course = fields.Nested('CourseSchema', only=('id', 'title', 'description'))
 
     # Custom validation
     @validates('course_id')
-    def validate_unique_enrollment(self, value):
+    def validate_unique_enrollment(self, value, **kwargs):
         existing = Enrollment.query.filter_by(
-            user_id=self.context.get('user_id'),
+            user_public_id=self.context.get('user_public_id'),
             course_id=value
         ).first()
         if existing:

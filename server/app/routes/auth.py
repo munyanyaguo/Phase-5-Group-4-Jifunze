@@ -23,10 +23,28 @@ login_schema = LoginSchema()
 reset_password_request_schema = ResetPasswordRequestSchema()
 reset_password_confirm_schema = ResetPasswordConfirmSchema()
 
-# JWT blocklist (⚠️ for prod, store in Redis or DB)
+# JWT blocklist (⚠️ For production, store in Redis or DB)
 jwt_blocklist = set()
 
 
+# ------------------------------
+# Helper function
+# ------------------------------
+def serialize_course(course):
+    return {
+        "id": course.id,
+        "title": course.title,
+        "description": course.description,
+        "resources": [
+            {"id": res.id, "title": res.title, "url": res.url} 
+            for res in getattr(course, "resources", [])
+        ]
+    }
+
+
+# ------------------------------
+# Register User
+# ------------------------------
 class RegisterResource(Resource):
     def post(self):
         try:
@@ -39,9 +57,8 @@ class RegisterResource(Resource):
                 "name": validated_data["name"],
                 "email": validated_data["email"],
                 "role": validated_data["role"],
+                "school_id": validated_data.get("school_id")
             }
-            if "school_id" in validated_data:
-                user_data["school_id"] = validated_data["school_id"]
 
             new_user = User(**user_data)
             new_user.set_password(validated_data["password"])
@@ -59,6 +76,9 @@ class RegisterResource(Resource):
             return error_response("Something went wrong", {"error": str(e)}, status_code=500)
 
 
+# ------------------------------
+# Login
+# ------------------------------
 class LoginResource(Resource):
     def post(self):
         try:
@@ -66,31 +86,49 @@ class LoginResource(Resource):
         except ValidationError as err:
             return error_response("Validation error", err.messages, status_code=400)
 
-        email, password = validated_data["email"], validated_data["password"]
+        email = validated_data["email"]
+        password = validated_data["password"]
         user = User.query.filter_by(email=email).first()
 
         if not user or not user.check_password(password):
             return error_response("Invalid credentials", status_code=401)
 
-        try:
-            claims = {"role": user.role, "email": user.email, "school_id": user.school_id}
-            access_token = create_access_token(identity=user.public_id, additional_claims=claims)
-            refresh_token = create_refresh_token(identity=user.public_id, additional_claims=claims)
+        # JWT tokens
+        claims = {
+            "role": user.role,
+            "email": user.email,
+            "school_id": user.school_id
+        }
+        access_token = create_access_token(identity=user.public_id, additional_claims=claims)
+        refresh_token = create_refresh_token(identity=user.public_id, additional_claims=claims)
 
-            return success_response("Login successful", {
-                "access_token": access_token,
-                "refresh_token": refresh_token,
-                "user": {
-                    "email": user.email,
-                    "role": user.role,
-                    "name": user.name,
-                    "school_id": user.school_id,
-                },
-            })
-        except Exception as e:
-            return error_response("Something went wrong", {"error": str(e)}, status_code=500)
+        # Courses depending on role
+        if user.role == "educator":
+            user_courses = [serialize_course(c) for c in user.courses]
+        elif user.role == "student":
+            user_courses = [serialize_course(e.course) for e in user.enrollments]
+        else:
+            user_courses = []
+
+        token_data = {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "user": {
+                "id": user.public_id,
+                "email": user.email,
+                "role": user.role,
+                "name": user.name,
+                "school_id": user.school_id,
+                "courses": user_courses
+            }
+        }
+
+        return success_response("Login successful", token_data)
 
 
+# ------------------------------
+# Logout
+# ------------------------------
 class LogoutResource(Resource):
     @jwt_required()
     def post(self):
@@ -102,9 +140,12 @@ class LogoutResource(Resource):
             return error_response("Something went wrong during logout", {"error": str(e)}, status_code=500)
 
 
+# ------------------------------
+# Reset Password
+# ------------------------------
 class ResetPasswordResource(Resource):
     def post(self):
-        """Step 1: Request password reset - generates token"""
+        """Step 1: Request password reset"""
         try:
             validated_data = reset_password_request_schema.load(request.get_json() or {})
         except ValidationError as err:
@@ -113,30 +154,22 @@ class ResetPasswordResource(Resource):
         email = validated_data["email"]
         user = User.query.filter_by(email=email).first()
 
-        # Always return generic response for security
+        # Generic success response to prevent email enumeration
         success_message = "If that email exists, reset instructions have been sent"
 
         if not user:
             return success_response(success_message)
 
         try:
-            # Generate token
             token = secrets.token_urlsafe(32)
+            reset_request = ResetPassword.create_reset_token(user_id=user.id, token=token, hours_valid=24)
 
-            # Store reset request
-            reset_request = ResetPassword.create_reset_token(
-                user_id=user.id,
-                token=token,
-                hours_valid=24
-            )
             db.session.add(reset_request)
             db.session.commit()
 
-            # TODO: integrate email service (send reset link with token)
-            # e.g. send_reset_email(user.email, token)
-
-            # ⚠️ In production, do NOT return token in API response
+            # ⚠️ In production, send the token via email, not API
             return success_response(success_message, {"reset_token": token})
+
         except Exception as e:
             db.session.rollback()
             return error_response("Something went wrong", {"error": str(e)}, status_code=500)
@@ -165,6 +198,7 @@ class ResetPasswordResource(Resource):
 
             db.session.commit()
             return success_response("Password reset successful")
+
         except Exception as e:
             db.session.rollback()
             return error_response("Something went wrong", {"error": str(e)}, status_code=500)
