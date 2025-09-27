@@ -1,6 +1,6 @@
 import pytest
 from app.models import Course, User, School, Enrollment, Attendance, Resource, Message, db
-
+from sqlalchemy.exc import IntegrityError, DataError # Import IntegrityError
 
 class TestCourseModel:
     """Test the Course model functionality"""
@@ -15,14 +15,14 @@ class TestCourseModel:
             role="manager"
         )
         self.owner.save()
-        
+
         # Create school
         self.school = School(
             name="Test School",
             owner_id=self.owner.id
         )
         self.school.save()
-        
+
         # Create educator
         self.educator = User(
             name="Test Educator",
@@ -42,7 +42,7 @@ class TestCourseModel:
             school_id=self.school.id
         )
         course.save()
-        
+
         assert course.id is not None
         assert course.title == "Introduction to Python"
         assert course.description == "Learn Python programming basics"
@@ -58,7 +58,7 @@ class TestCourseModel:
             school_id=self.school.id
         )
         course.save()
-        
+
         assert course.description is None
         assert course.title == "Math 101"
 
@@ -69,8 +69,8 @@ class TestCourseModel:
             educator_id=self.educator.id,
             school_id=self.school.id
         )
-        
-        with pytest.raises(Exception):  # IntegrityError from database
+
+        with pytest.raises(IntegrityError):  # Expect IntegrityError
             course.save()
 
     def test_course_educator_id_required(self):
@@ -80,8 +80,8 @@ class TestCourseModel:
             educator_id=None,  # Missing required field
             school_id=self.school.id
         )
-        
-        with pytest.raises(Exception):  # IntegrityError from database
+
+        with pytest.raises(IntegrityError):  # Expect IntegrityError
             course.save()
 
     def test_course_school_id_required(self):
@@ -91,8 +91,8 @@ class TestCourseModel:
             educator_id=self.educator.id,
             school_id=None  # Missing required field
         )
-        
-        with pytest.raises(Exception):  # IntegrityError from database
+
+        with pytest.raises(IntegrityError):  # Expect IntegrityError
             course.save()
 
     def test_course_educator_foreign_key_constraint(self):
@@ -102,8 +102,8 @@ class TestCourseModel:
             educator_id=99999,  # Non-existent user ID
             school_id=self.school.id
         )
-        
-        with pytest.raises(Exception):  # Foreign key constraint error
+
+        with pytest.raises(IntegrityError):  # Foreign key constraint error
             course.save()
 
     def test_course_school_foreign_key_constraint(self):
@@ -113,8 +113,8 @@ class TestCourseModel:
             educator_id=self.educator.id,
             school_id=99999  # Non-existent school ID
         )
-        
-        with pytest.raises(Exception):  # Foreign key constraint error
+
+        with pytest.raises(IntegrityError):  # Foreign key constraint error
             course.save()
 
     def test_course_educator_relationship(self):
@@ -125,10 +125,10 @@ class TestCourseModel:
             school_id=self.school.id
         )
         course.save()
-        
+
         # Test relationship from course to educator
         assert course.educator == self.educator
-        
+
         # Test relationship from educator to courses
         assert course in self.educator.courses
 
@@ -140,10 +140,10 @@ class TestCourseModel:
             school_id=self.school.id
         )
         course.save()
-        
+
         # Test relationship from course to school
         assert course.school == self.school
-        
+
         # Test relationship from school to courses
         assert course in self.school.courses
 
@@ -155,7 +155,7 @@ class TestCourseModel:
             school_id=self.school.id
         )
         course.save()
-        
+
         # Create a student
         student = User(
             name="Test Student",
@@ -165,7 +165,7 @@ class TestCourseModel:
             school_id=self.school.id
         )
         student.save()
-        
+
         # Create enrollment
         from datetime import datetime
         enrollment = Enrollment(
@@ -174,7 +174,7 @@ class TestCourseModel:
             date_enrolled=datetime.utcnow()
         )
         enrollment.save()
-        
+
         # Test relationships
         assert len(course.enrollments) == 1
         assert enrollment in course.enrollments
@@ -188,16 +188,17 @@ class TestCourseModel:
             school_id=self.school.id
         )
         course.save()
-        
+
         # Create student and enrollment
         student = User(
             name="Test Student",
             email="student@example.com",
             password_hash="hash",
-            role="student"
+            role="student",
+            school_id=self.school.id # Make sure student has a school_id
         )
         student.save()
-        
+
         from datetime import datetime
         enrollment = Enrollment(
             user_id=student.id,
@@ -206,10 +207,10 @@ class TestCourseModel:
         )
         enrollment.save()
         enrollment_id = enrollment.id
-        
+
         # Delete course
         course.delete()
-        
+
         # Enrollment should be deleted due to cascade
         assert Enrollment.query.get(enrollment_id) is None
 
@@ -221,16 +222,17 @@ class TestCourseModel:
             school_id=self.school.id
         )
         course.save()
-        
+
         # Create student
         student = User(
             name="Test Student",
             email="student@example.com",
             password_hash="hash",
-            role="student"
+            role="student",
+            school_id=self.school.id # Make sure student has a school_id
         )
         student.save()
-        
+
         # Create attendance record
         from datetime import date
         attendance = Attendance(
@@ -240,7 +242,7 @@ class TestCourseModel:
             status="present"
         )
         attendance.save()
-        
+
         # Test relationships
         assert len(course.attendance) == 1
         assert attendance in course.attendance
@@ -254,7 +256,7 @@ class TestCourseModel:
             school_id=self.school.id
         )
         course.save()
-        
+
         # Create resource
         resource = Resource(
             course_id=course.id,
@@ -264,7 +266,7 @@ class TestCourseModel:
             type="pdf"
         )
         resource.save()
-        
+
         # Test relationships
         assert len(course.resources) == 1
         assert resource in course.resources
@@ -278,7 +280,7 @@ class TestCourseModel:
             school_id=self.school.id
         )
         course.save()
-        
+
         # Create message
         from datetime import datetime
         message = Message(
@@ -288,7 +290,7 @@ class TestCourseModel:
             timestamp=datetime.utcnow()
         )
         message.save()
-        
+
         # Test relationships
         assert len(course.messages) == 1
         assert message in course.messages
@@ -302,26 +304,27 @@ class TestCourseModel:
             school_id=self.school.id
         )
         course.save()
-        
+
         # Create student
         student = User(
             name="Test Student",
             email="student@example.com",
             password_hash="hash",
-            role="student"
+            role="student",
+            school_id=self.school.id # Make sure student has a school_id
         )
         student.save()
-        
+
         # Create related records
         from datetime import datetime, date
-        
+
         enrollment = Enrollment(
             user_id=student.id,
             course_id=course.id,
             date_enrolled=datetime.utcnow()
         )
         enrollment.save()
-        
+
         attendance = Attendance(
             user_id=student.id,
             course_id=course.id,
@@ -329,7 +332,7 @@ class TestCourseModel:
             status="present"
         )
         attendance.save()
-        
+
         resource = Resource(
             course_id=course.id,
             uploaded_by=self.educator.id,
@@ -338,7 +341,7 @@ class TestCourseModel:
             type="pdf"
         )
         resource.save()
-        
+
         message = Message(
             user_id=self.educator.id,
             course_id=course.id,
@@ -346,16 +349,16 @@ class TestCourseModel:
             timestamp=datetime.utcnow()
         )
         message.save()
-        
+
         # Store IDs
         enrollment_id = enrollment.id
         attendance_id = attendance.id
         resource_id = resource.id
         message_id = message.id
-        
+
         # Delete course
         course.delete()
-        
+
         # All related records should be deleted due to cascade
         assert Enrollment.query.get(enrollment_id) is None
         assert Attendance.query.get(attendance_id) is None
@@ -369,7 +372,7 @@ class TestCourseModel:
             educator_id=self.educator.id,
             school_id=self.school.id
         )
-        
+
         repr_str = repr(course)
         assert "Introduction to Python" in repr_str
         assert repr_str.startswith("<Course")
@@ -384,7 +387,7 @@ class TestCourseModel:
             school_id=self.school.id
         )
         course.save()
-        
+
         assert course.title == long_title
 
     def test_course_title_too_long(self):
@@ -395,8 +398,8 @@ class TestCourseModel:
             educator_id=self.educator.id,
             school_id=self.school.id
         )
-        
-        with pytest.raises(Exception):  # Database constraint error
+
+        with pytest.raises(IntegrityError, DataError):  # Database constraint error
             course.save()
 
     def test_course_long_description(self):
@@ -409,7 +412,7 @@ class TestCourseModel:
             school_id=self.school.id
         )
         course.save()
-        
+
         assert course.description == long_description
 
     def test_multiple_courses_same_educator(self):
@@ -420,14 +423,14 @@ class TestCourseModel:
             school_id=self.school.id
         )
         course1.save()
-        
+
         course2 = Course(
             title="Python 102",
             educator_id=self.educator.id,
             school_id=self.school.id
         )
         course2.save()
-        
+
         # Both courses should be created successfully
         assert course1.educator_id == self.educator.id
         assert course2.educator_id == self.educator.id
@@ -442,24 +445,25 @@ class TestCourseModel:
             name="Second Educator",
             email="educator2@example.com",
             password_hash="hash",
-            role="educator"
+            role="educator",
+            school_id=self.school.id # Assign school_id to educator2
         )
         educator2.save()
-        
+
         course1 = Course(
             title="Math 101",
             educator_id=self.educator.id,
             school_id=self.school.id
         )
         course1.save()
-        
+
         course2 = Course(
             title="Science 101",
             educator_id=educator2.id,
             school_id=self.school.id
         )
         course2.save()
-        
+
         # Both courses should belong to the same school
         assert course1.school_id == self.school.id
         assert course2.school_id == self.school.id

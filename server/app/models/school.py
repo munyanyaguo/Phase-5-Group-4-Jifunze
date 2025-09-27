@@ -5,7 +5,7 @@ class School(BaseModel):
 
     name = db.Column(db.String(100), nullable=False)
     address = db.Column(db.String(255), nullable=True)
-    owner_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    owner_id = db.Column(db.Integer, db.ForeignKey("users.public_id"), nullable=False)
 
     # Relationships
     users = db.relationship("User",back_populates="school",cascade="all, delete-orphan",foreign_keys="User.school_id",
