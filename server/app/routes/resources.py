@@ -5,7 +5,7 @@ from app.extensions import db, paginate
 from functools import wraps
 from werkzeug.utils import secure_filename  # For file uploads (if supported)
 
-from app.models import Resource, Course
+from app.models import Resource, Course, Enrollment
 from app.schemas.resources import resource_schema, resources_schema
 from app.utils.responses import success_response, error_response
 
@@ -65,17 +65,17 @@ class ResourceListApi(ApiResource):
             url = f"/uploads/{filename}"
 
         # Validate course existence
-        course = Course.query.get(course_id)
+        course = db.session.get(Course, course_id)
         if not course:
-            return error_response("Invalid course_id", 404)
+            return error_response("Invalid course_id", status_code=404)
 
-        user_id = get_jwt_identity()
+        user_public_id = get_jwt_identity()
         resource = Resource(
             title=title,
             url=url,
             type=type_,
             course_id=course_id,
-            uploaded_by=user_id,
+            uploaded_by_public_id=user_public_id,
         )
         db.session.add(resource)
         db.session.commit()
@@ -85,16 +85,20 @@ class ResourceListApi(ApiResource):
 
 class ResourceDetailApi(ApiResource):
     @jwt_required()
-    def get(self, id):
+    def get(self, resource_id):
         """Get a single resource"""
-        resource = Resource.query.get_or_404(id)
+        resource = db.session.get(Resource, resource_id)
+        if not resource:
+            return error_response("Resource not found", status_code=404)
         return success_response("Fetched resource", resource_schema.dump(resource))
 
     @jwt_required()
     @role_required("educator", "manager")
-    def put(self, id):
+    def put(self, resource_id):
         """Update resource (educator/manager only)"""
-        resource = Resource.query.get_or_404(id)
+        resource = db.session.get(Resource, resource_id)
+        if not resource:
+            return error_response("Resource not found", status_code=404)
         data = request.get_json()
 
         if not data:
@@ -109,11 +113,33 @@ class ResourceDetailApi(ApiResource):
 
     @jwt_required()
     @role_required("educator", "manager")
-    def delete(self, id):
+    def delete(self, resource_id):
         """Delete resource (educator/manager only)"""
-        resource = Resource.query.get_or_404(id)
+        resource = db.session.get(Resource, resource_id)
+        if not resource:
+            return error_response("Resource not found", status_code=404)
         db.session.delete(resource)
         db.session.commit()
 
         return success_response("Resource deleted successfully")
 
+
+class CourseResourcesApi(ApiResource):
+    @jwt_required()
+    def get(self, course_id):
+        """List all resources for a given course (students only, paginated)."""
+        user_public_id = get_jwt_identity()
+
+        # check enrollment
+        enrollment = Enrollment.query.filter_by(
+            user_public_id=user_public_id,
+            course_id=course_id
+        ).first()
+        if not enrollment:
+            return error_response("You are not enrolled in this course", 403)
+
+        # apply pagination
+        query = Resource.query.filter_by(course_id=course_id).order_by(Resource.created_at.desc())
+        result = paginate(query, resources_schema, resource_name="resources")
+
+        return success_response("Resources fetched successfully", result)

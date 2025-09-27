@@ -1,7 +1,6 @@
 // src/pages/auth/Login.jsx
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { login } from "../../services/authServices"; // temporary, backend later
 
 const Login = () => {
   const navigate = useNavigate();
@@ -23,17 +22,42 @@ const Login = () => {
     setError("");
 
     try {
-      // Call login service (mocked for now)
-      const response = await login(formData.email, formData.password);
+      const response = await fetch("http://127.0.0.1:5000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
 
-      // Save token & role
-      localStorage.setItem("role", response.role);
-      localStorage.setItem("token", response.token);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Login failed");
+      }
+
+      // Save tokens + role + user_id
+      if (data.data?.access_token) {
+        localStorage.setItem("token", data.data.access_token);
+      }
+
+      let role = data.data?.user?.role || "user";
+
+      // 🔑 Normalize backend roles to frontend routes
+      if (role === "manager") {
+        role = "owner"; // map manager → owner
+      }
+
+      localStorage.setItem("role", role);
+      if (data.data?.user?.id) {
+        localStorage.setItem("user_id", data.data.user.id);
+      }
 
       // Redirect to correct dashboard
-      navigate(`/${response.role}/dashboard`);
-    } catch {
-      setError("Invalid email or password. Please try again.");
+      navigate(`/${role}/dashboard`);
+    } catch (err) {
+      setError(err.message || "Invalid email or password. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -60,6 +84,7 @@ const Login = () => {
             <input
               type="email"
               name="email"
+              value={formData.email}
               onChange={handleChange}
               required
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
@@ -72,6 +97,7 @@ const Login = () => {
             <input
               type="password"
               name="password"
+              value={formData.password}
               onChange={handleChange}
               required
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition"

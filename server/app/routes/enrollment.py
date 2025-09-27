@@ -31,19 +31,19 @@ class EnrollmentListResource(Resource):
     @jwt_required(optional=True)
     def get(self):
         """
-        GET /enrollments?page=1&per_page=10&course_id=1&user_id=2
+        GET /enrollments?page=1&per_page=10&course_id=1&user_public_id=<uuid>
         Public list with filters.
         """
         query = Enrollment.query
 
         # Filters
         course_id = request.args.get("course_id", type=int)
-        user_id = request.args.get("user_id", type=int)
+        user_public_id = request.args.get("user_public_id", type=str)
 
         if course_id:
             query = query.filter_by(course_id=course_id)
-        if user_id:
-            query = query.filter_by(user_id=user_id)
+        if user_public_id:
+            query = query.filter_by(user_public_id=user_public_id)
 
         query = query.order_by(Enrollment.date_enrolled.desc())
         return paginate(query, enrollments_schema, resource_name="enrollments")
@@ -54,7 +54,7 @@ class EnrollmentListResource(Resource):
         POST /enrollments
         Body:
         {
-          "user_id": 1,
+          "user_public_id": "uuid-string",
           "course_id": 2
         }
         Only managers/educators can enroll a user in a course in their school.
@@ -65,6 +65,7 @@ class EnrollmentListResource(Resource):
 
         claims = get_jwt()
         json_data = request.get_json() or {}
+        enrollment_schema.context = {"user_public_id": json_data.get("user_public_id")}
         errors = enrollment_schema.validate(json_data)
         if errors:
             return error_response("Validation failed.", 400, errors)
@@ -81,7 +82,7 @@ class EnrollmentListResource(Resource):
 
         try:
             enrollment = Enrollment(
-                user_id=json_data["user_id"],
+                user_public_id=json_data["user_public_id"],
                 course_id=json_data["course_id"],
                 date_enrolled=datetime.utcnow()
             )
@@ -115,7 +116,7 @@ class EnrollmentResource(Resource):
     def put(self, enrollment_id):
         """
         PUT /enrollments/<id>
-        Replace the enrollment record (user_id + course_id).
+        Replace the enrollment record (user_public_id + course_id).
         Only educator/manager in same school allowed.
         """
         allowed, resp = require_roles("educator", "manager")
@@ -129,6 +130,7 @@ class EnrollmentResource(Resource):
 
         # validate incoming data
         json_data = request.get_json() or {}
+        enrollment_schema.context = {"user_public_id": json_data.get("user_public_id")}
         errors = enrollment_schema.validate(json_data)
         if errors:
             return error_response("Validation failed.", 400, errors)
@@ -143,7 +145,7 @@ class EnrollmentResource(Resource):
             return scope_err
 
         try:
-            enrollment.user_id = json_data["user_id"]
+            enrollment.user_public_id = json_data["user_public_id"]
             enrollment.course_id = json_data["course_id"]
             enrollment.date_enrolled = datetime.utcnow()
             db.session.commit()
@@ -177,6 +179,7 @@ class EnrollmentResource(Resource):
             return error_response("Enrollment not found.", 404)
 
         json_data = request.get_json() or {}
+        enrollment_schema.context = {"user_public_id": json_data.get("user_public_id")}
         errors = enrollment_schema.validate(json_data, partial=True)
         if errors:
             return error_response("Validation failed.", 400, errors)
@@ -193,8 +196,8 @@ class EnrollmentResource(Resource):
 
             enrollment.course_id = json_data["course_id"]
 
-        if "user_id" in json_data:
-            enrollment.user_id = json_data["user_id"]
+        if "user_public_id" in json_data:
+            enrollment.user_public_id = json_data["user_public_id"]
 
         try:
             db.session.commit()

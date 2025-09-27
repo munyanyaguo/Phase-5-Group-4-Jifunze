@@ -16,9 +16,9 @@ sqlalchemy-serializer = "*"
 flask-bcrypt = "*"
 faker = "*"
 flask-restful = "*"
-flask-marshmallow = "*"
 marshmallow-sqlalchemy = "*"
 flask-jwt-extended = "*"
+flask-marshmallow = "*"
 pytest = "*"
 
 [dev-packages]

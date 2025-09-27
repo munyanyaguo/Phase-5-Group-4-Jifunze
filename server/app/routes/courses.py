@@ -90,7 +90,7 @@ class CourseListResource(Resource):
 class CourseResource(Resource):
     def get(self, course_id):
         """GET /courses/<id> (Public or Authenticated)."""
-        course = Course.query.get(course_id)
+        course = db.session.get(Course, course_id)
         if not course:
             return error_response("Course not found.", status_code=404)
         return success_response("Course retrieved successfully.", course_schema.dump(course))
@@ -105,7 +105,7 @@ class CourseResource(Resource):
         claims = get_jwt()
         user_school_id = claims.get("school_id")
 
-        course = Course.query.get(course_id)
+        course = db.session.get(Course, course_id)
         if not course or course.school_id != user_school_id:
             return error_response("Course not found or not in your school.", 404)
 
@@ -132,7 +132,7 @@ class CourseResource(Resource):
         claims = get_jwt()
         user_school_id = claims.get("school_id")
 
-        course = Course.query.get(course_id)
+        course = db.session.get(Course, course_id)
         if not course or course.school_id != user_school_id:
             return error_response("Course not found or not in your school.", 404)
 
@@ -159,7 +159,7 @@ class CourseResource(Resource):
         claims = get_jwt()
         user_school_id = claims.get("school_id")
 
-        course = Course.query.get(course_id)
+        course = db.session.get(Course, course_id)
         if not course or course.school_id != user_school_id:
             return error_response("Course not found or not in your school.", 404)
 
