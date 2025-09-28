@@ -47,13 +47,10 @@ export async function login(email, password) {
   });
 
   const data = await handleResponse(res);
-  const result = await res.json();
-  if (!res.ok) throw new Error(result.message || "Login failed");
 
   // Debug: log the login response structure
-  console.log("Login response:", result);
+  console.log("Login response:", data);
 
-  const data = result.data;
   if (data && data.user) {
     console.log("User object:", data.user);
     console.log("User ID:", data.user.id);
@@ -74,6 +71,7 @@ export async function login(email, password) {
 
   return data;
 }
+
 
 // 🔹 Logout
 export async function logout() {

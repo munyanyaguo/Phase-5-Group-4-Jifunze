@@ -18,7 +18,7 @@ import OwnerDashboard from "./pages/owner/Dashboard";
 import Schools from "./pages/owner/Schools";
 import OwnerStudents from "./pages/owner/Students";
 import Educators from "./pages/owner/Educators";
-import ResourcesOwner from "./pages/owner/Resources";
+// import ResourcesOwner from "./pages/owner/Resources";
 import Reports from "./pages/owner/Reports";
 import Users from "./pages/owner/Users";
 
@@ -87,7 +87,7 @@ export default function App() {
           <Route path="schools" element={<Schools />} />
           <Route path="students" element={<OwnerStudents />} />
           <Route path="educators" element={<Educators />} />
-          <Route path="resources" element={<ResourcesOwner />} />
+          {/* <Route path="resources" element={<ResourcesOwner />} /> */}
           <Route path="reports" element={<Reports />} />
           <Route path="users" element={<Users />} />
         </Route>

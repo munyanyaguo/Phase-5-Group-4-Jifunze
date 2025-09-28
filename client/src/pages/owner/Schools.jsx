@@ -1,95 +1,72 @@
-// client/src/pages/owner/Schools.jsx
 import React, { useEffect, useState } from "react";
-import { getMySchool, deleteSchool } from "../../api";
-import SchoolForm from "../../components/owner/SchoolForm";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, PlusCircle } from "lucide-react";
+import { fetchSchools, createSchool, deleteSchool } from "../../api";
+import SchoolCard from "../../components/owner/SchoolCard";
+import CreateSchoolForm from "../../components/owner/SchoolForm";
 
-export default function Schools() {
-  const [school, setSchool] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [editData, setEditData] = useState(null);
+export default function SchoolsPage() {
+  const [schools, setSchools] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Fetch owner’s school
-  useEffect(() => {
-    async function fetchSchool() {
-      try {
-        const data = await getMySchool();
-        setSchool(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchSchool();
-  }, []);
-
-  const handleDelete = async () => {
-    if (!school) return;
-    if (!confirm("Are you sure you want to delete this school?")) return;
-
+  const loadSchools = async () => {
+    setLoading(true);
     try {
-      await deleteSchool(school.id);
-      setSchool(null);
+      const res = await fetchSchools();
+      setSchools(res.data?.schools || res.schools || []);
     } catch (err) {
-      alert("Failed to delete school");
+      console.error("Error loading schools:", err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    loadSchools();
+  }, []);
+
+  const handleCreate = async (schoolData) => {
+    try {
+      await createSchool(schoolData);
+      loadSchools(); // Refresh list after creation
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this school?")) return;
+    try {
+      await deleteSchool(id);
+      loadSchools(); // Refresh list after deletion
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleAssignSuccess = () => {
+    loadSchools(); // Refresh list after assigning user
+  };
+
   return (
-    <div className="p-6 space-y-6">
-      <h2 className="text-2xl font-bold">My School</h2>
+    <div className="p-6 max-w-5xl mx-auto">
+      <h1 className="text-2xl font-bold mb-6">My Schools</h1>
+
+      <CreateSchoolForm onCreate={handleCreate} />
 
       {loading ? (
-        <p>Loading...</p>
-      ) : school ? (
-        <Card className="shadow-lg rounded-2xl border p-4 max-w-md">
-          <CardContent className="space-y-3">
-            <h3 className="text-xl font-semibold">{school.name}</h3>
-            <p className="text-gray-600">{school.description}</p>
-            <p className="text-sm text-gray-500">Location: {school.location}</p>
-
-            <div className="flex gap-3 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setEditData(school);
-                  setShowForm(true);
-                }}
-              >
-                <Pencil className="w-4 h-4 mr-1" /> Edit
-              </Button>
-              <Button variant="destructive" onClick={handleDelete}>
-                <Trash2 className="w-4 h-4 mr-1" /> Delete
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="text-center">
-          <p className="mb-4">You don’t have a school yet.</p>
-          <Button onClick={() => setShowForm(true)}>
-            <PlusCircle className="w-4 h-4 mr-1" /> Create School
-          </Button>
+        <p className="text-gray-500">Loading schools...</p>
+      ) : schools.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {schools.map((school) => (
+            <SchoolCard
+              key={school.id}
+              school={school}
+              onDelete={handleDelete}
+              onAssignSuccess={handleAssignSuccess} // Pass assign callback
+            />
+          ))}
         </div>
-      )}
-
-      {showForm && (
-        <SchoolForm
-          initialData={editData}
-          onClose={() => {
-            setShowForm(false);
-            setEditData(null);
-          }}
-          onSuccess={(newSchool) => {
-            setSchool(newSchool);
-            setShowForm(false);
-            setEditData(null);
-          }}
-        />
+      ) : (
+        <p className="text-gray-500">No schools found.</p>
       )}
     </div>
   );

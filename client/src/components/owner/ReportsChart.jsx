@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { getOwnerDashboard } from "../../api";
+
 import { getCurrentUser } from "../../services/authServices";
 
 export default function ReportChart() {

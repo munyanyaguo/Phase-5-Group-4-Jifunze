@@ -1,126 +1,168 @@
-# server/app/resources/schools.py
 from flask import request
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from marshmallow import ValidationError
+from datetime import datetime, timedelta
 
 from app.models.school import School
 from app.models.user import User, ROLES
 from app.models.base import db
 from app.schemas.schools import SchoolSchema
+from app.schemas.user import UserSchema
 from app.utils.responses import success_response, error_response
 
 school_schema = SchoolSchema()
+user_schema = UserSchema()
+
+# Initialize schemas
+school_schema = SchoolSchema()
 schools_schema = SchoolSchema(many=True)
+user_schema = UserSchema()
+users_schema = UserSchema(many=True)
 
-
-def get_current_user():
-    """Return the current user object or None (uses public_id stored in JWT)."""
-    public_id = get_jwt_identity()
-    if not public_id:
-        return None
-    return User.query.filter_by(public_id=public_id).first()
-
-
+# -------------------- School Resource --------------------
 class SchoolResource(Resource):
     @jwt_required()
-    def get(self, school_id):
-        current_user_id = get_jwt_identity()
-        school = School.query.get_or_404(school_id)
+    def get(self, school_id=None):
+        """Get a school by ID or current user's school"""
+        try:
+            current_user_public_id = get_jwt_identity()
+            current_user_claims = get_jwt()
+            user = User.query.filter_by(public_id=current_user_public_id).first()
+            if not user:
+                return error_response("User not found", status_code=404)
 
-        if school.owner_id != current_user_id:
-            return {"success": False, "message": "Not authorized to view this school"}, 403
+            # Get school by ID
+            if school_id:
+                school = School.query.filter_by(id=school_id).first()
+                if not school:
+                    return error_response("School not found", status_code=404)
 
-        return {"success": True, "data": school_schema.dump(school)}
+                # Managers: check ownership
+                if current_user_claims.get("role") == "manager" and school.owner_id != user.id:
+                    return error_response("Can only view your own school", status_code=403)
+
+                # Normal users: can only view their assigned school
+                if current_user_claims.get("role") != "manager" and user.school_id != school.id:
+                    return error_response("Not authorized to view this school", status_code=403)
+
+                return success_response("School retrieved successfully", {"school": school_schema.dump(school)})
+
+            # If no school_id, return user's school (for normal users) or all owned schools (for managers)
+            if current_user_claims.get("role") == "manager":
+                schools = School.query.filter_by(owner_id=user.id).all()
+            else:
+                if not user.school:
+                    return error_response("No school found for user", status_code=404)
+                schools = [user.school]
+
+            return success_response(
+                "Schools retrieved successfully",
+                {"schools": schools_schema.dump(schools), "total": len(schools)}
+            )
+
+        except Exception as e:
+            return error_response("Something went wrong", {"error": str(e)}, status_code=500)
 
     @jwt_required()
     def put(self, school_id):
-        current_user_id = get_jwt_identity()
-        school = School.query.get_or_404(school_id)
+        """Update a school (managers only)"""
+        try:
+            current_user_public_id = get_jwt_identity()
+            current_user_claims = get_jwt()
+            user = User.query.filter_by(public_id=current_user_public_id).first()
+            if not user:
+                return error_response("User not found", status_code=404)
 
-        if school.owner_id != current_user_id:
-            return {"success": False, "message": "Not authorized to update this school"}, 403
+            if current_user_claims.get("role") != "manager":
+                return error_response("Only managers can update schools", status_code=403)
 
-        data = reqparse.RequestParser()
-        data.add_argument("name", type=str)
-        data.add_argument("address", type=str)
-        args = data.parse_args()
+            school = School.query.filter_by(id=school_id, owner_id=user.id).first()
+            if not school:
+                return error_response("School not found or you do not have permission", status_code=404)
 
-        if args["name"]:
-            school.name = args["name"]
-        if args["address"]:
-            school.address = args["address"]
+            # Validate input data
+            try:
+                validated_data = school_schema.load(request.get_json() or {}, partial=True)
+            except ValidationError as err:
+                return error_response("Validation error", err.messages, status_code=400)
 
-        db.session.commit()
-        return {"success": True, "message": "School updated successfully", "data": school_schema.dump(school)}
+            # Update allowed fields
+            for field, value in validated_data.items():
+                if field not in ["id", "created_at", "updated_at", "users", "courses"]:
+                    setattr(school, field, value)
+
+            db.session.commit()
+            return success_response("School updated successfully", {"school": school_schema.dump(school)})
+
+        except Exception as e:
+            db.session.rollback()
+            return error_response("Something went wrong", {"error": str(e)}, status_code=500)
 
     @jwt_required()
     def delete(self, school_id):
-        current_user_id = get_jwt_identity()
-        school = School.query.get_or_404(school_id)
+        """Delete a school (managers only)"""
+        try:
+            current_user_public_id = get_jwt_identity()
+            current_user_claims = get_jwt()
+            user = User.query.filter_by(public_id=current_user_public_id).first()
+            if not user:
+                return error_response("User not found", status_code=404)
 
-        if school.owner_id != current_user_id:
-            return {"success": False, "message": "Not authorized to delete this school"}, 403
+            if current_user_claims.get("role") != "manager":
+                return error_response("Only managers can delete schools", status_code=403)
 
-        db.session.delete(school)
-        db.session.commit()
-        return {"success": True, "message": "School deleted successfully"}
+            school = School.query.filter_by(id=school_id, owner_id=user.id).first()
+            if not school:
+                return error_response("School not found or you do not have permission", status_code=404)
+
+            db.session.delete(school)
+            db.session.commit()
+            return success_response("School deleted successfully")
+
+        except Exception as e:
+            db.session.rollback()
+            return error_response("Something went wrong", {"error": str(e)}, status_code=500)
 
 
+# -------------------- School List Resource --------------------
 class SchoolListResource(Resource):
     @jwt_required()
     def get(self):
-        current_user_id = get_jwt_identity()
-        user = User.query.get(current_user_id)
+        """Get list of schools (managers: all owned, users: their school)"""
+        try:
+            current_user_public_id = get_jwt_identity()
+            current_user_claims = get_jwt()
+            user = User.query.filter_by(public_id=current_user_public_id).first()
+            if not user:
+                return error_response("User not found", status_code=404)
 
-        if user.role == "manager":
-            schools = School.query.filter_by(owner_id=user.id).all()
-        else:
-            # maybe allow admins to see all
-            schools = School.query.all()
+            if current_user_claims.get("role") == "manager":
+                schools = School.query.filter_by(owner_id=user.id).all()
+            else:
+                schools = [user.school] if user.school else []
 
-        return {"success": True, "data": {"schools": schools_schema.dump(schools)}}, 200
+            return success_response("Schools retrieved successfully", {
+                "schools": schools_schema.dump(schools),
+                "total": len(schools)
+            })
 
-    @jwt_required()
-    def post(self):
-        current_user_id = get_jwt_identity()
-        user = User.query.get(current_user_id)
+        except Exception as e:
+            return error_response("Something went wrong", {"error": str(e)}, status_code=500)
 
-        if user.role != "manager":
-            return {"success": False, "message": "Only managers can create schools"}, 403
-
-        data = reqparse.RequestParser()
-        data.add_argument("name", type=str, required=True, help="School name is required")
-        data.add_argument("address", type=str, required=False)
-        args = data.parse_args()
-
-        new_school = School(
-            name=args["name"],
-            address=args["address"],
-            owner_id=user.id
-        )
-        db.session.add(new_school)
-        db.session.commit()
-
-        return {"success": True, "message": "School created successfully", "data": school_schema.dump(new_school)}, 201# ---------------------------
-
-    
     @jwt_required()
     def post(self):
         """Create a new school (managers only)"""
         try:
-            current_user_claims = get_jwt()
             current_user_public_id = get_jwt_identity()
-            current_user = User.query.filter_by(public_id=current_user_public_id).first()
+            current_user_claims = get_jwt()
+            user = User.query.filter_by(public_id=current_user_public_id).first()
+            if not user:
+                return error_response("User not found", status_code=404)
 
-            # Only managers can create schools
             if current_user_claims.get("role") != "manager":
                 return error_response("Only managers can create schools", status_code=403)
 
-            if not current_user:
-                return error_response("User not found", status_code=404)
-
-            # Get and validate request data
             request_data = request.get_json()
             if not request_data:
                 return error_response("No data provided", status_code=400)
@@ -130,27 +172,16 @@ class SchoolListResource(Resource):
             except ValidationError as err:
                 return error_response("Validation error", err.messages, status_code=400)
 
-            # Create new school with the current manager as the owner
+            # Create school with manager as owner
             school = School(
                 name=validated_data['name'],
                 address=validated_data.get('address'),
                 phone=validated_data.get('phone'),
-                owner_id=current_user.id
+                owner_id=user.id
             )
-
-            # Save the school
             db.session.add(school)
-            db.session.flush()  # This assigns an ID to the school without committing
-
-            # Update the current user's school_id to the new school
-            current_user.school_id = school.id
-            
-            # Commit all changes
             db.session.commit()
-
-            return success_response("School created successfully", {
-                "school": school_schema.dump(school)
-            }, status_code=201)
+            return success_response("School created successfully", {"school": school_schema.dump(school)}, status_code=201)
 
         except Exception as e:
             db.session.rollback()
@@ -159,31 +190,337 @@ class SchoolListResource(Resource):
 class SchoolStatsResource(Resource):
     @jwt_required()
     def get(self, school_id=None):
-        return {"message": "School stats endpoint not implemented yet"}, 200
+        """Get school statistics"""
+        try:
+            current_user_claims = get_jwt()
+            current_user_public_id = get_jwt_identity()
+            current_user = User.query.filter_by(public_id=current_user_public_id).first()
 
+            # Determine which school to get stats for
+            target_school_id = school_id or current_user.school_id
 
-# ---------------------------
-# STUB: School Users
-# ---------------------------
+            # Check suthorization
+            if (current_user_claims.get("role") != "manager" and
+                current_user.school_id != target_school_id):
+                return error_response("Not authorized to view school stats", status_code=403)
+            school = School.query.get(target_school_id)
+            if not school:
+                return error_response("School not found", status_code=404)
+            
+            # Calculate stats
+            stats = {}
+
+            # User counts by role
+            for role in ROLES:
+                count = User.query.filter(User.school_id == target_school_id, User.role == role).count()
+            stats[f"{role}s"] = count
+
+            # Total users
+            stats["total_users"] = User.query.filter(User.school_id == target_school_id).count()
+
+            # Course count
+            stats["total_courses"] = len(school.courses)
+
+            # Recent registrations (last 30 days)
+            from datetime import datetime, timedelta
+            month_ago = datetime.now() - timedelta(days=30)
+            recent_users = User.query.filter(
+                User.school_id == target_school_id,
+                User.created_at >= month_ago
+            ).count()
+            stats["recent_registrations"] = recent_users
+
+            return success_response("School stats retrieved successfully", {
+                "school": school_schema.dump(school),
+                "stats": stats
+            })
+        except Exception as e:
+            return error_response("Something went wrong", {"error": str(e)}, status_code=500)
+
 class SchoolUsersResource(Resource):
     @jwt_required()
     def get(self, school_id):
-        return {"message": f"School users endpoint not implemented yet for school {school_id}"}, 200
+        """Get all users in a school with filtering"""
+        try:
+            current_user_claims = get_jwt()
+            current_user_public_id = get_jwt_identity()
+            current_user = User.query.filter_by(public_id=current_user_public_id).first()
 
+            # Check authorization
+            if (current_user_claims.get("role") != "manager" and
+                current_user.school_id != school_id):
+                return error_response("Not authorized to view school users", status_code=403)
+            
+            school = School.query.get(school_id)
+            if not school:
+                return error_response("School not found", status_code=404)
+            
+            # Build query
+            query = User.query.filter(User.school_id == school_id)
 
-# ---------------------------
-# STUB: School Courses
-# ---------------------------
+            # Apply filters
+            role = request.args.get("role")
+            if role and role in ROLES:
+                query = query.filter(User.role == role)
+
+            search = request.args.get("search")
+            if search:
+                search_term = f"%{search}%"
+                query = query.filter(
+                    User.name.ilike(search_term) | User.email.ilike(search_term)
+                )
+            
+            # Pagination
+            try:
+                page = int(request.args.get("page", 1))
+                per_page = min(int(request.args.get("per_page", 20)), 100)
+            except ValueError:
+                return error_response("Invalid pagination parameters", status_code=400)
+            
+            users = query.paginate(page=page, per_page=per_page, error_out=False)
+            return success_response("School users retrieved successfully", {
+                "school": {"id": school.id, "name": school.name},
+                "users": users_schema.dump(users.items),
+                "pagination": {
+                    "page": users.page,
+                    "pages": users.pages,
+                    "per_page": users.per_page,
+                    "total": users.total,
+                    "has_next": users.has_next,
+                    "has_prev": users.has_prev
+                }
+            })
+        except Exception as e:
+            return error_response("Something went wrong", {"error": str(e)}, status_code=500)
+
 class SchoolCoursesResource(Resource):
     @jwt_required()
     def get(self, school_id):
-        return {"message": f"School courses endpoint not implemented yet for school {school_id}"}, 200
-
-
-# ---------------------------
-# STUB: School Dashboard
-# ---------------------------
+        """Get all courses in a school"""
+        try:
+            current_user_claims = get_jwt()
+            current_user_public_id = get_jwt_identity()
+            current_user = User.query.filter_by(public_id=current_user_public_id).first()
+            
+            # Check authorization
+            if (current_user_claims.get('role') != 'manager' and 
+                current_user.school_id != school_id):
+                return error_response("Not authorized to view school courses", status_code=403)
+            
+            school = School.query.get(school_id)
+            if not school:
+                return error_response("School not found", status_code=404)
+            
+            # Get courses with optional filtering
+            query = school.courses
+            
+            # Filter by educator if specified
+            educator_id = request.args.get('educator_id')
+            if educator_id:
+                try:
+                    educator_id = int(educator_id)
+                    query = [course for course in query if course.educator_id == educator_id]
+                except ValueError:
+                    return error_response("Invalid educator_id parameter", status_code=400)
+            
+            # Search functionality
+            search = request.args.get('search')
+            if search:
+                search_term = search.lower()
+                query = [course for course in query if 
+                          search_term in course.title.lower() or 
+                          (course.description and search_term in course.description.lower())]
+            
+            # Use your existing CourseSchema
+            try:
+                from app.schemas.course import courses_schema
+                courses_data = courses_schema.dump(query)
+            except ImportError:
+                # Fallback to manual serialization if import fails
+                courses_data = []
+                for course in query:
+                    course_dict = {
+                        'id': course.id,
+                        'title': course.title,
+                        'description': course.description,
+                        'educator_id': course.educator_id,
+                        'school_id': course.school_id,
+                        'created_at': course.created_at.isoformat() if course.created_at else None,
+                        'updated_at': course.updated_at.isoformat() if course.updated_at else None
+                    }
+                    courses_data.append(course_dict)
+            
+            return success_response("School courses retrieved successfully", {
+                "school": {"id": school.id, "name": school.name},
+                "courses": courses_data,
+                "total": len(courses_data)
+            })
+            
+        except Exception as e:
+            return error_response("Something went wrong", {"error": str(e)}, status_code=500)
+        
 class SchoolDashboardResource(Resource):
     @jwt_required()
     def get(self, school_id=None):
-        return {"message": "School dashboard endpoint not implemented yet"}, 200
+        """Get dashboard data (managers only)"""
+        try:
+            current_user_claims = get_jwt()
+            current_user_public_id = get_jwt_identity()
+            current_user = User.query.filter_by(public_id=current_user_public_id).first()
+
+            # Only managers can access school dashboard
+            if current_user_claims.get("role") != "manager":
+                return error_response("Only managers can access school dashboard", status_code=403)
+            
+            # Use provided school_id or current user's school
+            target_school_id = school_id or current_user.school_id
+
+            # Managers can only view their own school's dashboard
+            if current_user.school_id != target_school_id:
+                return error_response("Can only view your own school dashboard", status_code=403)
+            
+            school = School.query.get(target_school_id)
+            if not school:
+                return error_response("School not found", status_code=404)
+            
+            # Complie dashboard data
+            dashboard_data = {
+                "school": school_schema.dump(school),
+                "stats": {},
+                "recent_activity": {}
+            }
+            # User stats
+            for role in ROLES:
+                count = User.query.filter(User.school_id == target_school_id, User.role == role).count()
+                dashboard_data["stats"][f"{role}s"] = count
+
+            dashboard_data["stats"]["total_users"] = sum(dashboard_data["stats"].values)
+            dashboard_data["stats"]["total_courses"] = len(school.courses)
+
+            # Recent actiivity
+            from datetime import datetime, timedelta
+            week_ago = datetime.now() - timedelta(days=7)
+
+            recent_users = User.query.filter(
+                User.school_id == target_school_id,
+                User.created_at >= week_ago
+            ).count()
+            dashboard_data["recent_activity"]["new_users_this_week"] = recent_users
+
+            return success_response("School dashboard retrieved successfully", {"dashboard": dashboard_data})
+        
+        except Exception as e:
+            return error_response("Something went wrong", {"error": str(e)}, status_code=500)
+        
+class SchoolAssignmentResource(Resource):
+    @jwt_required()
+    def post(self, school_id, role):
+        """Assign an educator or student to a school"""
+        current_user_claims = get_jwt()
+        current_user_id = get_jwt_identity()
+
+        # Only manager
+        if current_user_claims.get("role") != "manager":
+            return error_response("Not authorized", 403)
+
+        school = School.query.filter_by(id=school_id, owner_id=current_user_id).first()
+        if not school:
+            return error_response("School not found or not owned by you", 404)
+
+        data = request.get_json()
+        email = data.get("email")
+        if not email:
+            return error_response("Email required", 400)
+
+        user = User.query.filter_by(email=email.lower()).first()
+        if not user:
+            return error_response("User not found", 404)
+
+        if role == "educator":
+            if user.role != "educator":
+                return error_response("User is not an educator", 400)
+            # Add school_id if not already associated
+            if school not in user.schools:
+                user.schools.append(school)
+        elif role == "student":
+            if user.role != "student":
+                return error_response("User is not a student", 400)
+            if user.school_id and user.school_id != school.id:
+                return error_response("Student already assigned to a school", 400)
+            user.school_id = school.id
+        else:
+            return error_response("Invalid role", 400)
+
+        db.session.commit()
+        return success_response(f"{role.capitalize()} assigned successfully", {"school": school_schema.dump(school)})  
+    
+class SchoolAssignUserResource(Resource):
+    @jwt_required()
+    def post(self, school_id, role):
+        try:
+            if role not in ["student", "educator"]:
+                return error_response("Role must be 'student' or 'educator'", status_code=400)
+
+            current_user_claims = get_jwt()
+            current_user_id = get_jwt_identity()
+            current_user = User.query.filter_by(public_id=current_user_id).first()
+
+            # Only managers can assign users
+            if current_user_claims.get("role") != "manager":
+                return error_response("Only managers can assign users", status_code=403)
+
+            # Manager can only assign to their own school
+            school = School.query.get(school_id)
+            if not school or school.owner_id != current_user.id:
+                return error_response("You can only assign users to your own school", status_code=403)
+
+            # Get email from request
+            data = request.get_json()
+            email = data.get("email")
+            if not email:
+                return error_response("Email is required", status_code=400)
+
+            # Find user by email
+            user = User.query.filter_by(email=email.lower()).first()
+            if not user:
+                return error_response("User not found", status_code=404)
+
+            # Assign user to this school
+            if role == "student" and user.role != "student":
+                return error_response("Cannot assign non-student as student", status_code=400)
+            if role == "educator" and user.role != "educator":
+                return error_response("Cannot assign non-educator as educator", status_code=400)
+
+            user.school_id = school.id
+            db.session.commit()
+
+            return success_response(f"{role.capitalize()} assigned to school successfully", {"user": user_schema.dump(user)})
+
+        except Exception as e:
+            db.session.rollback()
+            return error_response("Something went wrong", {"error": str(e)}, status_code=500)
+
+class EducatorsByManagerResource(Resource):
+    @jwt_required()
+    def get(self):
+        current_user_public_id = get_jwt_identity()
+        user = User.query.filter_by(public_id=current_user_public_id).first()
+        if not user or user.role != "manager":
+            return error_response("Only managers can view their educators", status_code=403)
+
+        # Get all schools owned by this manager
+        schools = School.query.filter_by(owner_id=user.id).all()
+        educators = []
+
+        for school in schools:
+            for u in school.users:  # assuming School has a 'users' backref
+                if u.role == "educator":
+                    educators.append({
+                        "id": u.id,
+                        "name": u.name,
+                        "email": u.email,
+                        "school": school.name,
+                        "courses": [c.name for c in u.courses]  # assuming educator has courses
+                    })
+
+        return success_response("Educators retrieved successfully", {"educators": educators})

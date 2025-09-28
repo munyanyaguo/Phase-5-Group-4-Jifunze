@@ -4,9 +4,11 @@ from app.schemas.base import BaseSchema
 
 class SchoolSchema(BaseSchema):
     id = fields.Int(dump_only=True)
-    name = fields.String(required=True, validate=validate.Length(min=2, max=100))
-    address = fields.String(allow_none=True, validate=validate.Length(max=255))
-    owner_id = fields.Integer(dump_only=True)  # server assigns
+    name = fields.Str(required=True)
+    address = fields.Str(required=False)
+    phone = fields.Str(required=False)  # <-- Add this line
+    created_at = fields.DateTime(dump_only=True)
+    updated_at = fields.DateTime(dump_only=True)
 
     # ✅ include owner but exclude back-references to avoid recursion
     owner = fields.Nested("UserSchema", dump_only=True, exclude=["school", "owned_schools"])

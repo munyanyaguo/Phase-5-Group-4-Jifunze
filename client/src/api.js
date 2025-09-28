@@ -1,84 +1,150 @@
-// client/src/api.js
-import { getToken } from "./services/authServices";
+// src/services/api.js
+const API_URL = "http://127.0.0.1:5000/api";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+// ✅ Helper: get token
+function getToken() {
+  return localStorage.getItem("token");
+}
 
-// 🔹 Generic request wrapper
-async function request(endpoint, options = {}) {
-  const token = getToken();
-  const headers = {
-    "Content-Type": "application/json",
-    ...(token && { Authorization: `Bearer ${token}` }),
-    ...options.headers,
-  };
-
-  const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || "API Error");
+// ✅ Helper: handle API responses consistently
+async function handleResponse(res) {
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    data = {};
   }
 
-  return res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Something went wrong");
+  }
+
+  // Return nested `data` if present, else the raw response
+  return data.data ?? data;
 }
 
-/* -------- AUTH/USER -------- */
-export async function getUserDashboard() {
-  return request("/api/users/dashboard");
+// --------------------
+// SCHOOL API
+// --------------------
+
+// 🔹 Fetch all schools for the logged-in manager
+export async function fetchSchools() {
+  const res = await fetch(`${API_URL}/schools`, {
+    headers: {
+      Authorization: `Bearer ${getToken()}`,
+      "Content-Type": "application/json",
+    },
+  });
+  return handleResponse(res);
 }
 
-/* -------- SCHOOLS -------- */
-export async function getMySchool() {
-  return request("/api/schools/me");
-}
-
-export async function getSchools() {
-  return request("/api/schools");
-}
-
-export async function createSchool(data) {
-  return request("/api/schools", {
+// 🔹 Create a new school
+export async function createSchool(schoolData) {
+  const res = await fetch(`${API_URL}/schools`, {
     method: "POST",
-    body: JSON.stringify(data),
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getToken()}`,
+    },
+    body: JSON.stringify(schoolData), // { name, address, phone }
   });
+  return handleResponse(res);
 }
 
-export async function updateSchool(id, data) {
-  return request(`/api/schools/${id}`, {
+// 🔹 Get single school by ID
+export async function fetchSchoolById(id) {
+  const res = await fetch(`${API_URL}/schools/${id}`, {
+    headers: {
+      Authorization: `Bearer ${getToken()}`,
+      "Content-Type": "application/json",
+    },
+  });
+  return handleResponse(res);
+}
+
+// 🔹 Update school
+export async function updateSchool(id, updates) {
+  const res = await fetch(`${API_URL}/schools/${id}`, {
     method: "PUT",
-    body: JSON.stringify(data),
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getToken()}`,
+    },
+    body: JSON.stringify(updates),
   });
+  return handleResponse(res);
 }
 
+// 🔹 Delete school
 export async function deleteSchool(id) {
-  return request(`/api/schools/${id}`, {
+  const res = await fetch(`${API_URL}/schools/${id}`, {
     method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${getToken()}`,
+      "Content-Type": "application/json",
+    },
   });
+  return handleResponse(res);
 }
 
-export async function getSchoolById(id) {
-  return request(`/api/schools/${id}`);
+
+export async function apiAssignUser(schoolId, role, payload) {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/schools/${schoolId}/assign/${role}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return handleResponse(res);
 }
 
-export async function getSchoolDashboard(id) {
-  return request(`/api/schools/${id}/dashboard`);
-}
-export async function getOwnerDashboard(school_id) {
-  return request(`/api/schools/${school_id}/dashboard`);
+export async function fetchEducators() {
+  const res = await fetch(`${API_URL}/users?role=educator`, {
+    headers: {
+      Authorization: `Bearer ${getToken()}`,
+      "Content-Type": "application/json",
+    },
+  });
+  return handleResponse(res); // returns { users: [...] }
 }
 
-/* -------- DEFAULT EXPORT -------- */
+// Fetch only educators in the schools owned by the current manager
+export async function fetchManagerEducators() {
+  const res = await fetch(`${API_URL}/manager/educators`, {
+    headers: {
+      Authorization: `Bearer ${getToken()}`,
+      "Content-Type": "application/json",
+    },
+  });
+  return handleResponse(res); // returns { educators: [...] }
+}
+
+
+
+
+// --------------------
+// DASHBOARD API
+// --------------------
+export async function fetchDashboard() {
+  const res = await fetch(`${API_URL}/schools/dashboard`, {
+    headers: {
+      Authorization: `Bearer ${getToken()}`,
+      "Content-Type": "application/json",
+    },
+  });
+  return handleResponse(res);
+}
+
+// ✅ Export grouped service
 export default {
-  request,
-  getUserDashboard,
-  getMySchool,
-  getSchools,
+  fetchSchools,
   createSchool,
+  fetchSchoolById,
   updateSchool,
   deleteSchool,
-  getSchoolById,
-  getSchoolDashboard,
+  fetchDashboard,
 };
