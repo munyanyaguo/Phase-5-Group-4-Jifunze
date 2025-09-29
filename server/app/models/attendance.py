@@ -15,6 +15,15 @@ class Attendance(BaseModel):
     date = db.Column(db.Date, nullable=False)
     status = db.Column(db.String(20), nullable=False)  # present, absent, late
 
+
+
+    verified_by_public_id = db.Column(
+    "verified_by",  # maps to existing DB column
+    db.String(50),
+    db.ForeignKey("users.public_id"),
+    nullable=True
+)
+
     # Relationships
     user = db.relationship(
         "User",
