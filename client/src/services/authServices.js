@@ -1,16 +1,41 @@
+// src/services/authServices.js
+
 const API_URL = "http://127.0.0.1:5000/api";
 
+// 🔹 Helper: Get stored token
+export function getToken() {
+  return localStorage.getItem("token");
+}
+
+// 🔹 Helper: Handle API responses safely
+async function handleResponse(res) {
+  let result;
+  try {
+    result = await res.json();
+  } catch {
+    throw new Error("Invalid server response");
+  }
+
+  if (!res.ok) {
+    // Combine main message + validation errors if present
+    let errorMsg = result.message || "Request failed";
+    if (result.errors) {
+      errorMsg += " - " + JSON.stringify(result.errors);
+    }
+    throw new Error(errorMsg);
+  }
+
+  return result.data || result;
+}
+
 // 🔹 Register
-export async function register({ name, email, password, role, school_id }) {
+export async function register({ name, email, password, role }) {
   const res = await fetch(`${API_URL}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, email, password, role, school_id }),
+    body: JSON.stringify({ name, email, password, role }),
   });
-
-  const result = await res.json();
-  if (!res.ok) throw new Error(result.message || "Registration failed");
-  return result.data;
+  return handleResponse(res);
 }
 
 // 🔹 Login
@@ -21,13 +46,11 @@ export async function login(email, password) {
     body: JSON.stringify({ email, password }),
   });
 
-  const result = await res.json();
-  if (!res.ok) throw new Error(result.message || "Login failed");
+  const data = await handleResponse(res);
 
   // Debug: log the login response structure
-  console.log("Login response:", result);
+  console.log("Login response:", data);
 
-  const data = result.data;
   if (data && data.user) {
     console.log("User object:", data.user);
     console.log("User ID:", data.user.id);
@@ -51,11 +74,13 @@ export async function login(email, password) {
 
 // 🔹 Logout
 export async function logout() {
-  const token = localStorage.getItem("token");
-  await fetch(`${API_URL}/auth/logout`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const token = getToken();
+  if (token) {
+    await fetch(`${API_URL}/auth/logout`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    }).catch(() => {}); // ignore errors
+  }
   localStorage.clear();
 }
 
@@ -66,10 +91,7 @@ export async function resetPasswordRequest(email) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email }),
   });
-
-  const result = await res.json();
-  if (!res.ok) throw new Error(result.message || "Password reset request failed");
-  return result.data;
+  return handleResponse(res);
 }
 
 // 🔹 Confirm Password Reset
@@ -79,23 +101,23 @@ export async function resetPasswordConfirm(token, new_password) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ token, new_password }),
   });
-
-  const result = await res.json();
-  if (!res.ok) throw new Error(result.message || "Password reset failed");
-  return result.data;
+  return handleResponse(res);
 }
 
 // 🔹 Get current user
 export async function getCurrentUser() {
-  const token = localStorage.getItem("token");
+  const token = getToken();
   if (!token) return null;
 
-  const res = await fetch(`${API_URL}/users/me`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  if (!res.ok) throw new Error("Failed to fetch user");
-  return await res.json();
+  try {
+    const res = await fetch(`${API_URL}/users/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return await handleResponse(res);
+  } catch (err) {
+    console.error("getCurrentUser error:", err.message);
+    return null;
+  }
 }
 
 // 🔹 Role helper
@@ -105,5 +127,5 @@ export function getRole() {
 
 // 🔹 Auth check
 export function isAuthenticated() {
-  return !!localStorage.getItem("token");
+  return !!getToken();
 }

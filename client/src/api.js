@@ -1,5 +1,5 @@
 
-const BASE_URL = "http://localhost:5000";
+const BASE_URL = "http://127.0.0.1:5000";
 
 // Helper for authenticated requests
 export async function authFetch(url, options = {}) {
