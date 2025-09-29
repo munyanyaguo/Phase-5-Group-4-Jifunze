@@ -10,6 +10,7 @@ class Enrollment(BaseModel):
     __tablename__ = "enrollments"
 
     user_public_id = db.Column(db.String(50), db.ForeignKey("users.public_id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     course_id = db.Column(db.Integer, db.ForeignKey("courses.id"), nullable=False)
     date_enrolled = db.Column(db.DateTime, nullable=False)
 
