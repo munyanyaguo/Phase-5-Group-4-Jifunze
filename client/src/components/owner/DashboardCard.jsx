@@ -1,9 +1,13 @@
-// // src/components/owner/DashboardCard.jsx
-// export default function DashboardCard({ title, value }) {
-//   return (
-//     <div className="bg-white p-6 rounded-lg shadow-md">
-//       <h3 className="text-lg font-medium text-gray-600">{title}</h3>
-//       <p className="text-2xl font-bold text-gray-900 mt-2">{value}</p>
-//     </div>
-//   );
-// }
+import React from "react";
+
+export default function DashboardCard({ icon, title, value }) {
+  return (
+    <div className="bg-white p-6 rounded-2xl shadow flex items-center space-x-4">
+      <div className="text-indigo-600">{icon}</div>
+      <div>
+        <h4 className="text-sm font-medium text-gray-600">{title}</h4>
+        <p className="text-xl font-bold">{value}</p>
+      </div>
+    </div>
+  );
+}

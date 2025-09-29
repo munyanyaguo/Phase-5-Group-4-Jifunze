@@ -1,26 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { register } from "../../services/authServices";
 
 const Register = () => {
   const navigate = useNavigate();
-  const [schools, setSchools] = useState([]);
   const [form, setForm] = useState({
     name: "",
     email: "",
     password: "",
     role: "student",
-    school_id: "",
   });
   const [error, setError] = useState("");
-
-  // Fetch schools for dropdown
-  useEffect(() => {
-    fetch("http://127.0.0.1:5000/api/schools")
-      .then((res) => res.json())
-      .then((data) => setSchools(data.data.schools || []))
-      .catch(() => setError("Failed to load schools"));
-  }, []);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -35,7 +25,7 @@ const Register = () => {
       alert("Registration successful! Please log in.");
       navigate("/login");
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Registration failed");
     }
   };
 
@@ -79,24 +69,11 @@ const Register = () => {
           className="w-full p-2 border rounded"
           required
         >
-          <option value="manager">Manager</option>
-          <option value="educator">Educator</option>
           <option value="student">Student</option>
+          <option value="educator">Educator</option>
+          <option value="manager">Manager</option>
         </select>
-        <select
-          name="school_id"
-          value={form.school_id}
-          onChange={handleChange}
-          className="w-full p-2 border rounded"
-          required
-        >
-          <option value="">Select School</option>
-          {schools.map((school) => (
-            <option key={school.id} value={school.id}>
-              {school.name}
-            </option>
-          ))}
-        </select>
+
         <button
           type="submit"
           className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"

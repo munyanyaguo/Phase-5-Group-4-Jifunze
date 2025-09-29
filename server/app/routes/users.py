@@ -2,10 +2,13 @@ from flask import request
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from marshmallow import ValidationError
-
+from werkzeug.security import generate_password_hash
 from app.models.user import User, ROLES
 from app.models.school import School
+from app.models.reset_password import ResetPassword
 from app.models.base import db
+from app.utils.responses import success_response, error_response
+from datetime import datetime, timedelta
 from app.schemas.user import (
     UserSchema, UserCreateSchema, UserUpdateSchema, PasswordChangeSchema,
     UserListResponseSchema, UserStatsSchema, UserQuerySchema
@@ -382,3 +385,51 @@ class UserPasswordChangeResource(Resource):
         except Exception as e:
             db.session.rollback()
             return error_response("Something went wrong", {"error": str(e)}, status_code=500)
+        
+class UserPasswordResetResource(Resource):
+    def post(self):
+        """
+        Reset password using a token (no login required)
+        Payload:
+        {
+            "token": "<reset-token>",
+            "new_password": "newStrongPassword123!"
+        }
+        """
+        try:
+            data = request.get_json() or {}
+            token = data.get("token")
+            new_password = data.get("new_password")
+
+            if not token or not new_password:
+                return error_response("Token and new password are required", status_code=400)
+
+            # Look up token
+            reset_entry = ResetPassword.query.filter_by(token=token).first()
+            if not reset_entry:
+                return error_response("Invalid or expired token", status_code=400)
+
+            # Check expiration (e.g., 1 hour)
+            if reset_entry.created_at + timedelta(hours=1) < datetime.utcnow():
+                db.session.delete(reset_entry)
+                db.session.commit()
+                return error_response("Token has expired", status_code=400)
+
+            # Get user
+            user = User.query.get(reset_entry.user_id)
+            if not user:
+                return error_response("User not found", status_code=404)
+
+            # Hash and update password
+            user.set_password(new_password)
+            user.save()
+
+            # Invalidate the token
+            db.session.delete(reset_entry)
+            db.session.commit()
+
+            return success_response("Password has been successfully reset")
+
+        except Exception as e:
+            db.session.rollback()
+            return error_response("Something went wrong", {"error": str(e)}, status_code=500)        

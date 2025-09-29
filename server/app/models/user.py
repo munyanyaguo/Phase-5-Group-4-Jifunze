@@ -2,14 +2,11 @@ import uuid
 from flask_bcrypt import Bcrypt
 from sqlalchemy import Enum
 from sqlalchemy.orm import validates
-
 from .base import BaseModel, db
-
 
 bcrypt = Bcrypt()
 
 ROLES = ("student", "educator", "manager")
-
 
 class User(BaseModel):
     __tablename__ = "users"
@@ -21,17 +18,58 @@ class User(BaseModel):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
     role = db.Column(Enum(*ROLES, name="role_enum"), nullable=False)
-    school_id = db.Column(db.Integer, db.ForeignKey("schools.id", use_alter=True), nullable=True)
+    school_id = db.Column(db.Integer, db.ForeignKey("schools.id"), nullable=True)
 
     # Relationships
-    school = db.relationship("School", back_populates="users", foreign_keys="User.school_id")
-    courses = db.relationship("Course", back_populates="educator", foreign_keys="Course.educator_id")
-    resources = db.relationship("Resource", back_populates="uploader", foreign_keys="Resource.uploaded_by_public_id")
-    messages = db.relationship("Message", back_populates="user", foreign_keys="Message.user_public_id")
-    enrollments = db.relationship("Enrollment", back_populates="user", cascade="all, delete-orphan", lazy="select")
-    attendance = db.relationship("Attendance", back_populates="user", foreign_keys="Attendance.user_public_id")
-    verifications = db.relationship("Attendance", back_populates="verifier", foreign_keys="Attendance.verified_by_public_id")
-    reset_passwords = db.relationship("ResetPassword", back_populates="user")
+    school = db.relationship(
+        "School",
+        back_populates="users",
+        foreign_keys=[school_id]
+    )
+    owned_schools = db.relationship(
+        "School",
+        back_populates="owner",
+        cascade="all, delete-orphan",
+        foreign_keys="School.owner_id"
+    )
+    courses = db.relationship(
+        "Course",
+        back_populates="educator",
+        foreign_keys="Course.educator_id"
+    )
+    resources = db.relationship(
+        "Resource",
+        back_populates="uploader",
+        foreign_keys="Resource.uploaded_by_public_id"
+    )
+    messages = db.relationship(
+        "Message",
+        back_populates="user",
+        foreign_keys="Message.user_public_id"
+    )
+    enrollments = db.relationship(
+        "Enrollment",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="select",
+        foreign_keys="Enrollment.user_id"
+    )
+    attendance = db.relationship(
+        "Attendance",
+        back_populates="user",
+        foreign_keys="Attendance.user_id"
+    )
+    verifications = db.relationship(
+        "Attendance",
+        back_populates="verifier",
+        foreign_keys="Attendance.verified_by"
+    )
+    reset_passwords = db.relationship(
+        "ResetPassword",
+        back_populates="user",
+        foreign_keys="ResetPassword.user_id"
+    )
+
     # Password methods
     def set_password(self, password: str):
         self.password_hash = bcrypt.generate_password_hash(password).decode("utf-8")
@@ -39,6 +77,7 @@ class User(BaseModel):
     def check_password(self, password: str) -> bool:
         return bcrypt.check_password_hash(self.password_hash, password)
 
+    # Validators
     @validates("email")
     def validate_email(self, key, email):
         if "@" not in email or "." not in email:
