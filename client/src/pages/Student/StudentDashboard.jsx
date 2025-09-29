@@ -225,10 +225,14 @@ const StudentDashboard = () => {
         </>
       )}
 
-      {/* Messages Tab */}
-      {activeTab === "messages" && (
-        <StudentMessages enrolledCourses={dashboard.user?.enrollments || []} />
-      )}
+      {activeTab === "messages" && (() => {
+  const firstCourse = dashboard.user?.enrollments?.[0];
+  console.log("First enrolled course:", firstCourse); // safe outside JSX return
+  return (
+    <StudentMessages courseId={firstCourse?.course_id} />
+  );
+  })()}
+
 
       {/* Profile Tab (expanded) */}
       {activeTab === "profile" && (

@@ -11,6 +11,7 @@ from .messages import MessageListResource, MessageResource
 from .resources import ResourceListApi, ResourceDetailApi
 from .enrollment import EnrollmentListResource, EnrollmentResource
 from .resources import CourseResourcesApi
+from .resources import StudentResourcesApi
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 api = Api(api_bp)
 
@@ -51,6 +52,8 @@ api.add_resource(MessageResource, "/messages/<int:message_id>")
 api.add_resource(ResourceListApi, "/resources")
 api.add_resource(ResourceDetailApi, "/resources/<int:resource_id>")
 api.add_resource(CourseResourcesApi, "/courses/<int:course_id>/resources")
+api.add_resource(StudentResourcesApi, "/student/resources")
+
 
 # Enrollment endpoints
 api.add_resource(EnrollmentListResource, "/enrollments")
