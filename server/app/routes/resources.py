@@ -127,10 +127,10 @@ class ResourceDetailApi(ApiResource):
 class CourseResourcesApi(ApiResource):
     @jwt_required()
     def get(self, course_id):
-        """List all resources for a given course (students only, paginated)."""
+        """List all resources for a specific course (students only, paginated)."""
         user_public_id = get_jwt_identity()
 
-        # check enrollment
+        # Check enrollment
         enrollment = Enrollment.query.filter_by(
             user_public_id=user_public_id,
             course_id=course_id
@@ -138,8 +138,23 @@ class CourseResourcesApi(ApiResource):
         if not enrollment:
             return error_response("You are not enrolled in this course", 403)
 
-        # apply pagination
+        # Paginated query
         query = Resource.query.filter_by(course_id=course_id).order_by(Resource.created_at.desc())
-        result = paginate(query, resources_schema, resource_name="resources")
+        return paginate(query, resources_schema, resource_name="resources")
 
-        return success_response("Resources fetched successfully", result)
+
+class StudentResourcesApi(ApiResource):
+    @jwt_required()
+    def get(self):
+        """Return all resources for the logged-in student across enrolled courses (paginated)."""
+        user_public_id = get_jwt_identity()
+
+        enrollments = Enrollment.query.filter_by(user_public_id=user_public_id).all()
+        if not enrollments:
+            return success_response("No enrollments found", {"resources": []})
+
+        course_ids = [e.course_id for e in enrollments]
+
+        # Paginated query
+        query = Resource.query.filter(Resource.course_id.in_(course_ids)).order_by(Resource.created_at.desc())
+        return paginate(query, resources_schema, resource_name="resources")

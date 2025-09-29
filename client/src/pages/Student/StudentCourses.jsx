@@ -14,11 +14,13 @@ const StudentCourses = () => {
 
   useEffect(() => {
     fetchCourses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, page]);
 
   const fetchCourses = async () => {
     setLoading(true);
     setError("");
+
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
@@ -28,7 +30,11 @@ const StudentCourses = () => {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        setCourses(data.data.items);
+        const items = data.data.items.map((course) => ({
+          ...course,
+          resources: course.resources || [], // embed resources if available
+        }));
+        setCourses(items);
         setTotalPages(data.data.meta?.pages || 1);
       } else {
         setError(data.message || "Failed to load courses.");
@@ -36,8 +42,14 @@ const StudentCourses = () => {
     } catch {
       setError("Network error");
     }
+
     setLoading(false);
   };
+
+  // Client-side filtered courses
+  const filteredCourses = courses.filter((c) =>
+    c.title.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="max-w-6xl mx-auto mt-10 p-6">
@@ -59,9 +71,9 @@ const StudentCourses = () => {
         <div className="text-gray-500">Loading courses...</div>
       ) : error ? (
         <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</div>
-      ) : courses.length > 0 ? (
+      ) : filteredCourses.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {courses.map((course) => (
+          {filteredCourses.map((course) => (
             <div
               key={course.id}
               className="bg-white rounded-lg shadow-md p-4 flex flex-col"
@@ -81,8 +93,6 @@ const StudentCourses = () => {
               <p className="text-sm text-gray-500 mb-3">
                 <strong>School:</strong> {course.school?.name}
               </p>
-
-              {/* No enroll/unenroll buttons for students */}
               <p className="text-xs text-gray-500 italic mt-auto">
                 Ask your educator to enroll you in this course.
               </p>
@@ -124,7 +134,7 @@ const StudentCourses = () => {
       {/* Course Details Modal */}
       {selectedCourse && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 shadow-xl w-full max-w-lg relative">
+          <div className="bg-white rounded-lg p-6 shadow-xl w-full max-w-2xl relative">
             <button
               className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
               onClick={() => setSelectedCourse(null)}
@@ -147,13 +157,15 @@ const StudentCourses = () => {
               <strong>Created:</strong>{" "}
               {new Date(selectedCourse.created_at).toLocaleDateString()}
             </p>
-            {/* Richer Resources Section using StudentResources */}
-            {selectedCourse.id && (
-              <div className="mt-4">
-                <h4 className="font-semibold mb-2 text-blue-600">Resources</h4>
-                <StudentResources courseId={selectedCourse.id} />
-              </div>
-            )}
+
+            {/* Hybrid Resources */}
+            <div className="mt-4">
+              <h4 className="font-semibold mb-2 text-blue-600">Resources</h4>
+              <StudentResources
+                courseId={selectedCourse.id}
+                embeddedResources={selectedCourse.resources}
+              />
+            </div>
           </div>
         </div>
       )}
