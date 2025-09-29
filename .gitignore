@@ -41,4 +41,4 @@ ENV/
 *.sln
 *.sw?
 .coverage
-.coverage.*
+.coverage.*.coverage
