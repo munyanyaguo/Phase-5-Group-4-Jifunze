@@ -13,7 +13,7 @@ class AttendanceSchema(BaseSchema):
     course_id = ma.auto_field()
     date = ma.auto_field()
     status = ma.auto_field(validate=validate.OneOf(["present", "absent", "late"]))
-    verified_by_public_id = ma.auto_field()
+    #verified_by_public_id = ma.auto_field()
 
 attendance_schema = AttendanceSchema()
 attendances_schema = AttendanceSchema(many=True)

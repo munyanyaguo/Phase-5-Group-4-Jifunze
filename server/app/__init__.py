@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from flask import Flask
 from .extensions import cors, db, migrate
 from flask_jwt_extended import JWTManager
+from flask_cors import CORS
 
 # Load the right .env file
 flask_env = os.getenv("FLASK_ENV", "production")
@@ -56,7 +57,7 @@ def create_app(config_name=None):
     else:
         cors.init_app(
     app,
-    resources={r"/api/*": {"origins": ["http://127.0.0.1:5173"]}},
+    resources={r"/api/*": {"origins": ["http://localhost:5173", "http://127.0.0.1:5173"]}},
     supports_credentials=True,
     allow_headers=["Content-Type", "Authorization", "Cache-Control"],
     methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]

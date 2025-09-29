@@ -1,7 +1,7 @@
 import secrets
-from flask import request
+from flask import request, current_app
 from flask_restful import Resource
-from flask_jwt_extended import jwt_required, get_jwt, create_access_token, create_refresh_token
+from flask_jwt_extended import jwt_required, get_jwt, create_access_token, create_refresh_token, get_jwt_identity
 from marshmallow import ValidationError
 
 from app.models.user import User, ROLES
@@ -145,6 +145,59 @@ class LogoutResource(Resource):
         except Exception as e:
             return error_response("Something went wrong during logout", {"error": str(e)}, status_code=500)
 
+class TokenRefreshResource(Resource):
+    @jwt_required(refresh=True)
+    def post(self):
+        """
+        POST /auth/refresh
+        Requires a valid refresh token.
+        Returns a new access token and a new refresh token (optional, but good practice).
+        """
+        try:
+            current_user_public_id = get_jwt_identity()
+            user = User.query.filter_by(public_id=current_user_public_id).first()
+            if not user:
+                return error_response("User not found for refresh token", status_code=401)
+
+            # Rebuild claims for the new token
+            claims = {
+                "role": user.role,
+                "email": user.email,
+                "school_id": user.school_id
+            }
+
+            new_access_token = create_access_token(identity=current_user_public_id, additional_claims=claims, fresh=False)
+            new_refresh_token = create_refresh_token(identity=current_user_public_id, additional_claims=claims)
+
+            # Build courses list depending on role for the user object returned with the refresh
+            user_courses = []
+            if user.role == "educator":
+                for course in user.courses:
+                    user_courses.append({"id": course.id, "title": course.title}) # Simplified for refresh
+            elif user.role == "student":
+                for enrollment in user.enrollments:
+                    course = enrollment.course
+                    user_courses.append({"id": course.id, "title": course.title}) # Simplified for refresh
+
+
+            return success_response(
+                "Token refreshed successfully",
+                {
+                    "access_token": new_access_token,
+                    "refresh_token": new_refresh_token,
+                    "user": {
+                        "id": user.public_id,
+                        "email": user.email,
+                        "role": user.role,
+                        "name": user.name,
+                        "school_id": user.school_id,
+                        "courses": user_courses # Include updated courses if necessary
+                    }
+                }
+            )
+        except Exception as e:
+            current_app.logger.error(f"Token refresh error: {str(e)}")
+            return error_response("Failed to refresh token", {"error": str(e)}, status_code=401)
 
 class ResetPasswordResource(Resource):
     def post(self):

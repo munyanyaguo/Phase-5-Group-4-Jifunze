@@ -2,7 +2,7 @@ from flask_restful import Api
 from flask import Blueprint
 from .courses import CourseListResource, CourseResource
 from .attendance import AttendanceListResource, AttendanceResource
-from .auth import RegisterResource, LoginResource, LogoutResource, ResetPasswordResource 
+from .auth import RegisterResource, LoginResource, LogoutResource, ResetPasswordResource, TokenRefreshResource
 from .users import (UserResource, UserListResource, 
     UserProfileResource, UsersBySchoolResource, UserDashboardResource)
 from .schools import (SchoolResource, SchoolListResource, SchoolStatsResource,
@@ -27,6 +27,7 @@ api.add_resource(RegisterResource, "/auth/register")
 api.add_resource(LoginResource, "/auth/login")
 api.add_resource(LogoutResource, "/auth/logout")
 api.add_resource(ResetPasswordResource, "/auth/reset-password")
+api.add_resource(TokenRefreshResource, "/auth/refresh")
 
 # User endpoints
 api.add_resource(UserListResource, "/users")
