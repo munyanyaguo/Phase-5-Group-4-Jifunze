@@ -1,143 +1,105 @@
-// src/pages/owner/Dashboard.jsx
+// src/pages/Dashboard.jsx
 import React, { useEffect, useState } from "react";
-import api from "../../api"; // Ensure correct import path
-import DashboardCard from "../../components/owner/DashboardCard";
-import ReportChart from "../../components/owner/ReportsChart";
-import { Users, BookOpen, School } from "lucide-react";
+import { fetchDashboard } from "../../api";
+import { Card, CardContent } from "@/components/ui/card";
 
-const Dashboard = () => {
-  const [stats, setStats] = useState({});
-  const [recentUsers, setRecentUsers] = useState([]);
-  const [recentCourses, setRecentCourses] = useState([]);
-  const [recentSchools, setRecentSchools] = useState([]);
+export default function Dashboard() {
+  const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    const loadDashboard = async () => {
       try {
-        const res = await api.fetchDashboard();
-        // console.log("Dashboard response:", res);
-
-        setStats(res.stats ?? {});
-        setRecentUsers(res.recent_users ?? []);
-        setRecentCourses(res.recent_courses ?? []);
-        setRecentSchools(res.recent_schools ?? []);
-      } catch (error) {
-        console.error("Error fetching dashboard:", error);
+        const res = await fetchDashboard();
+        setDashboard(res.dashboard);
+      } catch (err) {
+        setError(err.message || "Failed to load dashboard");
       } finally {
         setLoading(false);
       }
     };
-
-    fetchDashboardData();
+    loadDashboard();
   }, []);
 
-  if (loading) return <p>Loading dashboard...</p>;
+  if (loading) return <p className="text-gray-500">Loading dashboard...</p>;
+  if (error) return <p className="text-red-500">{error}</p>;
+  if (!dashboard) return <p>No dashboard data available.</p>;
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "-";
-    const date = new Date(dateString);
-    return date.toLocaleDateString() + " " + date.toLocaleTimeString();
-  };
+  const { stats, recent_activity, schools, total_schools } = dashboard;
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold">School Owner Dashboard</h2>
+    <div className="p-6 space-y-8">
+      <h1 className="text-3xl font-bold">Manager Dashboard</h1>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <DashboardCard
-          title="Educators"
-          value={stats.educators ?? 0}
-          icon={<Users className="text-blue-500" />}
-        />
-        <DashboardCard
-          title="Students"
-          value={stats.students ?? 0}
-          icon={<Users className="text-green-500" />}
-        />
-        <DashboardCard
-          title="Courses"
-          value={stats.courses ?? stats.total_courses ?? 0}
-          icon={<BookOpen className="text-purple-500" />}
-        />
-        <DashboardCard
-          title="Schools"
-          value={stats.schools ?? 0}
-          icon={<School className="text-orange-500" />}
-        />
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <Card className="bg-blue-50 shadow-md rounded-2xl">
+          <CardContent className="p-6 text-center">
+            <p className="text-gray-500">Total Schools</p>
+            <p className="text-2xl font-bold">{total_schools}</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-green-50 shadow-md rounded-2xl">
+          <CardContent className="p-6 text-center">
+            <p className="text-gray-500">Students</p>
+            <p className="text-2xl font-bold">{stats.students}</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-yellow-50 shadow-md rounded-2xl">
+          <CardContent className="p-6 text-center">
+            <p className="text-gray-500">Educators</p>
+            <p className="text-2xl font-bold">{stats.educators}</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-purple-50 shadow-md rounded-2xl">
+          <CardContent className="p-6 text-center">
+            <p className="text-gray-500">Courses</p>
+            <p className="text-2xl font-bold">{stats.total_courses}</p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Chart */}
-      <ReportChart stats={stats} />
-
-      {/* Recent Users */}
-      <div>
-        <h3 className="text-xl font-semibold mb-3">Recent Users</h3>
-        <ul className="bg-white shadow rounded-lg p-4 space-y-2">
-          {recentUsers.length ? (
-            recentUsers.map((user) => (
-              <li
-                key={user.id}
-                className="flex justify-between border-b py-2"
-              >
-                <span>
-                  {user.name} ({user.role})
-                </span>
-                <span className="text-gray-500 text-sm">{user.email}</span>
-              </li>
-            ))
-          ) : (
-            <p className="text-gray-500">No recent users</p>
-          )}
-        </ul>
+      {/* Recent Activity */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="bg-white shadow rounded-2xl">
+          <CardContent className="p-6">
+            <p className="text-gray-500">New Users This Week</p>
+            <p className="text-2xl font-bold">{recent_activity.new_users_this_week}</p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Recent Courses */}
+      {/* Schools Table */}
       <div>
-        <h3 className="text-xl font-semibold mb-3">Recent Courses</h3>
-        <ul className="bg-white shadow rounded-lg p-4 space-y-2">
-          {recentCourses.length ? (
-            recentCourses.map((course) => (
-              <li
-                key={course.id}
-                className="flex justify-between border-b py-2"
-              >
-                <span>{course.title ?? course.name}</span>
-                <span className="text-gray-500 text-sm">
-                  {formatDate(course.created_at)}
-                </span>
-              </li>
-            ))
-          ) : (
-            <p className="text-gray-500">No recent courses</p>
-          )}
-        </ul>
-      </div>
-
-      {/* Recent Schools */}
-      <div>
-        <h3 className="text-xl font-semibold mb-3">Recent Schools</h3>
-        <ul className="bg-white shadow rounded-lg p-4 space-y-2">
-          {recentSchools.length ? (
-            recentSchools.map((school) => (
-              <li
-                key={school.id}
-                className="flex justify-between border-b py-2"
-              >
-                <span>{school.name}</span>
-                <span className="text-gray-500 text-sm">
-                  {formatDate(school.created_at)}
-                </span>
-              </li>
-            ))
-          ) : (
-            <p className="text-gray-500">No recent schools</p>
-          )}
-        </ul>
+        <h2 className="text-xl font-semibold mb-4">Schools Overview</h2>
+        <div className="overflow-x-auto bg-white rounded-2xl shadow">
+          <table className="min-w-full text-left">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="p-3">School</th>
+                <th className="p-3">Students</th>
+                <th className="p-3">Educators</th>
+                <th className="p-3">Managers</th>
+                <th className="p-3">Courses</th>
+                <th className="p-3">New Users (7d)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {schools.map((school) => (
+                <tr key={school.id} className="border-b">
+                  <td className="p-3 font-medium">{school.name}</td>
+                  <td className="p-3">{school.students}</td>
+                  <td className="p-3">{school.educators}</td>
+                  <td className="p-3">{school.managers}</td>
+                  <td className="p-3">{school.total_courses}</td>
+                  <td className="p-3">{school.new_users_this_week}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
-};
-
-export default Dashboard;
+}

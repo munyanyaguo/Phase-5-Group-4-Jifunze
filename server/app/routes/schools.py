@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from app.models.school import School
 from app.models.user import User, ROLES
 from app.models.base import db
+from app.models.course import Course
 from app.schemas.schools import SchoolSchema
 from app.schemas.user import UserSchema
 from app.utils.responses import success_response, error_response
@@ -364,54 +365,67 @@ class SchoolDashboardResource(Resource):
     def get(self, school_id=None):
         """Get dashboard data (managers only)"""
         try:
-            current_user_claims = get_jwt()
-            current_user_public_id = get_jwt_identity()
-            current_user = User.query.filter_by(public_id=current_user_public_id).first()
+            claims = get_jwt()
+            current_public_id = get_jwt_identity()
+            current_user = User.query.filter_by(public_id=current_public_id).first()
 
             # Only managers can access school dashboard
-            if current_user_claims.get("role") != "manager":
+            if claims.get("role") != "manager":
                 return error_response("Only managers can access school dashboard", status_code=403)
-            
-            # Use provided school_id or current user's school
-            target_school_id = school_id or current_user.school_id
 
-            # Managers can only view their own school's dashboard
-            if current_user.school_id != target_school_id:
-                return error_response("Can only view your own school dashboard", status_code=403)
-            
-            school = School.query.get(target_school_id)
-            if not school:
-                return error_response("School not found", status_code=404)
-            
-            # Complie dashboard data
+            # If a specific school_id is provided, return that one
+            if school_id:
+                schools = School.query.filter_by(id=school_id, owner_id=current_user.id).all()
+            else:
+                # Otherwise, return all schools owned by this manager
+                schools = School.query.filter_by(owner_id=current_user.id).all()
+
+            if not schools:
+                return error_response("No schools found for this manager", status_code=404)
+
             dashboard_data = {
-                "school": school_schema.dump(school),
-                "stats": {},
-                "recent_activity": {}
+                "total_schools": len(schools),
+                "stats": {"students": 0, "educators": 0, "managers": 0, "total_users": 0, "total_courses": 0},
+                "recent_activity": {"new_users_this_week": 0},
+                "schools": []
             }
-            # User stats
-            for role in ROLES:
-                count = User.query.filter(User.school_id == target_school_id, User.role == role).count()
-                dashboard_data["stats"][f"{role}s"] = count
 
-            dashboard_data["stats"]["total_users"] = sum(dashboard_data["stats"].values)
-            dashboard_data["stats"]["total_courses"] = len(school.courses)
+            week_ago = datetime.utcnow() - timedelta(days=7)
 
-            # Recent actiivity
-            from datetime import datetime, timedelta
-            week_ago = datetime.now() - timedelta(days=7)
+            for school in schools:
+                school_stats = {
+                    "id": school.id,
+                    "name": school.name,
+                    "students": User.query.filter_by(school_id=school.id, role="student").count(),
+                    "educators": User.query.filter_by(school_id=school.id, role="educator").count(),
+                    "managers": User.query.filter_by(school_id=school.id, role="manager").count(),
+                    "total_courses": Course.query.filter_by(school_id=school.id).count(),
+                    "new_users_this_week": User.query.filter(
+                        User.school_id == school.id,
+                        User.created_at >= week_ago
+                    ).count()
+                }
 
-            recent_users = User.query.filter(
-                User.school_id == target_school_id,
-                User.created_at >= week_ago
-            ).count()
-            dashboard_data["recent_activity"]["new_users_this_week"] = recent_users
+                # Add to aggregated totals
+                dashboard_data["stats"]["students"] += school_stats["students"]
+                dashboard_data["stats"]["educators"] += school_stats["educators"]
+                dashboard_data["stats"]["managers"] += school_stats["managers"]
+                dashboard_data["stats"]["total_courses"] += school_stats["total_courses"]
+                dashboard_data["recent_activity"]["new_users_this_week"] += school_stats["new_users_this_week"]
 
-            return success_response("School dashboard retrieved successfully", {"dashboard": dashboard_data})
-        
+                dashboard_data["schools"].append(school_stats)
+
+            dashboard_data["stats"]["total_users"] = (
+                dashboard_data["stats"]["students"] +
+                dashboard_data["stats"]["educators"] +
+                dashboard_data["stats"]["managers"]
+            )
+
+            return success_response("Dashboard retrieved successfully", {"dashboard": dashboard_data})
+
         except Exception as e:
             return error_response("Something went wrong", {"error": str(e)}, status_code=500)
-        
+
 class SchoolAssignmentResource(Resource):
     @jwt_required()
     def post(self, school_id, role):
@@ -524,3 +538,97 @@ class EducatorsByManagerResource(Resource):
                     })
 
         return success_response("Educators retrieved successfully", {"educators": educators})
+    
+class ManagerStudentsResource(Resource):
+    @jwt_required()
+    def get(self):
+        current_user_public_id = get_jwt_identity()
+        user = User.query.filter_by(public_id=current_user_public_id).first()
+        if not user or user.role != "manager":
+            return error_response("Only managers can view their students", status_code=403)
+
+        # Get all schools owned by this manager
+        schools = School.query.filter_by(owner_id=user.id).all()
+        students = []
+
+        for school in schools:
+            for u in school.users:  # assuming School has a 'users' backref
+                if u.role == "student":
+                    students.append({
+                        "id": u.id,
+                        "name": u.name,
+                        "email": u.email,
+                        "school": school.name,
+                        "courses": [c.name for c in u.courses]  # if students have courses
+                    })
+
+        return success_response("Students retrieved successfully", {"students": students})
+    
+class UserListResource(Resource):
+    @jwt_required()
+    def get(self):
+        """List users (with optional role filter)"""
+        role = request.args.get("role")
+        query = User.query
+        if role and role in ROLES:
+            query = query.filter_by(role=role)
+
+        users = query.all()
+        return success_response("Users retrieved successfully", {"users": users_schema.dump(users)})
+
+    @jwt_required()
+    def post(self):
+        """Create new user (e.g. student)"""
+        data = request.get_json()
+        if not data:
+            return error_response("No data provided", 400)
+
+        try:
+            user = user_schema.load(data)
+        except Exception as e:
+            return error_response("Validation error", str(e), 400)
+
+        db.session.add(user)
+        db.session.commit()
+        return success_response("User created successfully", {"user": user_schema.dump(user)}, 201)
+
+
+class UserResource(Resource):
+    @jwt_required()
+    def get(self, user_id):
+        user = User.query.get_or_404(user_id)
+        return success_response("User retrieved successfully", {"user": user_schema.dump(user)})
+
+    @jwt_required()
+    def put(self, user_id):
+        user = User.query.get_or_404(user_id)
+        data = request.get_json() or {}
+        for field, value in data.items():
+            if hasattr(user, field) and field not in ["id", "public_id"]:
+                setattr(user, field, value)
+        db.session.commit()
+        return success_response("User updated successfully", {"user": user_schema.dump(user)})
+
+    @jwt_required()
+    def delete(self, user_id):
+        user = User.query.get_or_404(user_id)
+        db.session.delete(user)
+        db.session.commit()
+        return success_response("User deleted successfully")
+    
+
+class ManagerUsersResource(Resource):
+    @jwt_required()
+    def get(self):
+        """Get all users under manager’s schools"""
+        current_public_id = get_jwt_identity()
+        manager = User.query.filter_by(public_id=current_public_id).first()
+        if not manager or manager.role != "manager":
+            return error_response("Only managers can view this", 403)
+
+        schools = School.query.filter_by(owner_id=manager.id).all()
+        user_list = []
+        for school in schools:
+            user_list.extend(school.users)
+
+        return success_response("Users retrieved successfully", {"users": users_schema.dump(user_list)})    

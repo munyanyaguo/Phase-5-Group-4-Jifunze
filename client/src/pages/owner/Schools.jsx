@@ -1,12 +1,19 @@
+// src/pages/SchoolsPage.jsx
 import React, { useEffect, useState } from "react";
-import { fetchSchools, createSchool, deleteSchool } from "../../api";
+import {
+  fetchSchools,
+  createSchool,
+  updateSchool,
+  deleteSchool,
+} from "../../api";
 import SchoolCard from "../../components/owner/SchoolCard";
-import CreateSchoolForm from "../../components/owner/SchoolForm";
+import SchoolForm from "../../components/owner/SchoolForm";
 
 export default function SchoolsPage() {
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // Load all schools
   const loadSchools = async () => {
     setLoading(true);
     try {
@@ -23,35 +30,45 @@ export default function SchoolsPage() {
     loadSchools();
   }, []);
 
+  // Create a new school
   const handleCreate = async (schoolData) => {
     try {
       await createSchool(schoolData);
-      loadSchools(); // Refresh list after creation
+      loadSchools();
     } catch (err) {
       alert(err.message);
     }
   };
 
+  // Update existing school
+  const handleUpdate = async (id, updatedData) => {
+    try {
+      await updateSchool(id, updatedData);
+      loadSchools();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  // Delete school
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this school?")) return;
     try {
       await deleteSchool(id);
-      loadSchools(); // Refresh list after deletion
+      loadSchools();
     } catch (err) {
       alert(err.message);
     }
-  };
-
-  const handleAssignSuccess = () => {
-    loadSchools(); // Refresh list after assigning user
   };
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">My Schools</h1>
 
-      <CreateSchoolForm onCreate={handleCreate} />
+      {/* Form to create new school */}
+      <SchoolForm onCreate={handleCreate} />
 
+      {/* Schools list */}
       {loading ? (
         <p className="text-gray-500">Loading schools...</p>
       ) : schools.length > 0 ? (
@@ -61,7 +78,8 @@ export default function SchoolsPage() {
               key={school.id}
               school={school}
               onDelete={handleDelete}
-              onAssignSuccess={handleAssignSuccess} // Pass assign callback
+              onUpdate={handleUpdate} // for inline edit
+              onAssignSuccess={loadSchools} // refresh after assigning user
             />
           ))}
         </div>

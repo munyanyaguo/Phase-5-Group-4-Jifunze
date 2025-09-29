@@ -1,11 +1,17 @@
-// src/components/SchoolForm.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-export default function SchoolForm({ onCreate }) {
-  const [name, setName] = useState("");
-  const [address, setAddress] = useState("");
-  const [phone, setPhone] = useState("");
+export default function SchoolForm({ onCreate, initialData = {}, onCancel }) {
+  const [name, setName] = useState(initialData.name || "");
+  const [address, setAddress] = useState(initialData.address || "");
+  const [phone, setPhone] = useState(initialData.phone || "");
   const [loading, setLoading] = useState(false);
+
+  // Update form if initialData changes (useful when editing different schools)
+  useEffect(() => {
+    setName(initialData.name || "");
+    setAddress(initialData.address || "");
+    setPhone(initialData.phone || "");
+  }, [initialData]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -13,11 +19,14 @@ export default function SchoolForm({ onCreate }) {
 
     setLoading(true);
     await onCreate({ name, address, phone });
-
-    setName("");
-    setAddress("");
-    setPhone("");
     setLoading(false);
+
+    // Clear form only if not editing
+    if (!initialData.id) {
+      setName("");
+      setAddress("");
+      setPhone("");
+    }
   };
 
   return (
@@ -47,13 +56,24 @@ export default function SchoolForm({ onCreate }) {
         onChange={(e) => setPhone(e.target.value)}
         className="border p-2 rounded"
       />
-      <button
-        type="submit"
-        disabled={loading}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-      >
-        {loading ? "Creating..." : "Add School"}
-      </button>
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={loading}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+        >
+          {loading ? (initialData.id ? "Saving..." : "Creating...") : initialData.id ? "Save" : "Add School"}
+        </button>
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition"
+          >
+            Cancel
+          </button>
+        )}
+      </div>
     </form>
   );
 }
