@@ -1,5 +1,5 @@
 // src/pages/owner/Reports.jsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { BarChart3, FileText } from "lucide-react";
 import {
@@ -12,65 +12,63 @@ import {
 } from "recharts";
 
 export default function Reports() {
-  // Attendance Data
-  const attendanceData = [
-    { school: "DeKUT", attendance: 92 },
-    { school: "Kisumu High", attendance: 85 },
-    { school: "Nairobi School", attendance: 78 },
-  ];
+  const [schools, setSchools] = useState([]);
+  const [selectedSchool, setSelectedSchool] = useState(null);
+  const [attendance, setAttendance] = useState(0);
+  const [courseStats, setCourseStats] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Performance Data (hierarchical: school → class → subjects)
-  const performanceData = [
-    {
-      school: "DeKUT",
-      classes: [
-        {
-          class: "Form 1",
-          subjects: [
-            { subject: "Math", avg: 75 },
-            { subject: "Physics", avg: 68 },
-          ],
-        },
-        {
-          class: "Form 2",
-          subjects: [
-            { subject: "Math", avg: 80 },
-            { subject: "Chemistry", avg: 70 },
-          ],
-        },
-      ],
-    },
-    {
-      school: "Kisumu High",
-      classes: [
-        {
-          class: "Form 1",
-          subjects: [
-            { subject: "Math", avg: 72 },
-            { subject: "Physics", avg: 65 },
-          ],
-        },
-      ],
-    },
-    {
-      school: "Nairobi School",
-      classes: [
-        {
-          class: "Form 1",
-          subjects: [
-            { subject: "Math", avg: 68 },
-            { subject: "Chemistry", avg: 74 },
-          ],
-        },
-      ],
-    },
-  ];
+  // Fetch manager's schools
+  const loadSchools = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/manager/schools", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSchools(data.schools);
+        if (data.schools.length > 0) {
+          setSelectedSchool(data.schools[0]);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch schools:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // State for drilldown
-  const [selectedSchool, setSelectedSchool] = useState(performanceData[0]);
-  const [selectedClass, setSelectedClass] = useState(
-    performanceData[0].classes[0]
-  );
+  // Fetch stats for a specific school
+  const loadSchoolStats = async (schoolId) => {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/schools/${schoolId}/stats`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAttendance(data.attendance || 0);
+        setCourseStats(data.courses || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch stats:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial load
+  useEffect(() => {
+    loadSchools();
+  }, []);
+
+  // Load stats when school changes
+  useEffect(() => {
+    if (selectedSchool) {
+      loadSchoolStats(selectedSchool.id);
+    }
+  }, [selectedSchool]);
 
   return (
     <motion.div
@@ -84,85 +82,75 @@ export default function Reports() {
         Reports & Analytics
       </h1>
 
-      <div className="grid md:grid-cols-2 gap-8">
-        {/* Attendance Summary */}
-        <motion.div
-          className="bg-white shadow rounded-2xl p-5"
-          whileHover={{ scale: 1.02 }}
-        >
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-green-600" />
-            Attendance Summary
-          </h2>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={attendanceData}>
-              <XAxis dataKey="school" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="attendance" fill="#2563eb" radius={8} />
-            </BarChart>
-          </ResponsiveContainer>
-        </motion.div>
-
-        {/* Student Performance Drilldown */}
-        <motion.div
-          className="bg-white shadow rounded-2xl p-5"
-          whileHover={{ scale: 1.02 }}
-        >
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-purple-600" />
-            Student Performance Overview
-          </h2>
-
-          {/* School Selector */}
+      {/* School Selector */}
+      {schools.length > 0 && (
+        <div className="mb-6">
+          <label className="mr-3 font-medium">Select School:</label>
           <select
-            className="border p-2 rounded mb-4"
-            onChange={(e) => {
-              const school = performanceData.find(
-                (s) => s.school === e.target.value
-              );
-              setSelectedSchool(school);
-              setSelectedClass(school.classes[0]); // reset to first class
-            }}
-            value={selectedSchool.school}
+            className="border p-2 rounded"
+            value={selectedSchool?.id || ""}
+            onChange={(e) =>
+              setSelectedSchool(
+                schools.find((s) => s.id === parseInt(e.target.value))
+              )
+            }
           >
-            {performanceData.map((s) => (
-              <option key={s.school} value={s.school}>
-                {s.school}
+            {schools.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
               </option>
             ))}
           </select>
+        </div>
+      )}
 
-          {/* Class Selector */}
-          <select
-            className="border p-2 rounded mb-4 ml-4"
-            onChange={(e) => {
-              const cls = selectedSchool.classes.find(
-                (c) => c.class === e.target.value
-              );
-              setSelectedClass(cls);
-            }}
-            value={selectedClass.class}
+      {loading ? (
+        <p className="text-gray-500">Loading reports...</p>
+      ) : (
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* Attendance Summary */}
+          <motion.div
+            className="bg-white shadow rounded-2xl p-5"
+            whileHover={{ scale: 1.02 }}
           >
-            {selectedSchool.classes.map((c) => (
-              <option key={c.class} value={c.class}>
-                {c.class}
-              </option>
-            ))}
-          </select>
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-green-600" />
+              Attendance Summary
+            </h2>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={[{ name: selectedSchool?.name, attendance }]}>
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="attendance" fill="#2563eb" radius={8} />
+              </BarChart>
+            </ResponsiveContainer>
+          </motion.div>
 
-          {/* Subject Performance Chart */}
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={selectedClass.subjects}>
-              <XAxis dataKey="subject" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="avg" fill="#9333ea" radius={8} />
-            </BarChart>
-          </ResponsiveContainer>
-        </motion.div>
-      </div>
+          {/* Course Performance */}
+          <motion.div
+            className="bg-white shadow rounded-2xl p-5"
+            whileHover={{ scale: 1.02 }}
+          >
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-purple-600" />
+              Course Attendance Rates
+            </h2>
+            {courseStats.length === 0 ? (
+              <p className="text-gray-500">No course data available.</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={courseStats}>
+                  <XAxis dataKey="course" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="avg_attendance" fill="#9333ea" radius={8} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </motion.div>
+        </div>
+      )}
     </motion.div>
   );
 }
-

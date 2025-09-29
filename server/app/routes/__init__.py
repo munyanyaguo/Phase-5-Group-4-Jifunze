@@ -36,14 +36,15 @@ api.add_resource(LogoutResource, "/auth/logout")
 api.add_resource(ResetPasswordResource, "/auth/reset-password")
 api.add_resource(UserPasswordResetResource, "/auth/reset-password-token")
 
-# -------------------
+# ------------------- 
 # User endpoints
 # -------------------
 api.add_resource(UserListResource, "/users")  # GET all users, POST new
-api.add_resource(UserResource, "/users/me", "/users/<int:user_id>")  # GET/PUT own profile or by ID
+api.add_resource(UserResource, "/users/me", "/users/<int:user_id>")  # GET/PUT/DELETE own profile or by ID
 api.add_resource(UserProfileResource, "/users/profile")
 api.add_resource(UserDashboardResource, "/users/dashboard")
 api.add_resource(UsersBySchoolResource, "/schools/<int:school_id>/users")  # Users in a school
+
 
 # -------------------
 # School endpoints

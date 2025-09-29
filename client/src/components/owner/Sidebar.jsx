@@ -31,7 +31,7 @@ export default function Sidebar() {
         <MenuItem to="/owner/students" icon={Users}>Students</MenuItem>
         <MenuItem to="/owner/educators" icon={Users}>Educators</MenuItem>
         <MenuItem to="/owner/users" icon={Users}>Users</MenuItem>
-     
+        <MenuItem to="/owner/courses" icon={BookOpen}>Courses</MenuItem>
         <MenuItem to="/owner/reports" icon={BarChart3}>Reports</MenuItem>
       </nav>
 
