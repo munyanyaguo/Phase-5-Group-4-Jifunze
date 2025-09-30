@@ -11,6 +11,7 @@ export default function EducatorMessages() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const listRef = useRef(null);
+  const STORAGE_KEY = "educator_messages_course_id";
 
   useEffect(() => {
     const load = async () => {
@@ -19,7 +20,11 @@ export default function EducatorMessages() {
         const res = await fetchEducatorCourses();
         const list = Array.isArray(res?.data) ? res.data : [];
         setCourses(list);
-        if (list.length > 0) setSelectedCourseId(String(list[0].id));
+        if (list.length > 0) {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          const initial = saved && list.find((c) => String(c.id) === saved) ? saved : String(list[0].id);
+          setSelectedCourseId(initial);
+        }
       } catch (e) {
         setError(e.message || "Failed to load courses");
       }
@@ -102,7 +107,7 @@ export default function EducatorMessages() {
               courses.map((c) => (
                 <button
                   key={c.id}
-                  onClick={() => setSelectedCourseId(String(c.id))}
+                  onClick={() => { const id = String(c.id); setSelectedCourseId(id); localStorage.setItem(STORAGE_KEY, id); }}
                   className={`w-full text-left px-4 py-3 border-b hover:bg-gray-50 ${String(c.id) === selectedCourseId ? "bg-blue-50" : ""}`}
                 >
                   <div className="font-medium text-gray-800">{c.title || c.name}</div>

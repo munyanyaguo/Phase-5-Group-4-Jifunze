@@ -10,7 +10,8 @@ export async function fetchMessagesByCourse(courseId, page = 1, perPage = 50) {
   });
   const data = await res.json();
   if (!res.ok || !data.success) {
-    throw new Error(data.message || `Failed to fetch messages for course ${courseId}`);
+    const detail = data?.errors ? `: ${JSON.stringify(data.errors)}` : "";
+    throw new Error((data.message || `Failed to fetch messages for course ${courseId}`) + detail);
   }
   return data?.data || { messages: [], meta: { total: 0 } };
 }
@@ -26,7 +27,8 @@ export async function sendMessage(courseId, content, parentId) {
   });
   const data = await res.json();
   if (!res.ok || !data.success) {
-    throw new Error(data.message || "Failed to send message");
+    const detail = data?.errors ? `: ${JSON.stringify(data.errors)}` : "";
+    throw new Error((data.message || "Failed to send message") + detail);
   }
   return data.data;
 }
