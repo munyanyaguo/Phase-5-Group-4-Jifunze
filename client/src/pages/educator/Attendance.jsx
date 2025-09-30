@@ -1,19 +1,50 @@
 // src/pages/educator/Attendance.jsx
 import React, { useState, useEffect } from "react";
-//import { authFetchWithRefresh } from '../../services/authServices';
 
 const BASE_URL = "http://127.0.0.1:5000/api";
 
 // Helper for authenticated requests
-// async function authFetchWithRefresh(url, options = {}) {
-//   const token = localStorage.getItem("token");
-//   const headers = {
-//     "Content-Type": "application/json",
-//     ...(options.headers || {}),
-//     ...(token ? { Authorization: `Bearer ${token}` } : {}),
-//   };
-//   return fetch(url, { ...options, headers });
-// }
+async function authFetch(url, options = {}) {
+  const token = localStorage.getItem("token");
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+  return fetch(url, { ...options, headers });
+}
+
+// Decode JWT payload safely to extract claims (e.g., school_id)
+function decodeJwt(token) {
+  try {
+    const payload = token.split(".")[1];
+    // Base64URL decode with padding
+    let base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const pad = base64.length % 4;
+    if (pad) base64 += "=".repeat(4 - pad);
+    const json = atob(base64);
+    return JSON.parse(json);
+  } catch (_) {
+    return null;
+  }
+}
+
+async function fetchUserSchoolId(token) {
+  const claims = decodeJwt(token);
+  if (claims?.school_id) return claims.school_id;
+  // Fallback: fetch user's schools
+  try {
+    const res = await fetch(`${BASE_URL}/schools`, {
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const schools = data?.data?.schools || data?.schools || [];
+    return Array.isArray(schools) && schools[0]?.id ? schools[0].id : null;
+  } catch {
+    return null;
+  }
+}
 
 export default function Attendance() {
   const [students, setStudents] = useState([]);
@@ -27,13 +58,13 @@ export default function Attendance() {
   const [success, setSuccess] = useState("");
 
   // Get token from localStorage or wherever you store it
-  // const getToken = () => {
-  //   const token = localStorage.getItem('token');
-  //   if (!token) {
-  //     setError('No authentication token found. Please log in.');
-  //   }
-  //   return token;
-  // };
+  const getToken = () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('No authentication token found. Please log in.');
+    }
+    return token;
+  };
 
   // Fetch courses on component mount
   useEffect(() => {
@@ -49,57 +80,74 @@ export default function Attendance() {
   }, [selectedCourse, selectedDate]);
 
   const fetchCourses = async () => {
-    setLoading(true);
-    setError("");
     try {
       const token = getToken();
       if (!token) return;
 
-      const response = await authFetchWithRefresh(`${BASE_URL}/courses`);
+      const schoolId = await fetchUserSchoolId(token);
+      if (!schoolId) {
+        setError('Could not determine your school. Please re-login.');
+        return;
+      }
+
+      const response = await fetch(`${BASE_URL}/schools/${schoolId}/courses`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
       if (!response.ok) {
-        const errorText = await response.text();
         if (response.status === 401) {
           setError('Authentication failed. Please log in again.');
-          logout();
           return;
         }
-        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+        if (response.status === 403) {
+          setError('You are not allowed to view courses for this school.');
+          return;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
       if (data.success) {
-        setCourses(data.data.items || []);
+        const items = data?.data?.items
+          || data?.data?.courses
+          || data?.courses
+          || [];
+        setCourses(Array.isArray(items) ? items : []);
       } else {
         setError(data.message || 'Failed to fetch courses');
       }
     } catch (err) {
       console.error('Fetch courses error:', err);
       setError('Failed to fetch courses: ' + err.message);
-    } finally {
-      setLoading(false);
     }
   };
 
   const fetchStudents = async () => {
-    setLoading(true);
-    setError("");
     try {
-      const response = await authFetchWithRefresh(`${BASE_URL}/enrollments?course_id=${selectedCourse}`);
+      const token = getToken();
+      if (!token) return;
+
+      const response = await fetch(`${BASE_URL}/enrollments?course_id=${selectedCourse}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
       if (!response.ok) {
-        const errorText = await response.text();
         if (response.status === 401) {
           setError('Authentication failed. Please log in again.');
-          logout();
           return;
         }
-        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
       if (data.success) {
-        const studentList = (data.data.items || []).map(enrollment => ({
+        const studentList = data.data.enrollments.map(enrollment => ({
           id: enrollment.user_public_id,
           name: enrollment.user?.name || `Student ${enrollment.user_public_id}`,
           user_id: enrollment.user_public_id
@@ -111,29 +159,25 @@ export default function Attendance() {
     } catch (err) {
       console.error('Fetch students error:', err);
       setError('Failed to fetch students: ' + err.message);
-    }finally {
-      setLoading(false);
     }
   };
 
   const fetchExistingAttendance = async () => {
   if (!selectedCourse || !selectedDate) return;
 
-  setLoading(true);
-  setError("");
   try {
-    const response = await authFetchWithRefresh(
-        `${BASE_URL}/attendance?course_id=${selectedCourse}&date=${selectedDate}`
-      );
+    const response = await fetch(
+      `${BASE_URL}/attendance?course_id=${selectedCourse}&date=${selectedDate}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${getToken()}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
 
     if (!response.ok) {
-      const errorText = await response.text();
-      if (response.status === 401) {
-        setError('Authentication failed. Please log in again.');
-        logout();
-        return;
-      }
-      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
@@ -149,9 +193,6 @@ export default function Attendance() {
     }
   } catch (err) {
     console.error('Failed to fetch existing attendance:', err);
-    setError('Failed to fetch existing attendance: ' + err.message);
-  } finally {
-    setLoading(false);
   }
 };
 
@@ -191,32 +232,37 @@ export default function Attendance() {
         date: selectedDate,
         status: status
       };
-      let response;
+
       if (existingId) {
-          // Update existing record
-          response = await authFetchWithRefresh(`${BASE_URL}/attendance/${existingId}`, {
-            method: 'PATCH',
-            body: JSON.stringify({ status: status }) 
-          });
-        } else {
-          // Create new record
-          response = await authFetchWithRefresh(`${BASE_URL}/attendance`, {
-            method: 'POST',
-            body: JSON.stringify(attendanceRecord) 
-          });
-        }
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Failed to save attendance for ${student.name}: HTTP error! status: ${response.status} - ${errorText}`);
-        }
+        // Update existing record
+        const response = await fetch(`${BASE_URL}/attendance/${existingId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getToken()}`
+          },
+          body: JSON.stringify({ status: status })
+        });
         return response.json();
-      });
+      } else {
+        // Create new record
+        const response = await fetch(`${BASE_URL}/attendance`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getToken()}`
+          },
+          body: JSON.stringify(attendanceRecord)
+        });
+        return response.json();
+      }
+    });
 
     const results = await Promise.all(promises);
     const hasError = results.some(result => !result.success);
 
     if (hasError) {
-      setError('Some attendance records failed to save. Check console for details.');
+      setError('Some attendance records failed to save');
     } else {
       setSuccess('Attendance saved successfully!');
       fetchExistingAttendance(); // Refresh the attendance data
@@ -224,8 +270,8 @@ export default function Attendance() {
     }
 
   } catch (err) {
-    console.error('Failed to save attendance:', err);
-    setError('Failed to save attendance: ' + err.message);
+    setError('Failed to save attendance');
+    console.error(err);
   } finally {
     setLoading(false);
   }

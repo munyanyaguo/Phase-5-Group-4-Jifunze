@@ -1,16 +1,52 @@
 // src/services/courseService.js
+import { authFetchWithRefresh } from "./authServices";
+
 const API_URL = "http://127.0.0.1:5000/api";
 
-// Helper to get token (matching your Attendance.jsx pattern)
+// Helper to get token
 const getToken = () => localStorage.getItem('token');
 
-// Get educator's courses (matching your working Attendance.jsx pattern)
+// Decode JWT helper
+const decodeJwt = (token) => {
+  try {
+    const payload = token.split('.')[1];
+    let base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const pad = base64.length % 4;
+    if (pad) base64 += '='.repeat(4 - pad);
+    return JSON.parse(atob(base64));
+  } catch {
+    return null;
+  }
+};
+
+// Get educator's courses - FIXED to match your API structure
 export async function fetchEducatorCourses() {
   try {
     const token = getToken();
     if (!token) throw new Error('No authentication token found');
 
-    const response = await fetch(`${API_URL}/courses`, {
+    // Decode JWT to get educator info
+    const claims = decodeJwt(token) || {};
+    const schoolId = claims.school_id;
+    const educatorEmail = claims.email;
+
+    console.log("Token claims:", { schoolId, educatorEmail });
+
+    // Build the endpoint with school_id if available
+    let endpoint = `${API_URL}/courses`;
+    const params = new URLSearchParams();
+    
+    if (schoolId) {
+      params.append('school_id', schoolId);
+    }
+    
+    if (params.toString()) {
+      endpoint += `?${params.toString()}`;
+    }
+
+    console.log("Fetching from:", endpoint);
+
+    const response = await fetch(endpoint, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -21,49 +57,59 @@ export async function fetchEducatorCourses() {
       if (response.status === 401) {
         throw new Error('Authentication failed. Please log in again.');
       }
+      if (response.status === 403) {
+        throw new Error('Not authorized to view courses');
+      }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
-    
-    if (data.success) {
-      // Get current user info to filter courses
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const educatorId = user.id || user.public_id;
-      
-      const allCourses = data.data.items || data.data || [];
-      
-      // Filter courses for current educator if we have their ID
-      if (educatorId) {
-        const filteredCourses = allCourses.filter(course => 
-          course.educator_id === educatorId || 
-          course.educator?.id === educatorId ||
-          course.educator?.public_id === educatorId
-        );
-        
-        return {
-          success: true,
-          data: filteredCourses,
-          total: filteredCourses.length
-        };
-      }
-      
-      // Return all courses if we can't identify educator
-      return {
-        success: true,
-        data: allCourses,
-        total: allCourses.length
-      };
-    } else {
-      throw new Error(data.message || 'Failed to fetch courses');
+    console.log("API Response:", data);
+
+    if (!data.success) {
+      return { success: true, data: [], total: 0 };
     }
+
+    // YOUR API RETURNS: data.data.items (array of courses)
+    const allCourses = data?.data?.items || [];
+    console.log("All courses from API:", allCourses);
+
+    // Filter by educator when possible; otherwise, don't over-filter
+    const user = (() => { try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; } })();
+    const educatorId = user.id || user.public_id;
+    const filtered = allCourses.filter((course) => {
+      // Preferred: match by educator email in nested educator
+      if (educatorEmail && course?.educator?.email) {
+        return course.educator.email === educatorEmail;
+      }
+      // Fallbacks: match by known educator identifiers
+      if (educatorId && typeof course?.educator_id !== 'undefined') {
+        return course.educator_id === educatorId;
+      }
+      if (educatorId && course?.educator?.id) {
+        return course.educator.id === educatorId;
+      }
+      if (educatorId && course?.educator?.public_id) {
+        return course.educator.public_id === educatorId;
+      }
+      // If we can't determine educator identity, include the course rather than hiding it
+      return true;
+    });
+
+    console.log("Filtered courses for educator:", filtered);
+
+    return { 
+      success: true, 
+      data: filtered, 
+      total: filtered.length 
+    };
   } catch (error) {
     console.error('Error fetching educator courses:', error);
     throw error;
   }
 }
 
-// Get all courses with pagination and filters (keeping your original authFetch pattern)
+// Get all courses with pagination and filters
 export async function fetchCourses(params = {}) {
   const queryParams = new URLSearchParams();
   
@@ -98,6 +144,8 @@ export async function fetchCourse(courseId) {
 
   const result = await response.json();
   if (!response.ok) throw new Error(result.message || "Failed to fetch course");
+  
+  // YOUR API RETURNS: { success: true, data: { id, title, ... } }
   return result.data;
 }
 

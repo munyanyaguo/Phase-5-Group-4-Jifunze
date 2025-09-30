@@ -11,7 +11,6 @@ import {
   Video, 
   Image, 
   FileText,
-  Presentation,
   Download,
   Eye
 } from 'lucide-react';
@@ -28,7 +27,7 @@ const getResourceIcon = (type) => {
     case 'image': return <Image size={16} className="text-green-500" />;
     case 'pdf': return <FileText size={16} className="text-red-500" />;
     case 'document': return <File size={16} className="text-purple-500" />;
-    case 'presentation': return <Presentation size={16} className="text-orange-500" />;
+    case 'presentation': return <File size={16} className="text-orange-500" />;
     case 'url': return <ExternalLink size={16} className="text-indigo-500" />;
     default: return <File size={16} className="text-gray-500" />;
   }
@@ -75,7 +74,8 @@ export default function EducatorResources() {
     try {
       setLoading(true);
       const result = await fetchResources(pagination.page, pagination.per_page);
-      setResources(result.data || []);
+      const list = Array.isArray(result.data) ? result.data : [];
+      setResources(list);
       setPagination(prev => ({
         ...prev,
         total: result.total || 0,
@@ -131,7 +131,7 @@ export default function EducatorResources() {
   };
 
   // Filter resources based on search and filters
-  const filteredResources = resources.filter(resource => {
+  const filteredResources = (Array.isArray(resources) ? resources : []).filter(resource => {
     const matchesSearch = resource.title.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCourse = !selectedCourse || resource.course_id.toString() === selectedCourse;
     const matchesType = !selectedType || resource.type === selectedType;

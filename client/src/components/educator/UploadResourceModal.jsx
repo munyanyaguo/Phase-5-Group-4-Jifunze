@@ -29,6 +29,8 @@ export default function UploadResourceModal({
     formState: { errors }, 
     reset, 
     setValue,
+    setError,
+    clearErrors,
     watch 
   } = useForm();
 
@@ -54,7 +56,8 @@ export default function UploadResourceModal({
     const files = e.dataTransfer.files;
     if (files && files[0]) {
       setSelectedFile(files[0]);
-      setValue('file', files[0]);
+      setValue('file', files[0], { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+      clearErrors('file');
       
       // Auto-detect type based on file extension
       const fileName = files[0].name.toLowerCase();
@@ -71,7 +74,8 @@ export default function UploadResourceModal({
     const file = e.target.files[0];
     if (file) {
       setSelectedFile(file);
-      setValue('file', file);
+      setValue('file', file, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+      clearErrors('file');
     }
   };
 
@@ -83,7 +87,11 @@ export default function UploadResourceModal({
       course_id: parseInt(data.course_id),
     };
 
-    if (uploadType === 'file' && selectedFile) {
+    if (uploadType === 'file') {
+      if (!selectedFile) {
+        setError('file', { type: 'manual', message: 'File is required' });
+        return;
+      }
       formData.file = selectedFile;
     } else if (uploadType === 'url' && data.url) {
       formData.url = data.url;
