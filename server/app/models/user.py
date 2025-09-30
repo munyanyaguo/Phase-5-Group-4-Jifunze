@@ -40,11 +40,7 @@ class User(BaseModel):
         foreign_keys="Enrollment.user_public_id",
     )
     attendance = db.relationship("Attendance", back_populates="user", foreign_keys="Attendance.user_public_id")
-    verifications = db.relationship(
-        "Attendance",
-        back_populates="verifier",
-        foreign_keys="Attendance.verified_by",
-    )
+    # Note: removed verifications relationship to match current Attendance model/table
     reset_passwords = db.relationship("ResetPassword", back_populates="user")
     # Password methods
 
