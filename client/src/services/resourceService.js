@@ -25,13 +25,16 @@ export async function fetchResources(page = 1, perPage = 10) {
     }
 
     const result = await response.json();
-    
+
     if (result.success) {
+      const data = result.data || {};
+      const items = data.resources || data.items || [];
+      const meta = data.meta || {};
       return {
-        data: result.data.items || result.data || [],
-        total: result.total || 0,
-        pages: result.pages || 0,
-        page: result.page || page
+        data: items,
+        total: meta.total || 0,
+        pages: meta.pages || 0,
+        page: meta.page || page
       };
     } else {
       throw new Error(result.message || "Failed to fetch resources");

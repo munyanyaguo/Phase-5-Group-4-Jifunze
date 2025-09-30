@@ -27,8 +27,8 @@ import EducatorDashboard from "./pages/educator/Dashboard";
 import EducatorStudents from "./pages/educator/Students";
 import EducatorResources from "./pages/educator/Resources";
 import Attendance from "./pages/educator/Attendance";
-import Classes from "./pages/educator/Classes";
-import ClassDetails from "./pages/educator/ClassDetails";
+import Classes from "./pages/educator/Courses";
+import ClassDetails from "./pages/educator/CourseDetails";
 import StudentProfile from "./pages/educator/StudentProfile";
 
 // Student pages (NEW)

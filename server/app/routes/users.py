@@ -325,6 +325,9 @@ class UserProfileResource(Resource):
             db.session.rollback()
             return error_response("Something went wrong", {"error": str(e)}, status_code=500)
 
+    
+
+
 
 class UserDashboardResource(Resource):
     @jwt_required()

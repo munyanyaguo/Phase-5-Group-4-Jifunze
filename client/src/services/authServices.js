@@ -130,3 +130,27 @@ export function getRole() {
 export function isAuthenticated() {
   return !!getToken();
 }
+
+// 🔹 Authenticated fetch with Bearer token
+export async function authFetchWithRefresh(url, options = {}) {
+  const token = getToken();
+
+  const headers = {
+    ...(options.headers || {}),
+    "Content-Type": "application/json",
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${API_URL}${url}`, { ...options, headers });
+
+  if (res.status === 401) {
+    // Optional: try refresh flow later
+    localStorage.clear();
+    throw new Error("Session expired, please log in again.");
+  }
+
+  return handleResponse(res);
+}
