@@ -30,6 +30,7 @@ import Attendance from "./pages/educator/Attendance";
 import Classes from "./pages/educator/Courses";
 import ClassDetails from "./pages/educator/CourseDetails";
 import StudentProfile from "./pages/educator/StudentProfile";
+import EducatorMessages from "./pages/educator/Messages";
 
 // Student pages (NEW)
 import StudentDashboard from "./pages/Student/StudentDashboard";
@@ -106,8 +107,14 @@ export default function App() {
           <Route path="students" element={<EducatorStudents />} />
           <Route path="resources" element={<EducatorResources />} />
           <Route path="attendance" element={<Attendance />} />
+          {/* Classes (primary) */}
           <Route path="classes" element={<Classes />} />
           <Route path="classes/:id" element={<ClassDetails />} />
+          {/* Courses alias to support sidebar links */}
+          <Route path="courses" element={<Classes />} />
+          <Route path="courses/:id" element={<ClassDetails />} />
+          {/* Messages */}
+          <Route path="messages" element={<EducatorMessages />} />
           <Route path="students/:id" element={<StudentProfile />} />
         </Route>
 

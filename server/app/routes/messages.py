@@ -40,9 +40,9 @@ class MessageListResource(Resource):
         """
         claims = get_jwt()
         role = claims.get("role")
-        user_internal_id = claims.get("sub")
+        current_public_id = claims.get("sub")
 
-        user = User.query.filter_by(public_id=user_internal_id).first()
+        user = User.query.filter_by(public_id=current_public_id).first()
         if not user:
             return error_response("User not found.", 404)
 
@@ -61,11 +61,11 @@ class MessageListResource(Resource):
             return scope_err
 
         # Role restrictions
-        if role == "educator" and course.educator_id != user_internal_id:
+        if role == "educator" and course.educator_id != user.id:
             return error_response("You can only post in your own courses.", 403)
 
         if role == "student":
-            enrolled = Enrollment.query.filter_by(user_id=user_internal_id, course_id=course.id).first()
+            enrolled = Enrollment.query.filter_by(user_public_id=user.public_id, course_id=course.id).first()
             if not enrolled:
                 return error_response("You are not enrolled in this course.", 403)
 
@@ -100,7 +100,7 @@ class MessageResource(Resource):
     def put(self, message_id):
         """Replace message (manager or owner)"""
         claims = get_jwt()
-        role, user_internal_id = claims.get("role"), claims.get("sub")
+        role, current_public_id = claims.get("role"), claims.get("sub")
 
         message = Message.query.get(message_id)
         if not message:
@@ -112,7 +112,7 @@ class MessageResource(Resource):
             return scope_err
 
         # Only manager or message owner
-        if role != "manager" and message.user_public_id != message.user.public_id:
+        if role != "manager" and message.user_public_id != current_public_id:
             return error_response("Forbidden.", 403)
 
         json_data = request.get_json() or {}
@@ -133,7 +133,7 @@ class MessageResource(Resource):
     def patch(self, message_id):
         """Partial update (manager or owner)"""
         claims = get_jwt()
-        role, user_internal_id = claims.get("role"), claims.get("sub")
+        role, current_public_id = claims.get("role"), claims.get("sub")
 
         message = Message.query.get(message_id)
         if not message:
@@ -143,7 +143,7 @@ class MessageResource(Resource):
         if scope_err:
             return scope_err
 
-        if role != "manager" and message.user_public_id != message.user.public_id:
+        if role != "manager" and message.user_public_id != current_public_id:
             return error_response("Forbidden.", 403)
 
         json_data = request.get_json() or {}
@@ -164,7 +164,7 @@ class MessageResource(Resource):
     def delete(self, message_id):
         """Delete message (manager or owner)"""
         claims = get_jwt()
-        role, user_internal_id = claims.get("role"), claims.get("sub")
+        role, current_public_id = claims.get("role"), claims.get("sub")
 
         message = Message.query.get(message_id)
         if not message:
@@ -174,7 +174,7 @@ class MessageResource(Resource):
         if scope_err:
             return scope_err
 
-        if role != "manager" and message.user_public_id != message.user.public_id:
+        if role != "manager" and message.user_public_id != current_public_id:
             return error_response("Forbidden.", 403)
 
         try:

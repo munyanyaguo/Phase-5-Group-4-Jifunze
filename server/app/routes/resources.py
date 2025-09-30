@@ -4,6 +4,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from app.extensions import db, paginate
 from functools import wraps
 from werkzeug.utils import secure_filename  # For file uploads (if supported)
+import os
 
 from app.models import Resource, Course, Enrollment
 from app.schemas.resources import resource_schema, resources_schema
@@ -61,7 +62,12 @@ class ResourceListApi(ApiResource):
         if file:
             # Sanitize filename before saving
             filename = secure_filename(file.filename)
-            file.save(f"uploads/{filename}")  # Example path
+            # Ensure uploads directory exists
+            upload_dir = os.path.join(os.getcwd(), "uploads")
+            os.makedirs(upload_dir, exist_ok=True)
+            file_path = os.path.join(upload_dir, filename)
+            file.save(file_path)
+            # Public URL path (adjust if serving static differently)
             url = f"/uploads/{filename}"
 
         # Validate course existence
