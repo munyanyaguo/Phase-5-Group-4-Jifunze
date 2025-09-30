@@ -42,6 +42,9 @@ const StudentMessages = ({ courseId }) => {
 
       if (data.success) {
         setEnrolledCourses(data.data.enrollments);
+        if (data.data.enrollments.length > 0) {
+          setSelectedCourseId(data.data.enrollments[0].course_id);
+        }
       } else {
         setError(data.message || "Failed to load courses");
       }
@@ -63,7 +66,7 @@ const StudentMessages = ({ courseId }) => {
       else setLoadingMore(true);
 
       const res = await fetch(
-        `${API_URL}/api/messages?course_id=${effectiveCourseId}&page=${pageNumber}&per_page=${PER_PAGE}`,
+        `${API_URL}/api/messages?course_id=${parseInt(effectiveCourseId)}&page=${pageNumber}&per_page=${PER_PAGE}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -99,35 +102,88 @@ const StudentMessages = ({ courseId }) => {
   // Send new message
   const handleSendMessage = async e => {
     e.preventDefault();
-    if (!newMessage.trim() || !effectiveCourseId) return;
+
+    //  validation before sending message
+    const isEnrolled = !courseId && enrolledCourses.some(
+      enrollment => parseInt(enrollment.course_id) === parseInt(effectiveCourseId)
+    );
+
+    if (!courseId && !isEnrolled) {
+      setError("You are not enrolled in this course.");
+      return;
+    }
+
+    // Validate message content
+    if (!newMessage.trim()) {
+      setError("Message cannot be empty.");
+      return;
+    }
+
+    if (newMessage.trim().length < 2) {
+      setError("Message must be at least 2 characters long.");
+      return;
+    }
+
+    // Validate course selection
+    if (!effectiveCourseId) {
+      setError("Please select a course first.");
+      return;
+    }
+
+    // For standalone component, validate enrollment
+    if (!courseId) {
+      const isEnrolled = enrolledCourses.some(enrollment =>
+        parseInt(enrollment.course_id) === parseInt(effectiveCourseId)
+      );
+
+      if (!isEnrolled) {
+        setError("You are not enrolled in this course.");
+        return;
+      }
+    }
+
+    console.log("All validations passed, sending message to course:", effectiveCourseId);
 
     setSending(true);
+    setError("");
     const token = localStorage.getItem("token");
 
     try {
+      const requestData = {
+        course_id: parseInt(effectiveCourseId),
+        content: newMessage.trim(),
+      };
+
+      console.log("📤 Sending message:", requestData);
+
       const res = await fetch(`${API_URL}/api/messages`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ course_id: effectiveCourseId, content: newMessage }),
+        body: JSON.stringify(requestData),
       });
 
       const data = await res.json();
+      console.log("📥 Response:", res.status, data);
 
       if (data.success) {
         setMessages(prev => [...prev, data.data]);
         setNewMessage("");
-      } else {
-        setError(data.message || "Failed to send message");
+      }
+      else {
+        console.error("❌ Validation failed:", data.errors || data.message);
+        setError(`Validation failed: ${data.errors || data.message}`);
       }
     } catch (err) {
-      setError(err.message || "Network error");
+      console.error("❌ Network error:", err);
+      setError("Network error occurred.");
     } finally {
       setSending(false);
     }
   };
+
 
   // Filter messages by selected course
   const filteredMessages = messages.filter(msg => msg.course_id === effectiveCourseId);
@@ -148,8 +204,12 @@ const StudentMessages = ({ courseId }) => {
       {/* Course selection dropdown */}
       {!courseId && enrolledCourses.length > 0 && (
         <select
-          value={selectedCourseId}
-          onChange={e => setSelectedCourseId(e.target.value)}
+          value={selectedCourseId || ""}
+          onChange={e => {
+            const courseId = parseInt(e.target.value) || "";
+            console.log(" Selected course:", courseId);
+            setSelectedCourseId(courseId);
+          }}
           className="mb-2 border p-1 rounded w-full"
         >
           <option value="">Choose a course...</option>
@@ -193,9 +253,8 @@ const StudentMessages = ({ courseId }) => {
                         )}
                         <div className={`flex mb-1 ${isSelf ? "justify-end" : "justify-start"}`}>
                           <div
-                            className={`max-w-xs p-2 rounded-lg shadow ${
-                              isSelf ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-800"
-                            }`}
+                            className={`max-w-xs p-2 rounded-lg shadow ${isSelf ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-800"
+                              }`}
                           >
                             {!isSelf && <div className="font-semibold text-sm mb-1">{msg.user?.name || "Teacher"}</div>}
                             <div>{msg.content}</div>
