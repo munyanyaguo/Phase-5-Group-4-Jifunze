@@ -21,24 +21,17 @@ export default function EducatorDashboard() {
 
         // 2) Aggregate unique students from enrollments per course
         const enrollmentPromises = courseIds.map(async (courseId) => {
-          const res = await fetch(`${API_URL}/enrollments?course_id=${courseId}&per_page=1000`, {
+          const res = await fetch(`${API_URL}/enrollments?course_id=${courseId}&page=1&per_page=1`, {
             headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
           });
           const body = await res.json();
-          const items = res.ok && body.success ? (body?.data?.enrollments || []) : [];
-          return items.map((e) => e.user_public_id || e?.user?.public_id).filter(Boolean);
+          const total = (res.ok && body.success && body?.data?.meta?.total) ? body.data.meta.total : 0;
+          return total;
         });
-        const enrolled = (await Promise.all(enrollmentPromises)).flat();
-        const uniqueStudents = new Set(enrolled);
+        const perCourseTotals = await Promise.all(enrollmentPromises);
+        const studentsTotal = perCourseTotals.reduce((sum, n) => sum + (Number.isFinite(n) ? n : 0), 0);
 
-        // 3) Count resources uploaded by this educator or in their courses
-        // We’ll count all resources and then filter client-side
-        const resResources = await fetch(`${API_URL}/resources?per_page=1000`, {
-          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        });
-        const resBody = await resResources.json();
-        const allResources = resResources.ok && resBody.success ? (resBody?.data?.resources || []) : [];
-
+        // 3) Count resources across educator's courses using meta.total per course
         const claims = (() => {
           try {
             const payload = token.split(".")[1];
@@ -47,19 +40,26 @@ export default function EducatorDashboard() {
             return JSON.parse(atob(base64));
           } catch { return {}; }
         })();
-        const educatorPublicId = claims?.sub;
-
-        const resourcesCount = allResources.filter((r) => {
-          if (educatorPublicId && r.uploaded_by_public_id) return r.uploaded_by_public_id === educatorPublicId;
-          if (courseIds.length && typeof r.course_id !== 'undefined') return courseIds.includes(r.course_id);
-          return false;
-        }).length;
+        const resourceCountPromises = courseIds.map(async (courseId) => {
+          try {
+            const rr = await fetch(`${API_URL}/courses/${courseId}/resources?page=1&per_page=1`, {
+              headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            });
+            const rb = await rr.json();
+            const total = (rr.ok && rb.success && rb?.data?.meta?.total) ? rb.data.meta.total : 0;
+            return total;
+          } catch {
+            return 0;
+          }
+        });
+        const perCourseResourceTotals = await Promise.all(resourceCountPromises);
+        const resourcesCount = perCourseResourceTotals.reduce((sum, n) => sum + (Number.isFinite(n) ? n : 0), 0);
 
         // Unread messages best-effort: teacher's courses messages count (no read state in API yet)
         const unreadApprox = 0;
 
         setStats({
-          students: uniqueStudents.size,
+          students: studentsTotal,
           classes: courses.length,
           resources: resourcesCount,
           sessions: unreadApprox,
