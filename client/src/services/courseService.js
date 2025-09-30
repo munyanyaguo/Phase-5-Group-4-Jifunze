@@ -30,7 +30,7 @@ export async function fetchEducatorCourses() {
     const schoolId = claims.school_id;
     const educatorEmail = claims.email;
 
-    console.log("Token claims:", { schoolId, educatorEmail });
+    // console.debug("Token claims:", { schoolId, educatorEmail });
 
     // Build the endpoint with school_id if available
     let endpoint = `${API_URL}/courses`;
@@ -44,7 +44,7 @@ export async function fetchEducatorCourses() {
       endpoint += `?${params.toString()}`;
     }
 
-    console.log("Fetching from:", endpoint);
+    // console.debug("Fetching from:", endpoint);
 
     const response = await fetch(endpoint, {
       headers: {
@@ -64,7 +64,7 @@ export async function fetchEducatorCourses() {
     }
 
     const data = await response.json();
-    console.log("API Response:", data);
+    // console.debug("API Response:", data);
 
     if (!data.success) {
       return { success: true, data: [], total: 0 };
@@ -72,7 +72,7 @@ export async function fetchEducatorCourses() {
 
     // YOUR API RETURNS: data.data.items (array of courses)
     const allCourses = data?.data?.items || [];
-    console.log("All courses from API:", allCourses);
+    // console.debug("All courses from API:", allCourses);
 
     // Filter by educator when possible; otherwise, don't over-filter
     const user = (() => { try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; } })();
@@ -96,7 +96,7 @@ export async function fetchEducatorCourses() {
       return true;
     });
 
-    console.log("Filtered courses for educator:", filtered);
+    // console.debug("Filtered courses for educator:", filtered);
 
     return { 
       success: true, 
