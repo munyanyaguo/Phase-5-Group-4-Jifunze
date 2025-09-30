@@ -49,17 +49,37 @@ export default function EducatorMessages() {
   }, [messages]);
 
   const handleSend = async () => {
-    if (!newMessage.trim() || !selectedCourseId) return;
+    const content = newMessage.trim();
+    if (!content || content.length < 2 || !selectedCourseId) return;
     try {
       setLoading(true);
-      await sendMessage(Number(selectedCourseId), newMessage.trim());
+      // Optimistic update
+      const optimistic = {
+        id: `temp-${Date.now()}`,
+        content,
+        timestamp: new Date().toISOString(),
+        user: { name: "You" },
+      };
+      setMessages((prev) => [...prev, optimistic]);
       setNewMessage("");
+
+      // Send to server
+      const saved = await sendMessage(Number(selectedCourseId), content);
+
+      // Replace optimistic with saved (refresh list to get server ordering/nesting)
       const refreshed = await fetchMessagesByCourse(Number(selectedCourseId));
       setMessages(Array.isArray(refreshed?.messages) ? refreshed.messages : []);
     } catch (e) {
       setError(e.message || "Failed to send message");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const onKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!loading) handleSend();
     }
   };
 
@@ -127,12 +147,13 @@ export default function EducatorMessages() {
               type="text"
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
+              onKeyDown={onKeyDown}
               placeholder="Type a message..."
               className="flex-1 px-3 py-2 border rounded-md"
             />
             <button
               onClick={handleSend}
-              disabled={loading || !newMessage.trim() || !selectedCourseId}
+              disabled={loading || newMessage.trim().length < 2 || !selectedCourseId}
               className="px-4 py-2 bg-blue-600 text-white rounded-md disabled:opacity-50"
             >
               <Send className="w-4 h-4" />

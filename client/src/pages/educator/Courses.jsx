@@ -10,6 +10,8 @@ export default function Courses() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [enrollmentCounts, setEnrollmentCounts] = useState({});
+  const API_URL = "http://127.0.0.1:5000/api";
 
   useEffect(() => {
     const load = async () => {
@@ -21,6 +23,24 @@ export default function Courses() {
         const items = Array.isArray(res?.data) ? res.data : [];
         
         setCourses(items);
+
+        // Fetch enrollment counts per course (using pagination meta.total)
+        const token = localStorage.getItem("token");
+        const countPromises = items.map(async (c) => {
+          try {
+            const r = await fetch(`${API_URL}/enrollments?course_id=${c.id}&page=1&per_page=1`, {
+              headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            });
+            const body = await r.json();
+            const total = (r.ok && body.success && body?.data?.meta?.total) ? body.data.meta.total : 0;
+            return [c.id, total];
+          } catch {
+            return [c.id, 0];
+          }
+        });
+        // Resolve fastest first to start painting sooner
+        const entries = await Promise.all(countPromises);
+        setEnrollmentCounts(Object.fromEntries(entries));
       } catch (e) {
         console.error("Failed to load courses:", e);
         setError(e.message || "Failed to load courses");
@@ -110,7 +130,7 @@ export default function Courses() {
                 <p className="text-gray-600 flex items-center gap-1">
                   <Users className="w-4 h-4 text-gray-400" />
                   <span className="text-sm">
-                    {course.enrollments?.length || 0} Students
+                    {enrollmentCounts[course.id] ?? 0} Students
                   </span>
                 </p>
 
