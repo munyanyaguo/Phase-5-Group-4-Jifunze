@@ -34,7 +34,9 @@ class User(BaseModel):
         foreign_keys="Enrollment.user_public_id",
     )
     attendance = db.relationship("Attendance", back_populates="user", foreign_keys="Attendance.user_public_id")
-    verifications = db.relationship("Attendance", back_populates="verifier", foreign_keys="Attendance.verified_by_public_id")
+    verifications = db.relationship("Attendance", back_populates="verifier", foreign_keys="Attendance.verified_by")
+    # NEW: schools owned by this user (manager/owner)
+    owned_schools = db.relationship("School", back_populates="owner", foreign_keys="School.owner_id")
     reset_passwords = db.relationship("ResetPassword", back_populates="user")
     # Password methods
 
