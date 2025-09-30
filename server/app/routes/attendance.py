@@ -71,6 +71,7 @@ class AttendanceListResource(Resource):
             return resp
 
         claims = get_jwt()
+        current_app.logger.debug(f"JWT claims in attendance POST: {claims}")
         json_data = request.get_json() or {}
         errors = attendance_schema.validate(json_data)
         if errors:
@@ -86,10 +87,21 @@ class AttendanceListResource(Resource):
             return scope_err
 
         try:
+            # Ensure internal user_id is populated based on provided user_public_id
+            user_public_id = json_data.get("user_public_id")
+            if not user_public_id:
+                return error_response("Missing required field: user_public_id", status_code=400)
+
+            user = User.query.filter_by(public_id=user_public_id).first()
+            if not user:
+                return error_response("User not found for provided user_public_id.", status_code=404)
+
             if "date" in json_data:
                 json_data["date"] = datetime.strptime(json_data["date"], "%Y-%m-%d").date()
 
             new_attendance = attendance_schema.load(json_data, session=db.session)
+            # Populate non-nullable internal FK
+            new_attendance.user_id = user.id
             db.session.add(new_attendance)
             db.session.commit()
 
