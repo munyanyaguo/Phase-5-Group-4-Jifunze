@@ -17,9 +17,9 @@ flask-bcrypt = "*"
 faker = "*"
 flask-restful = "*"
 marshmallow-sqlalchemy = "*"
-flask-jwt-extended = "*"
 flask-marshmallow = "*"
 pytest = "*"
+flask-jwt-extended = "*"
 
 [dev-packages]
 black = "*"
