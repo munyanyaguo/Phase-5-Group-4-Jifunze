@@ -1,7 +1,7 @@
 // src/pages/educator/Dashboard.jsx
 import React, { useEffect, useState } from "react";
 import DashboardCard from "../../components/common/DashboardCard";
-import { Users, BookOpen, Video } from "lucide-react";
+import { Users, BookOpen, MessageSquare } from "lucide-react";
 import { fetchEducatorCourses } from "../../services/courseService";
 
 export default function EducatorDashboard() {
@@ -55,11 +55,14 @@ export default function EducatorDashboard() {
           return false;
         }).length;
 
+        // Unread messages best-effort: teacher's courses messages count (no read state in API yet)
+        const unreadApprox = 0;
+
         setStats({
           students: uniqueStudents.size,
           classes: courses.length,
           resources: resourcesCount,
-          sessions: 0,
+          sessions: unreadApprox,
         });
       } catch (e) {
         console.error("Failed to load educator dashboard stats", e);
@@ -76,7 +79,7 @@ export default function EducatorDashboard() {
         <DashboardCard title="Students" value={stats.students} icon={<Users />} />
         <DashboardCard title="Classes" value={stats.classes} icon={<BookOpen />} />
         <DashboardCard title="Resources" value={stats.resources} icon={<BookOpen />} />
-        <DashboardCard title="Sessions" value={stats.sessions} icon={<Video />} />
+        <DashboardCard title="Unread" value={stats.sessions} icon={<MessageSquare />} />
       </div>
     </div>
   );
