@@ -24,20 +24,54 @@ class User(BaseModel):
     school_id = db.Column(db.Integer, db.ForeignKey("schools.id", use_alter=True), nullable=True)
 
     # Relationships
-    school = db.relationship("School", back_populates="users", foreign_keys="User.school_id")
-    courses = db.relationship("Course", back_populates="educator", foreign_keys="Course.educator_id")
-    resources = db.relationship("Resource", back_populates="uploader", foreign_keys="Resource.uploaded_by_public_id")
-    messages = db.relationship("Message", back_populates="user", foreign_keys="Message.user_public_id")
+    school = db.relationship(
+        "School",
+        back_populates="users",
+        foreign_keys=[school_id]
+    )
+    owned_schools = db.relationship(
+        "School",
+        back_populates="owner",
+        cascade="all, delete-orphan",
+        foreign_keys="School.owner_id"
+    )
+    courses = db.relationship(
+        "Course",
+        back_populates="educator",
+        foreign_keys="Course.educator_id"
+    )
+    resources = db.relationship(
+        "Resource",
+        back_populates="uploader",
+        foreign_keys="Resource.uploaded_by_public_id"
+    )
+    messages = db.relationship(
+        "Message",
+        back_populates="user",
+        foreign_keys="Message.user_public_id"
+    )
     enrollments = db.relationship(
         "Enrollment",
         back_populates="user",
         cascade="all, delete-orphan",
         lazy="select",
-        foreign_keys="Enrollment.user_public_id",
+        foreign_keys="Enrollment.user_public_id"
     )
-    attendance = db.relationship("Attendance", back_populates="user", foreign_keys="Attendance.user_public_id")
-    verifications = db.relationship("Attendance", back_populates="verifier", foreign_keys="Attendance.verified_by_public_id")
-    reset_passwords = db.relationship("ResetPassword", back_populates="user")
+    attendance = db.relationship(
+        "Attendance",
+        back_populates="user",
+        foreign_keys="Attendance.user_public_id"
+    )
+    verifications = db.relationship(
+        "Attendance",
+        back_populates="verifier",
+        foreign_keys="Attendance.verified_by_public_id"
+    )
+    reset_passwords = db.relationship(
+        "ResetPassword",
+        back_populates="user",
+        foreign_keys="ResetPassword.user_id"
+    )
     # Password methods
 
     def set_password(self, password: str):
