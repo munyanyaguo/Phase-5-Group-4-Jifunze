@@ -47,9 +47,17 @@ class MessageListResource(Resource):
             return error_response("User not found.", 404)
 
         json_data = request.get_json() or {}
-        errors = message_schema.validate(json_data)
-        if errors:
-            return error_response("Validation failed.", 400, errors)
+        # Minimal manual validation to avoid dump_only conflicts
+        course_id = json_data.get("course_id")
+        content = (json_data.get("content") or "").strip()
+
+        field_errors = {}
+        if not isinstance(course_id, int):
+            field_errors["course_id"] = ["Must be an integer."]
+        if len(content) < 2:
+            field_errors["content"] = ["Must be at least 2 characters long."]
+        if field_errors:
+            return error_response("Validation failed.", 400, field_errors)
 
         course = Course.query.get(json_data.get("course_id"))
         if not course:
@@ -65,20 +73,23 @@ class MessageListResource(Resource):
             return error_response("You can only post in your own courses.", 403)
 
         if role == "student":
-            enrolled = Enrollment.query.filter_by(user_id=user_internal_id, course_id=course.id).first()
+            # Enrollment uses user_public_id, not internal numeric id
+            enrolled = Enrollment.query.filter_by(user_public_id=user.public_id, course_id=course.id).first()
             if not enrolled:
                 return error_response("You are not enrolled in this course.", 403)
 
         try:
-            new_message = message_schema.load({
-                **json_data,
-                "user_public_id": user.public_id,
-                "timestamp": datetime.utcnow()
-            }, session=db.session)
-
+            # Create message directly to avoid dump_only load conflicts
+            new_message = Message(
+                user_public_id=user.public_id,
+                course_id=course.id,
+                parent_id=json_data.get("parent_id"),
+                content=content,
+                timestamp=datetime.utcnow(),
+            )
             db.session.add(new_message)
             db.session.commit()
-            db.session.refresh(new_message)  # ensure nested user/course are loaded
+            db.session.refresh(new_message)
 
             return success_response("Message created successfully.", message_schema.dump(new_message), 201)
         except SQLAlchemyError as e:
@@ -185,4 +196,3 @@ class MessageResource(Resource):
             db.session.rollback()
             current_app.logger.error(f"DB error on DELETE /messages/{message_id}: {str(e)}")
             return error_response("Error deleting message.", 500, errors=str(e))
- 

@@ -228,6 +228,7 @@ const StudentDashboard = () => {
       {activeTab === "messages" && (() => {
   const firstCourse = dashboard.user?.enrollments?.[0];
   console.log("First enrolled course:", firstCourse); // safe outside JSX return
+  console.log("Course ID:", firstCourse?.course_id);
   return (
     <StudentMessages courseId={firstCourse?.course_id} />
   );

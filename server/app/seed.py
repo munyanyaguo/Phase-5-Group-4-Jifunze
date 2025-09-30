@@ -1,6 +1,6 @@
 import random
 from datetime import datetime, timedelta, timezone
-from flask.cli import with_appcontext 
+from flask.cli import with_appcontext
 import click
 from faker import Faker
 import uuid
@@ -13,7 +13,7 @@ from app.models import (
     Message,
     Resource,
     School,
-    User,ResetPassword
+    User, ResetPassword
 )
 
 fake = Faker()
@@ -27,7 +27,6 @@ def get_or_create_school(name: str = "Demo School", owner_id: int | None = None)
     db.session.add(school)
     db.session.commit()
     return school
-
 
 
 def get_or_create_user(email: str, name: str, role: str, school_id: int) -> User:
@@ -56,28 +55,48 @@ def create_course(title: str, educator_id: int, school_id: int) -> Course:
     return course
 
 
-def enroll_user(user_id: int, course_id: int, when: datetime) -> Enrollment:
-    existing = Enrollment.query.filter_by(user_id=user_id, course_id=course_id).first()
+def enroll_user(user_public_id: str, course_id: int, when: datetime) -> Enrollment:
+    existing = Enrollment.query.filter_by(user_public_id=user_public_id, course_id=course_id).first()
     if existing:
         return existing
-    enrollment = Enrollment(user_id=user_id, course_id=course_id, date_enrolled=when)
+
+    # fetch internal user id to satisfy NOT NULL user_id column
+    user = User.query.filter_by(public_id=user_public_id).first()
+    if not user:
+        print(f"Warning: User with public_id {user_public_id} not found; skipping enrollment")
+        return None
+
+    enrollment = Enrollment(
+        user_public_id=user_public_id,
+        user_id=user.id,
+        course_id=course_id,
+        date_enrolled=when,
+    )
     db.session.add(enrollment)
     db.session.commit()
     return enrollment
 
 
-def record_attendance(user_id: int, course_id: int, when: datetime, status: str) -> Attendance:
+def record_attendance(user_public_id: str, course_id: int, when: datetime, status: str) -> Attendance:
+    # Get user_id from user_public_id
+    user = User.query.filter_by(public_id=user_public_id).first()
+    if not user:
+        print(f"Warning: User with public_id {user_public_id} not found")
+        return None
+
     existing = Attendance.query.filter_by(
-        user_id=user_id, course_id=course_id, date=when.date()
+        user_public_id=user_public_id, course_id=course_id, date=when.date()
     ).first()
     if existing:
         return existing
+
     att = Attendance(
-        user_id=user_id,
+        user_public_id=user_public_id,
+        user_id=user.id,
         course_id=course_id,
         date=when.date(),
         status=status,
-        verified_by=None,
+        verified_by_public_id=None,
     )
     db.session.add(att)
     db.session.commit()
@@ -100,9 +119,10 @@ def add_resource(course_id: int, uploader_id: int, title: str) -> Resource:
     return res
 
 
-def add_message(course_id: int, user_id: int, content: str, parent_id: int | None = None) -> Message:
+def add_message(course_id: int, user_public_id: str, content: str, parent_id: int | None = None) -> Message:
+    # Messages table only uses user_public_id, so we don't need to fetch the user object
     msg = Message(
-        user_id=user_id,
+        user_public_id=user_public_id,
         course_id=course_id,
         parent_id=parent_id,
         content=content,
@@ -111,6 +131,7 @@ def add_message(course_id: int, user_id: int, content: str, parent_id: int | Non
     db.session.add(msg)
     db.session.commit()
     return msg
+
 
 def create_reset_password(user_id: int) -> ResetPassword:
     token = str(uuid.uuid4())
@@ -137,7 +158,7 @@ def seed():
 @with_appcontext
 @click.option("--students", default=5, show_default=True, help="Number of students")
 @click.option("--educators", default=1, show_default=True, help="Number of educators")
-@click.option("--courses", default=2, show_default=True, help="Number of courses")
+@click.option("--courses", default=10, show_default=True, help="Number of courses")
 def seed_run(students: int, educators: int, courses: int):
     manager = get_or_create_user(
         email="manager@demo.com", name="Manager", role="manager", school_id=None
@@ -180,21 +201,21 @@ def seed_run(students: int, educators: int, courses: int):
     now = datetime.now(timezone.utc)
     for course in course_rows:
         for s in student_users:
-            enroll_user(s.id, course.id, now - timedelta(days=random.randint(1, 10)))
+            enroll_user(s.public_id, course.id, now - timedelta(days=random.randint(1, 10)))
             # attendance for past few days
             for d in range(3):
                 day = now - timedelta(days=d)
                 record_attendance(
-                    user_id=s.id,
+                    user_public_id=s.public_id,
                     course_id=course.id,
                     when=day,
                     status=random.choice(["present", "absent", "late"]),
                 )
         # sample resources and chat
         add_resource(course.id, course.educator_id, f"Syllabus {course.title}")
-        add_message(course.id, course.educator_id, "Welcome to the course!")
+        add_message(course.id, course.educator.public_id, "Welcome to the course!")
         if student_users:
-            add_message(course.id, student_users[0].id, "Thank you!", parent_id=None)
+            add_message(course.id, student_users[0].public_id, "Thank you!", parent_id=None)
 
     click.echo("Seed complete (idempotent). Default password for demo users: password")
 

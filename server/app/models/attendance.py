@@ -8,6 +8,7 @@ class Attendance(BaseModel):
     __tablename__ = "attendance"
 
     user_public_id = db.Column(db.String(50), db.ForeignKey("users.public_id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     course_id = db.Column(db.Integer, db.ForeignKey("courses.id"), nullable=False)
     date = db.Column(db.Date, nullable=False)
     status = db.Column(db.String(20), nullable=False)  # present, absent, late

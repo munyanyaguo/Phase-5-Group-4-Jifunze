@@ -28,11 +28,18 @@ class User(BaseModel):
     courses = db.relationship("Course", back_populates="educator", foreign_keys="Course.educator_id")
     resources = db.relationship("Resource", back_populates="uploader", foreign_keys="Resource.uploaded_by_public_id")
     messages = db.relationship("Message", back_populates="user", foreign_keys="Message.user_public_id")
-    enrollments = db.relationship("Enrollment", back_populates="user", cascade="all, delete-orphan", lazy="select")
+    enrollments = db.relationship(
+        "Enrollment",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="select",
+        foreign_keys="Enrollment.user_public_id",
+    )
     attendance = db.relationship("Attendance", back_populates="user", foreign_keys="Attendance.user_public_id")
     verifications = db.relationship("Attendance", back_populates="verifier", foreign_keys="Attendance.verified_by_public_id")
     reset_passwords = db.relationship("ResetPassword", back_populates="user")
     # Password methods
+
     def set_password(self, password: str):
         self.password_hash = bcrypt.generate_password_hash(password).decode("utf-8")
 
