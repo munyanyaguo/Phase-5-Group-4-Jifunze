@@ -1,4 +1,4 @@
-"""merge multiple heads
+"""merge multiple heads (no-op)
 
 Revision ID: 1ffd9a2da04f
 Revises: 003d5328a85a, 15fd3a346d2e
@@ -17,8 +17,10 @@ depends_on = None
 
 
 def upgrade():
+    # This is a merge migration; no schema changes.
     pass
 
 
 def downgrade():
+    # This is a merge migration; no schema changes.
     pass

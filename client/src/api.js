@@ -1,5 +1,6 @@
 // src/services/api.js
-const API_URL = "http://127.0.0.1:5000/api";
+import { API_URL as API_BASE } from "./config";
+const API_URL = `${API_BASE}/api`;
 
 // ✅ Helper: get token
 function getToken() {

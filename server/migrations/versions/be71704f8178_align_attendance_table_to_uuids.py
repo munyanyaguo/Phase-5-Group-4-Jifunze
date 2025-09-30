@@ -30,11 +30,12 @@ def upgrade():
 
     # Backfill if old verified_by column exists
     if "verified_by" in attendance_cols:
+        # verified_by may be stored as VARCHAR in some environments; cast for safety
         op.execute("""
         UPDATE attendance a
         SET verified_by_public_id = u.public_id
         FROM users u
-        WHERE a.verified_by = u.id
+        WHERE a.verified_by::varchar = u.id::varchar
         """)
 
     with op.batch_alter_table("attendance") as batch_op:
