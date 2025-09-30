@@ -14,7 +14,7 @@ class AttendanceSchema(BaseSchema):
     course_id = ma.auto_field()
     date = ma.auto_field()
     status = ma.auto_field(validate=validate.OneOf(["present", "absent", "late"]))
-    verified_by_public_id = ma.auto_field()
+    #verified_by = ma.auto_field()
 
     # Include nested course info
     course = fields.Nested(CourseSchema, dump_only=True)

@@ -2,10 +2,13 @@ from flask import request
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from marshmallow import ValidationError
-
+from werkzeug.security import generate_password_hash
 from app.models.user import User, ROLES
 from app.models.school import School
+from app.models.reset_password import ResetPassword
 from app.models.base import db
+from app.utils.responses import success_response, error_response
+from datetime import datetime, timedelta
 from app.schemas.user import (
     UserSchema, UserCreateSchema, UserUpdateSchema, PasswordChangeSchema,
     UserListResponseSchema, UserStatsSchema, UserQuerySchema
@@ -27,7 +30,7 @@ user_query_schema = UserQuerySchema()
 
 class UserResource(Resource):
     @jwt_required()
-    def get(self, user_id=None):
+    def get(self, user_id):
         """Get user by ID (int) or public_id (string) or current user"""
         try:
             user = None
@@ -290,31 +293,43 @@ class UserProfileResource(Resource):
         except Exception as e:
             return error_response("Something went wrong", {"error": str(e)}, status_code=500)
     
+
+
     @jwt_required()
     def put(self):
-        """Update current user's profile"""
+        """Update current user's profile (self or manager can update)"""
         try:
             current_user_public_id = get_jwt_identity()
-            user = User.query.filter_by(public_id=current_user_public_id).first()
+            current_user = User.query.filter_by(public_id=current_user_public_id).first()
+            current_user_claims = get_jwt()
 
-            if not user:
+            if not current_user:
                 return error_response("User not found", status_code=404)
 
-            # Get update data
-            json_data = request.get_json() or {}
-            
-            # Only allow updating name and email
-            if 'name' in json_data:
-                user.name = json_data['name']
-            if 'email' in json_data:
-                user.email = json_data['email']
+            # Validate input
+            user_update_schema.context = {"user_id": current_user.id}
+            validated_data = user_update_schema.load(request.get_json() or {})
 
-            user.save()
-            return success_response("Profile updated successfully", {"profile": user_schema.dump(user)})
+            for field, value in validated_data.items():
+                # Managers can change role/school_id, normal users cannot
+                if field in ["role", "school_id"]:
+                    if current_user_claims.get("role") == "manager":
+                        setattr(current_user, field, value)
+                else:
+                    setattr(current_user, field, value)
 
+            current_user.save()
+            return success_response("Profile updated successfully", {"profile": user_schema.dump(current_user)})
+
+        except ValidationError as err:
+            return error_response("Validation error", err.messages, status_code=400)
         except Exception as e:
             db.session.rollback()
-            return error_response("Something went wrong", {"error": str(e)}, status_code=500)
+            return error_response("Something went wrong", {"error": str(e)}, status_code=500)   
+
+    
+
+
 
 class UserDashboardResource(Resource):
     @jwt_required()
@@ -407,3 +422,51 @@ class UserPasswordChangeResource(Resource):
         except Exception as e:
             db.session.rollback()
             return error_response("Something went wrong", {"error": str(e)}, status_code=500)
+        
+class UserPasswordResetResource(Resource):
+    def post(self):
+        """
+        Reset password using a token (no login required)
+        Payload:
+        {
+            "token": "<reset-token>",
+            "new_password": "newStrongPassword123!"
+        }
+        """
+        try:
+            data = request.get_json() or {}
+            token = data.get("token")
+            new_password = data.get("new_password")
+
+            if not token or not new_password:
+                return error_response("Token and new password are required", status_code=400)
+
+            # Look up token
+            reset_entry = ResetPassword.query.filter_by(token=token).first()
+            if not reset_entry:
+                return error_response("Invalid or expired token", status_code=400)
+
+            # Check expiration (e.g., 1 hour)
+            if reset_entry.created_at + timedelta(hours=1) < datetime.utcnow():
+                db.session.delete(reset_entry)
+                db.session.commit()
+                return error_response("Token has expired", status_code=400)
+
+            # Get user
+            user = User.query.get(reset_entry.user_id)
+            if not user:
+                return error_response("User not found", status_code=404)
+
+            # Hash and update password
+            user.set_password(new_password)
+            user.save()
+
+            # Invalidate the token
+            db.session.delete(reset_entry)
+            db.session.commit()
+
+            return success_response("Password has been successfully reset")
+
+        except Exception as e:
+            db.session.rollback()
+            return error_response("Something went wrong", {"error": str(e)}, status_code=500)        

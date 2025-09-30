@@ -1,53 +1,103 @@
-// src/pages/owner/Dashboard.jsx
-import React from "react";
-import DashboardCard from "../../components/common/DashboardCard";
-import { Users, BookOpen, School, BarChart3 } from "lucide-react";
-import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+// src/pages/Dashboard.jsx
+import React, { useEffect, useState } from "react";
+import { fetchDashboard } from "../../api";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function Dashboard() {
-  // Mock stats - replace with API
-  const stats = [
-    { title: "Total Schools", value: 3, icon: <School /> },
-    { title: "Students", value: 350, icon: <Users /> },
-    { title: "Educators", value: 25, icon: <Users /> },
-    { title: "Resources", value: 120, icon: <BookOpen /> },
-  ];
+  const [dashboard, setDashboard] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        const res = await fetchDashboard();
+        setDashboard(res.dashboard);
+      } catch (err) {
+        setError(err.message || "Failed to load dashboard");
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadDashboard();
+  }, []);
+
+  if (loading) return <p className="text-gray-500">Loading dashboard...</p>;
+  if (error) return <p className="text-red-500">{error}</p>;
+  if (!dashboard) return <p>No dashboard data available.</p>;
+
+  const { stats, recent_activity, schools, total_schools } = dashboard;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Owner Dashboard</h2>
-        <p className="text-gray-500">Overview of your platform</p>
+    <div className="p-6 space-y-8">
+      <h1 className="text-3xl font-bold">Manager Dashboard</h1>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <Card className="bg-blue-50 shadow-md rounded-2xl">
+          <CardContent className="p-6 text-center">
+            <p className="text-gray-500">Total Schools</p>
+            <p className="text-2xl font-bold">{total_schools}</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-green-50 shadow-md rounded-2xl">
+          <CardContent className="p-6 text-center">
+            <p className="text-gray-500">Students</p>
+            <p className="text-2xl font-bold">{stats.students}</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-yellow-50 shadow-md rounded-2xl">
+          <CardContent className="p-6 text-center">
+            <p className="text-gray-500">Educators</p>
+            <p className="text-2xl font-bold">{stats.educators}</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-purple-50 shadow-md rounded-2xl">
+          <CardContent className="p-6 text-center">
+            <p className="text-gray-500">Courses</p>
+            <p className="text-2xl font-bold">{stats.total_courses}</p>
+          </CardContent>
+        </Card>
       </div>
 
-      <motion.div layout className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {stats.map((s) => (
-          <DashboardCard key={s.title} title={s.title} value={s.value} icon={s.icon} />
-        ))}
-      </motion.div>
+      {/* Recent Activity */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="bg-white shadow rounded-2xl">
+          <CardContent className="p-6">
+            <p className="text-gray-500">New Users This Week</p>
+            <p className="text-2xl font-bold">{recent_activity.new_users_this_week}</p>
+          </CardContent>
+        </Card>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow">
-          <h3 className="text-lg font-semibold mb-2">Quick Actions</h3>
-          <div className="flex flex-col gap-3">
-            <Link to="/owner/schools" className="text-blue-600">Manage Schools</Link>
-            <Link to="/owner/students" className="text-blue-600">Manage Students</Link>
-            <Link to="/owner/educators" className="text-blue-600">Manage Educators</Link>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow">
-          <h3 className="text-lg font-semibold mb-2">Recent Activity</h3>
-          <ul className="text-sm text-gray-600 space-y-2">
-            <li>✅ New school created - Sunrise Academy</li>
-            <li>📌 Resource uploaded - Algebra notes</li>
-          </ul>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow">
-          <h3 className="text-lg font-semibold mb-2">Reports</h3>
-          <p className="text-gray-600">Attendance summary & performance reports.</p>
+      {/* Schools Table */}
+      <div>
+        <h2 className="text-xl font-semibold mb-4">Schools Overview</h2>
+        <div className="overflow-x-auto bg-white rounded-2xl shadow">
+          <table className="min-w-full text-left">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="p-3">School</th>
+                <th className="p-3">Students</th>
+                <th className="p-3">Educators</th>
+                <th className="p-3">Managers</th>
+                <th className="p-3">Courses</th>
+                <th className="p-3">New Users (7d)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {schools.map((school) => (
+                <tr key={school.id} className="border-b">
+                  <td className="p-3 font-medium">{school.name}</td>
+                  <td className="p-3">{school.students}</td>
+                  <td className="p-3">{school.educators}</td>
+                  <td className="p-3">{school.managers}</td>
+                  <td className="p-3">{school.total_courses}</td>
+                  <td className="p-3">{school.new_users_this_week}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

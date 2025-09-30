@@ -14,6 +14,12 @@ class UserSchema(BaseSchema):
     email = fields.Email(required=True, validate=validate.Length(max=120))
     role = fields.String(required=True, validate=validate.OneOf(ROLES))
     school_id = fields.Integer(required=False)
+    owned_schools = fields.Nested(
+        "SchoolSchema",
+        many=True,
+        dump_only=True,
+        exclude=["owner", "users", "courses"]  # avoid recursion
+    )
 
     # Password fields
     password = fields.String(load_only=True, required=True, validate=validate.Length(min=6))

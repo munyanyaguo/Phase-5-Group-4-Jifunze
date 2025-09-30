@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from flask import Flask
 from .extensions import cors, db, migrate
 from flask_jwt_extended import JWTManager
+from datetime import timedelta
 
 # Load the right .env file
 flask_env = os.getenv("FLASK_ENV", "production")
@@ -25,8 +26,8 @@ def create_app(config_name=None):
     app = Flask(__name__)
 
     # Handle different configurations
+    # Handle different configurations
     if config_name == "testing":
-        # Testing configuration
         app.config["SECRET_KEY"] = "test_secret_key"
         app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
         app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -34,13 +35,16 @@ def create_app(config_name=None):
         app.config["WTF_CSRF_ENABLED"] = False
         app.config["JWT_SECRET_KEY"] = "test_jwt_secret"
         app.config["JWT_TOKEN_LOCATION"] = ["headers"]
+        app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)  # ⬅ longer for tests
+        app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
     else:
-        # Normal configuration (development/production)
         app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev_secret")
         app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
         app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
         app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "deV_jwt_secret")
         app.config["JWT_TOKEN_LOCATION"] = ["headers"]
+        app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)   # ⬅ default 15 mins → 1 hr
+        app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)  # ⬅ optional refresh
 
     db_uri = app.config.get("SQLALCHEMY_DATABASE_URI")
     if db_uri and isinstance(db_uri, str) and db_uri.startswith("postgresql"):
@@ -56,7 +60,7 @@ def create_app(config_name=None):
     else:
         cors.init_app(
     app,
-    resources={r"/api/*": {"origins": ["http://127.0.0.1:5173"]}},
+    resources={r"/api/*": {"origins": ["http://localhost:5173", "http://127.0.0.1:5173"]}},
     supports_credentials=True,
     allow_headers=["Content-Type", "Authorization", "Cache-Control"],
     methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]

@@ -1,35 +1,53 @@
-// src/components/owner/UserForm.jsx
 import { useState, useEffect } from "react";
+import { fetchSchools } from "../../api";
 
-export default function UserForm({ onSave, onCancel, initialData = null }) {
+export default function UserForm({ onSave, onCancel, initialData = null, role = "student" }) {
   const [form, setForm] = useState({
     name: "",
     email: "",
-    role: "student",
-    school: "",
+    school_id: "",
+    courses: [],
   });
+  const [schools, setSchools] = useState([]);
+  const [loadingSchools, setLoadingSchools] = useState(true);
 
-  // Prefill form when editing
+  // Load schools on mount
+  useEffect(() => {
+    const loadSchools = async () => {
+      try {
+        const data = await fetchSchools();
+        setSchools(data.schools || []);
+      } catch (err) {
+        console.error("Failed to load schools", err);
+      } finally {
+        setLoadingSchools(false);
+      }
+    };
+    loadSchools();
+  }, []);
+
+  // Prefill form for editing
   useEffect(() => {
     if (initialData) {
       setForm({
         name: initialData.name || "",
         email: initialData.email || "",
-        role: initialData.role || "student",
-        school: initialData.school || "",
+        school_id: initialData.school?.id || "",
+        courses: initialData.courses?.map((c) => c.id) || [],
       });
     }
   }, [initialData]);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.name.trim() || !form.email.trim()) return;
+    if (!form.name.trim() || !form.email.trim() || !form.school_id) return;
     onSave(form);
-    setForm({ name: "", email: "", role: "student", school: "" });
+    setForm({ name: "", email: "", school_id: "", courses: [] });
   };
 
   return (
@@ -54,26 +72,40 @@ export default function UserForm({ onSave, onCancel, initialData = null }) {
         className="border border-gray-300 rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500"
       />
 
-      {/* Role */}
+      {/* School Dropdown */}
       <select
-        name="role"
-        value={form.role}
+        name="school_id"
+        value={form.school_id}
         onChange={handleChange}
         className="border border-gray-300 rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500"
       >
-        <option value="student">Student</option>
-        <option value="educator">Educator</option>
+        <option value="">Select School</option>
+        {schools.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.name}
+          </option>
+        ))}
       </select>
 
-      {/* School */}
-      <input
-        type="text"
-        name="school"
-        placeholder="School Name"
-        value={form.school}
-        onChange={handleChange}
+      {/* Optional: add multi-select courses if needed */}
+      {/* <select
+        name="courses"
+        multiple
+        value={form.courses}
+        onChange={(e) =>
+          setForm({
+            ...form,
+            courses: Array.from(e.target.selectedOptions, (o) => o.value),
+          })
+        }
         className="border border-gray-300 rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500"
-      />
+      >
+        {courses.map((c) => (
+          <option key={c.id} value={c.id}>
+            {c.name}
+          </option>
+        ))}
+      </select> */}
 
       {/* Actions */}
       <div className="flex justify-end gap-3">

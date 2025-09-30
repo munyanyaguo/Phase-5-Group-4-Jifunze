@@ -1,27 +1,99 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { User, Mail, ArrowLeft, BarChart3, Calendar } from "lucide-react";
 
+const API_URL = "http://127.0.0.1:5000/api";
+
 export default function StudentProfile() {
-  const { id } = useParams();
+  const { id } = useParams(); // student's public_id
   const navigate = useNavigate();
 
-  // Mock student data (replace with API later)
-  const students = [
-    { id: 1, name: "Alice Johnson", email: "alice@student.com", status: "Active" },
-    { id: 2, name: "Brian Smith", email: "brian@student.com", status: "Inactive" },
-    { id: 3, name: "Cynthia Wang", email: "cynthia@student.com", status: "Active" },
-    { id: 4, name: "David Kim", email: "david@student.com", status: "Active" },
-  ];
+  const [student, setStudent] = useState(null);
+  const [enrollments, setEnrollments] = useState([]);
+  const [attendance, setAttendance] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const exams = [
-    { id: 1, subject: "Mathematics", score: 85, date: "2025-02-10" },
-    { id: 2, subject: "Physics", score: 72, date: "2025-02-18" },
-    { id: 3, subject: "Chemistry", score: 90, date: "2025-03-01" },
-  ];
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setError("Not authenticated. Please log in.");
+          return;
+        }
 
-  const student = students.find((s) => s.id === parseInt(id));
+        // 1) Fetch enrollments for this student (provides nested user and course info)
+        const enrRes = await fetch(`${API_URL}/enrollments?user_public_id=${encodeURIComponent(id)}&per_page=1000`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        const enrBody = await enrRes.json();
+        if (!enrRes.ok || !enrBody.success) {
+          throw new Error(enrBody.message || "Failed to load enrollments");
+        }
+        const enrItems = enrBody?.data?.enrollments || [];
+        setEnrollments(enrItems);
+        const userFromEnroll = enrItems[0]?.user;
+
+        // 2) Fetch attendance for this student
+        const attRes = await fetch(`${API_URL}/attendance?user_id=${encodeURIComponent(id)}&per_page=1000`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        const attBody = await attRes.json();
+        if (attRes.ok && attBody.success) {
+          setAttendance(attBody?.data?.items || []);
+        } else {
+          setAttendance([]);
+        }
+
+        // 3) Build student summary
+        if (userFromEnroll) {
+          setStudent({
+            public_id: userFromEnroll.public_id,
+            name: userFromEnroll.name,
+            email: userFromEnroll.email,
+          });
+        } else {
+          setStudent({ public_id: id, name: "Student", email: "" });
+        }
+      } catch (e) {
+        console.error("Failed to load student profile:", e);
+        setError(e.message || "Failed to load student profile");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [id]);
+
+  const attendanceStats = useMemo(() => {
+    const stats = { present: 0, absent: 0, late: 0, total: 0 };
+    for (const rec of attendance) {
+      if (rec?.status === "present") stats.present += 1;
+      else if (rec?.status === "absent") stats.absent += 1;
+      else if (rec?.status === "late") stats.late += 1;
+      stats.total += 1;
+    }
+    return stats;
+  }, [attendance]);
+
+  if (loading) {
+    return <p className="p-6 text-gray-600">Loading...</p>;
+  }
+
+  if (error) {
+    return <p className="p-6 text-red-500">{error}</p>;
+  }
 
   if (!student) {
     return <p className="p-6 text-red-500">Student not found.</p>;
@@ -56,13 +128,7 @@ export default function StudentProfile() {
         <p className="text-gray-600 flex items-center gap-2">
           <Mail className="w-5 h-5" /> {student.email}
         </p>
-        <p
-          className={`mt-2 font-medium ${
-            student.status === "Active" ? "text-green-600" : "text-red-600"
-          }`}
-        >
-          {student.status}
-        </p>
+        <p className={`mt-2 font-medium text-green-600`}>Active</p>
       </motion.div>
 
       {/* Attendance */}
@@ -76,12 +142,13 @@ export default function StudentProfile() {
           <Calendar className="w-5 h-5 text-green-600" />
           Attendance
         </h2>
-        <p className="text-gray-700">Present: <span className="font-bold">40</span></p>
-        <p className="text-gray-700">Absent: <span className="font-bold">5</span></p>
-        <p className="text-gray-700">Total: <span className="font-bold">45</span></p>
+        <p className="text-gray-700">Present: <span className="font-bold">{attendanceStats.present}</span></p>
+        <p className="text-gray-700">Late: <span className="font-bold">{attendanceStats.late}</span></p>
+        <p className="text-gray-700">Absent: <span className="font-bold">{attendanceStats.absent}</span></p>
+        <p className="text-gray-700">Total: <span className="font-bold">{attendanceStats.total}</span></p>
       </motion.div>
 
-      {/* Exam Results */}
+      {/* Enrollments */}
       <motion.div
         className="p-6 rounded-2xl shadow-md bg-white"
         initial={{ y: 20, opacity: 0 }}
@@ -90,23 +157,23 @@ export default function StudentProfile() {
       >
         <h2 className="text-xl font-semibold flex items-center gap-2 mb-4">
           <BarChart3 className="w-5 h-5 text-purple-600" />
-          Exam Results
+          Enrollments
         </h2>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-gray-100 text-left">
-                <th className="p-3">Subject</th>
-                <th className="p-3">Score</th>
-                <th className="p-3">Date</th>
+                <th className="p-3">Course</th>
+                <th className="p-3">Description</th>
+                <th className="p-3">Enrolled On</th>
               </tr>
             </thead>
             <tbody>
-              {exams.map((exam) => (
-                <tr key={exam.id} className="border-b hover:bg-gray-50">
-                  <td className="p-3">{exam.subject}</td>
-                  <td className="p-3 font-semibold">{exam.score}%</td>
-                  <td className="p-3">{exam.date}</td>
+              {enrollments.map((enr) => (
+                <tr key={enr.id} className="border-b hover:bg-gray-50">
+                  <td className="p-3">{enr?.course?.title || enr.course_id}</td>
+                  <td className="p-3">{enr?.course?.description || ""}</td>
+                  <td className="p-3">{new Date(enr?.created_at || enr?.date_enrolled || Date.now()).toLocaleDateString()}</td>
                 </tr>
               ))}
             </tbody>

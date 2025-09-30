@@ -18,7 +18,7 @@ import OwnerDashboard from "./pages/owner/Dashboard";
 import Schools from "./pages/owner/Schools";
 import OwnerStudents from "./pages/owner/Students";
 import Educators from "./pages/owner/Educators";
-import ResourcesOwner from "./pages/owner/Resources";
+// import ResourcesOwner from "./pages/owner/Resources";
 import Reports from "./pages/owner/Reports";
 import Users from "./pages/owner/Users";
 
@@ -27,9 +27,10 @@ import EducatorDashboard from "./pages/educator/Dashboard";
 import EducatorStudents from "./pages/educator/Students";
 import EducatorResources from "./pages/educator/Resources";
 import Attendance from "./pages/educator/Attendance";
-import Classes from "./pages/educator/Classes";
-import ClassDetails from "./pages/educator/ClassDetails";
+import Classes from "./pages/educator/Courses";
+import ClassDetails from "./pages/educator/CourseDetails";
 import StudentProfile from "./pages/educator/StudentProfile";
+import EducatorMessages from "./pages/educator/Messages";
 
 // Student pages (NEW)
 import StudentDashboard from "./pages/Student/StudentDashboard";
@@ -87,7 +88,7 @@ export default function App() {
           <Route path="schools" element={<Schools />} />
           <Route path="students" element={<OwnerStudents />} />
           <Route path="educators" element={<Educators />} />
-          <Route path="resources" element={<ResourcesOwner />} />
+          {/* <Route path="resources" element={<ResourcesOwner />} /> */}
           <Route path="reports" element={<Reports />} />
           <Route path="users" element={<Users />} />
         </Route>
@@ -106,8 +107,14 @@ export default function App() {
           <Route path="students" element={<EducatorStudents />} />
           <Route path="resources" element={<EducatorResources />} />
           <Route path="attendance" element={<Attendance />} />
+          {/* Classes (primary) */}
           <Route path="classes" element={<Classes />} />
           <Route path="classes/:id" element={<ClassDetails />} />
+          {/* Courses alias to support sidebar links */}
+          <Route path="courses" element={<Classes />} />
+          <Route path="courses/:id" element={<ClassDetails />} />
+          {/* Messages */}
+          <Route path="messages" element={<EducatorMessages />} />
           <Route path="students/:id" element={<StudentProfile />} />
         </Route>
 
