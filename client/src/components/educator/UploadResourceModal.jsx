@@ -140,7 +140,7 @@ export default function UploadResourceModal({
             <div className="flex space-x-1 rounded-lg bg-gray-100 p-1">
               <button
                 type="button"
-                onClick={() => setUploadType('file')}
+                onClick={() => { setUploadType('file'); clearErrors('url'); }}
                 className={`flex-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                   uploadType === 'file'
                     ? 'bg-white text-gray-900 shadow-sm'
@@ -241,10 +241,10 @@ export default function UploadResourceModal({
                 >
                   <input
                     type="file"
-                    {...register('file', { required: uploadType === 'file' ? 'File is required' : false })}
+                    {...register('file')}
                     onChange={handleFileChange}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.mp4,.avi,.mov"
+                    accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.mp4,.avi,.mov,.webm"
                   />
                   
                   <div className="flex flex-col items-center">
