@@ -1,7 +1,7 @@
 // src/components/educator/Sidebar.jsx
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { Home, Users, BookOpen, CalendarCheck, BookLock } from "lucide-react";
+import { Home, Users, BookOpen, CalendarCheck, BookLock, MessageSquare } from "lucide-react";
 
 const Item = ({ to, icon: I, children }) => (
   <NavLink
@@ -22,6 +22,7 @@ export default function Sidebar() {
         <Item to="/educator/students" icon={Users}>Students</Item>
         <Item to="/educator/resources" icon={BookOpen}>Resources</Item>
         <Item to="/educator/attendance" icon={CalendarCheck}>Attendance</Item>
+        <Item to="/educator/messages" icon={MessageSquare}>Messages</Item>
         
       </nav>
     </aside>
