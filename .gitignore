@@ -2,7 +2,7 @@
 .env
 server/.env.production
 server/.env.development
-client/.env
+client/.env.production      
 
 # Node.js
 node_modules/

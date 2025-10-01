@@ -1,5 +1,4 @@
-// src/services/api.js
-const API_URL = "http://127.0.0.1:5000/api";
+const API_URL = "http://localhost:5000/api";
 
 // --------------------
 // Helpers
@@ -15,15 +14,12 @@ async function handleResponse(res) {
   } catch {
     data = {};
   }
-
   if (!res.ok) {
     const message = data.message || (data.errors && JSON.stringify(data.errors)) || "Something went wrong";
     throw new Error(message);
   }
-
-  return data.data ?? data;
+  return data;
 }
-
 
 // Common fetch with auth
 async function fetchWithAuth(url, options = {}) {
@@ -126,6 +122,7 @@ export const updateCourse = (course_id, updates) =>
   fetchWithAuth(`${API_URL}/courses/${course_id}`, { method: "PATCH", body: JSON.stringify(updates) });
 export const deleteCourse = (course_id) =>
   fetchWithAuth(`${API_URL}/courses/${course_id}`, { method: "DELETE" });
+
 // --------------------
 // ENROLLMENTS
 // --------------------
@@ -172,6 +169,7 @@ export default {
   updateCourse,
   deleteCourse,
   fetchEnrollments,
+  fetchSchoolEnrollments,
   createEnrollment,
   deleteEnrollment,
 };
