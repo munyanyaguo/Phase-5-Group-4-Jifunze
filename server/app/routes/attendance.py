@@ -34,7 +34,7 @@ class AttendanceListResource(Resource):
         GET /attendance?page=1&per_page=10&course_id=1&user_id=5&status=present
         Uses JWT for logged-in user if user_id not passed.
         """
-        query = Attendance.query.options(joinedload(Attendance.course))
+        query = Attendance.query.options(joinedload(Attendance.course), joinedload(Attendance.user))
 
         # Filters from query params
         course_id = request.args.get("course_id", type=int)
@@ -100,8 +100,6 @@ class AttendanceListResource(Resource):
                 json_data["date"] = datetime.strptime(json_data["date"], "%Y-%m-%d").date()
 
             new_attendance = attendance_schema.load(json_data, session=db.session)
-            # Populate non-nullable internal FK
-            new_attendance.user_id = user.id
             db.session.add(new_attendance)
             db.session.commit()
 

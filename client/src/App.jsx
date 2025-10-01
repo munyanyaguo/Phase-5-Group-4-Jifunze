@@ -1,51 +1,57 @@
 // src/App.jsx
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
-// Layouts
+// Layouts - Load immediately (needed for structure)
 import OwnerLayout from "./layouts/OwnerLayout";
 import EducatorLayout from "./layouts/EducatorLayout";
 import StudentLayout from "./layouts/StudentLayout";
 
-// Public pages
+// Public pages - Load immediately (first interaction)
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
-import ResetPassword from "./pages/Auth/ResetPassword";
 import LandingPage from "./pages/LandingPage";
 
-// Owner pages
-import OwnerDashboard from "./pages/owner/Dashboard";
-import Schools from "./pages/owner/Schools";
-import OwnerStudents from "./pages/owner/Students";
-import Educators from "./pages/owner/Educators";
-// import ResourcesOwner from "./pages/owner/Resources";
-import Reports from "./pages/owner/Reports";
-import Users from "./pages/owner/Users";
-import ManagerCourses from "./pages/owner/Courses";
-import Enrollments from "./pages/owner/Enrollment";
-import OwnerProfile from "./pages/owner/Profile";
-// import OwnerSettings from "./pages/owner/Settings";
+// Lazy load other pages for code splitting
+const ResetPassword = lazy(() => import("./pages/Auth/ResetPassword"));
 
-// Educator pages
-import EducatorDashboard from "./pages/educator/Dashboard";
-import EducatorStudents from "./pages/educator/Students";
-import EducatorResources from "./pages/educator/Resources";
-import Attendance from "./pages/educator/Attendance";
-import Classes from "./pages/educator/Courses";
-import ClassDetails from "./pages/educator/CourseDetails";
-import StudentProfile from "./pages/educator/StudentProfile";
-import EducatorMessages from "./pages/educator/Messages";
+// Owner pages - Lazy loaded
+const OwnerDashboard = lazy(() => import(/* webpackPrefetch: true */ "./pages/owner/Dashboard"));
+const Schools = lazy(() => import("./pages/owner/Schools"));
+const OwnerStudents = lazy(() => import("./pages/owner/Students"));
+const Educators = lazy(() => import("./pages/owner/Educators"));
+const Reports = lazy(() => import("./pages/owner/Reports"));
+const Users = lazy(() => import("./pages/owner/Users"));
+const ManagerCourses = lazy(() => import("./pages/owner/Courses"));
+const Enrollments = lazy(() => import("./pages/owner/Enrollment"));
+const OwnerProfile = lazy(() => import("./pages/owner/Profile"));
 
-// Student pages (NEW)
-import StudentDashboard from "./pages/Student/StudentDashboard";
-import StudentCourses from "./pages/Student/StudentCourses";
-import StudentResources from "./pages/Student/StudentResources";
-import StudentEnrollments from "./pages/Student/StudentEnrollments";
-import StudentAttendance from "./pages/Student/StudentAttendance";
-import StudentMessages from "./pages/Student/StudentMessages";
+// Educator pages - Lazy loaded with preloading hints
+const EducatorDashboard = lazy(() => import(/* webpackPrefetch: true */ "./pages/educator/Dashboard"));
+const EducatorStudents = lazy(() => import("./pages/educator/Students"));
+const EducatorResources = lazy(() => import("./pages/educator/Resources"));
+const Attendance = lazy(() => import("./pages/educator/Attendance"));
+const Classes = lazy(() => import(/* webpackPrefetch: true */ "./pages/educator/Courses"));
+const ClassDetails = lazy(() => import("./pages/educator/CourseDetails"));
+const StudentProfile = lazy(() => import("./pages/educator/StudentProfile"));
+const EducatorMessages = lazy(() => import(/* webpackPrefetch: true */ "./pages/educator/Messages"));
+const EducatorProfile = lazy(() => import("./pages/educator/Profile"));
+const ChangePassword = lazy(() => import("./pages/educator/ChangePassword"));
+
+// Student pages - Lazy loaded
+const StudentDashboard = lazy(() => import("./pages/Student/StudentDashboard"));
+const StudentCourses = lazy(() => import("./pages/Student/StudentCourses"));
+const StudentResources = lazy(() => import("./pages/Student/StudentResources"));
+const StudentEnrollments = lazy(() => import("./pages/Student/StudentEnrollments"));
+const StudentAttendance = lazy(() => import("./pages/Student/StudentAttendance"));
+const StudentMessages = lazy(() => import("./pages/Student/StudentMessages"));
 
 // Utils
 import { isAuthenticated, getRole } from "./services/authServices";
+import { PageSkeleton } from "./components/common/SkeletonLoader";
+
+// Loading fallback component
+const PageLoader = () => <PageSkeleton />;
 
 // 🔹 PrivateRoute wrapper
 const PrivateRoute = ({ children, role }) => {
@@ -71,12 +77,13 @@ const PrivateRoute = ({ children, role }) => {
 export default function App() {
   return (
     <Router>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Owner routes */}
         <Route
@@ -124,6 +131,10 @@ export default function App() {
           {/* Messages */}
           <Route path="messages" element={<EducatorMessages />} />
           <Route path="students/:id" element={<StudentProfile />} />
+          {/* Profile & Settings */}
+          <Route path="profile" element={<EducatorProfile />} />
+          <Route path="settings" element={<EducatorProfile />} />
+          <Route path="change-password" element={<ChangePassword />} />
         </Route>
 
         {/* Student routes (NEW) */}
@@ -144,9 +155,10 @@ export default function App() {
           <Route path="messages" element={<StudentMessages />} />
         </Route>
 
-        {/* Catch-all redirect */}
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
+          {/* Catch-all redirect */}
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </Suspense>
     </Router>
   );
 }

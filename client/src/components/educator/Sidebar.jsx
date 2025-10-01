@@ -3,10 +3,15 @@ import React from "react";
 import { NavLink } from "react-router-dom";
 import { Home, Users, BookOpen, CalendarCheck, BookLock, MessageSquare } from "lucide-react";
 
+// Navigation item component
 const Item = ({ to, icon: I, children }) => (
   <NavLink
     to={to}
-    className={({ isActive }) => `flex items-center gap-2 px-3 py-2 rounded ${isActive ? "bg-blue-50 text-blue-600" : "text-gray-700 hover:bg-gray-100"}`}
+    className={({ isActive }) => 
+      `flex items-center gap-2 px-3 py-2 rounded ${
+        isActive ? "bg-blue-50 text-blue-600" : "text-gray-700 hover:bg-gray-100"
+      }`
+    }
   >
     <I size={16} /> {children}
   </NavLink>

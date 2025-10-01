@@ -49,13 +49,12 @@ export async function login(email, password) {
   const data = await handleResponse(res);
 
   // Debug: log the login response structure
-  console.log("Login response:", data);
+  
 
   if (data && data.user) {
-    console.log("User object:", data.user);
-    console.log("User ID:", data.user.id);
+    
   } else {
-    console.warn("No user object in login response!");
+    
   }
 
   // Save tokens + user info in localStorage

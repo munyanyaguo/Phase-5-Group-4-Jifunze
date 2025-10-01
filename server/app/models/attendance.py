@@ -11,11 +11,14 @@ class Attendance(BaseModel):
     course_id = db.Column(db.Integer, db.ForeignKey("courses.id"), nullable=False)
     date = db.Column(db.Date, nullable=False)
     status = db.Column(db.String(20), nullable=False)  # present, absent, late
-    # Note: current DB appears to lack a verifier column; remove for now
+    verified_by_public_id = db.Column(db.String(50), db.ForeignKey("users.public_id"), nullable=True)
+    
+    # Alias for simpler access
+    verified_by = db.synonym('verified_by_public_id')
 
     # Relationships
     user = db.relationship("User", foreign_keys=[user_public_id], back_populates="attendance", lazy="joined")
-    # Verifier relationship omitted to match DB
+    verifier = db.relationship("User", foreign_keys=[verified_by_public_id], back_populates="verifications")
     course = db.relationship("Course", back_populates="attendance", foreign_keys=[course_id])
 
     _table_args_ = (
