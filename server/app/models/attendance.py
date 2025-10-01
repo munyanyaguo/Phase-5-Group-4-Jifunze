@@ -18,7 +18,7 @@ class Attendance(BaseModel):
 
     # Relationships
     user = db.relationship("User", foreign_keys=[user_public_id], back_populates="attendance", lazy="joined")
-    verifier = db.relationship("User", foreign_keys=[verified_by_public_id], back_populates="verifications")
+    verifier = db.relationship("User", foreign_keys=[verified_by_public_id])
     course = db.relationship("Course", back_populates="attendance", foreign_keys=[course_id])
 
     _table_args_ = (
