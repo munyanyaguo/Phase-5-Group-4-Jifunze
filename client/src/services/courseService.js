@@ -1,6 +1,4 @@
 // src/services/courseService.js
-import { authFetchWithRefresh } from "./authServices";
-
 const API_URL = "http://127.0.0.1:5000/api";
 
 // Helper to get token

@@ -77,7 +77,20 @@ class EnrollmentListResource(Resource):
             results = query.all()
             return enrollments_schema.dump(results), 200
 
-        return error_response("Admins or managers only.", 403)
+        if role == "student":
+            # Students can only see their own enrollments
+            student_public_id = get_jwt_identity()
+            query = query.filter_by(user_public_id=student_public_id)
+            
+            # Optional: filter by course_id if provided
+            if course_id is not None:
+                query = query.filter_by(course_id=course_id)
+            
+            # Handle pagination
+            from app.extensions import paginate
+            return paginate(query, enrollments_schema, resource_name="enrollments")
+
+        return error_response("Unauthorized access.", 403)
 
     @jwt_required()
     def post(self):

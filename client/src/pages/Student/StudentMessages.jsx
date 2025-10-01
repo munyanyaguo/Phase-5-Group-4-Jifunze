@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { API_URL } from "../../config";
+import { FaPaperPlane, FaComments } from "react-icons/fa";
 
 const StudentMessages = ({ courseId }) => {
   const [messages, setMessages] = useState([]);
@@ -29,7 +30,7 @@ const StudentMessages = ({ courseId }) => {
 
   // Fetch enrolled courses
   const fetchEnrolledCourses = async () => {
-    if (!currentUserId) return;
+    if (!currentUserId) return console.log("Waiting for user authentication...");
 
     setCoursesLoading(true);
     const token = localStorage.getItem("token");
@@ -147,6 +148,15 @@ const StudentMessages = ({ courseId }) => {
     setSending(true);
     setError("");
     const token = localStorage.getItem("token");
+    
+    // Debug: decode token to see claims
+    try {
+      const payload = token.split('.')[1];
+      const decoded = JSON.parse(atob(payload));
+      console.log("🔑 Token claims:", decoded);
+    } catch (e) {
+      console.error("Failed to decode token:", e);
+    }
 
     try {
       const requestData = {
@@ -154,7 +164,7 @@ const StudentMessages = ({ courseId }) => {
         content: newMessage.trim(),
       };
 
-      
+      console.log("📤 Sending message:", requestData);
 
       const res = await fetch(`${API_URL}/api/messages`, {
         method: "POST",
@@ -166,18 +176,24 @@ const StudentMessages = ({ courseId }) => {
       });
 
       const data = await res.json();
-      
+      console.log("📥 Response:", res.status, data);
 
       if (data.success) {
         setMessages(prev => [...prev, data.data]);
         setNewMessage("");
       }
       else {
+        console.error("❌ Validation failed:", data.errors || data.message);
         
-        setError(`Validation failed: ${data.errors || data.message}`);
+        // Better error message for school mismatch
+        if (data.message?.includes("not allowed for this school")) {
+          setError("This course belongs to a different school. Please contact your administrator.");
+        } else {
+          setError(`Failed to send message: ${data.message || "Unknown error"}`);
+        }
       }
     } catch (err) {
-      
+      console.error("❌ Network error:", err);
       setError("Network error occurred.");
     } finally {
       setSending(false);
@@ -192,115 +208,181 @@ const StudentMessages = ({ courseId }) => {
   );
 
   return (
-    <div className="mt-6 flex flex-col h-96 border rounded-lg p-4 bg-white overflow-y-auto">
-      {/* Loading courses */}
-      {coursesLoading && <div className="text-center mt-4">Loading courses...</div>}
-
-      {/* No courses */}
-      {!coursesLoading && enrolledCourses.length === 0 && !courseId && (
-        <div className="text-center mt-4 text-gray-500">You are not enrolled in any courses.</div>
-      )}
-
-      {/* Course selection dropdown */}
-      {!courseId && enrolledCourses.length > 0 && (
-        <select
-          value={selectedCourseId || ""}
-          onChange={e => {
-            const courseId = parseInt(e.target.value) || "";
-            
-            setSelectedCourseId(courseId);
-          }}
-          className="mb-2 border p-1 rounded w-full"
-        >
-          <option value="">Choose a course...</option>
-          {enrolledCourses.map(enrollment => (
-            <option key={enrollment.course_id} value={enrollment.course_id}>
-              {enrollment.course.title}
-            </option>
-          ))}
-        </select>
-      )}
-
-      {/* Feedback if no course selected */}
-      {!courseId && enrolledCourses.length > 0 && !selectedCourseId && (
-        <div className="text-center text-gray-500 mt-4">
-          Please select a course above to view messages.
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-8 px-4">
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">💬 Messages</h1>
+          <p className="text-gray-600">Chat with your educators and classmates</p>
         </div>
-      )}
 
-      {/* Messages UI */}
-      {effectiveCourseId && (
-        <>
-          {loading && <div className="text-center mt-4">Loading messages...</div>}
-          {error && <div className="text-red-500 text-center mt-4">{error}</div>}
-
-          {!loading && !error && (
-            <>
-              <ul className="flex-1 space-y-4">
-                {(() => {
-                  let currentDate = null;
-                  return sortedMessages.map(msg => {
-                    const msgDate = new Date(msg.timestamp).toLocaleDateString();
-                    const showDate = msgDate !== currentDate;
-                    currentDate = msgDate;
-
-                    const isSelf = msg.user_public_id === currentUserId;
-
-                    return (
-                      <div key={msg.id}>
-                        {showDate && (
-                          <div className="text-center text-gray-500 text-sm mb-2">{msgDate}</div>
-                        )}
-                        <div className={`flex mb-1 ${isSelf ? "justify-end" : "justify-start"}`}>
-                          <div
-                            className={`max-w-xs p-2 rounded-lg shadow ${isSelf ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-800"
-                              }`}
-                          >
-                            {!isSelf && <div className="font-semibold text-sm mb-1">{msg.user?.name || "Teacher"}</div>}
-                            <div>{msg.content}</div>
-                            <div className="text-xs text-gray-500 mt-1 text-right">
-                              {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  });
-                })()}
-                <div ref={messagesEndRef} />
-              </ul>
-
-              {hasMore && (
-                <button
-                  className="mt-2 text-blue-500 underline self-center"
-                  onClick={() => fetchMessages(page + 1)}
-                  disabled={loadingMore}
-                >
-                  {loadingMore ? "Loading..." : "Load more"}
-                </button>
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+          {/* Course selection dropdown */}
+          {!courseId && (
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6">
+              {coursesLoading ? (
+                <div className="text-white text-center">Loading courses...</div>
+              ) : enrolledCourses.length === 0 ? (
+                <div className="text-center text-white">
+                  <FaComments className="mx-auto text-4xl mb-2 opacity-70" />
+                  <p>You are not enrolled in any courses.</p>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-white text-sm font-medium mb-2">Select Course</label>
+                  <select
+                    value={selectedCourseId || ""}
+                    onChange={e => {
+                      const courseId = parseInt(e.target.value) || "";
+                      console.log("Selected course:", courseId);
+                      setSelectedCourseId(courseId);
+                    }}
+                    className="w-full p-3 rounded-lg border-0 focus:ring-2 focus:ring-white/50 outline-none"
+                  >
+                    <option value="">Choose a course...</option>
+                    {enrolledCourses.map(enrollment => (
+                      <option key={enrollment.course_id} value={enrollment.course_id}>
+                        {enrollment.course.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               )}
+            </div>
+          )}
 
-              <form onSubmit={handleSendMessage} className="mt-2 flex gap-2">
-                <input
-                  type="text"
-                  value={newMessage}
-                  onChange={e => setNewMessage(e.target.value)}
-                  placeholder="Type your message..."
-                  className="border p-2 rounded flex-1"
-                  disabled={sending}
-                />
-                <button
-                  type="submit"
-                  className="bg-blue-500 text-white px-4 py-2 rounded"
-                  disabled={sending}
-                >
-                  {sending ? "Sending..." : "Send"}
-                </button>
-              </form>
+          {/* Feedback if no course selected */}
+          {!courseId && enrolledCourses.length > 0 && !selectedCourseId && (
+            <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+              <FaComments className="text-6xl mb-4 opacity-50" />
+              <p className="text-lg">Please select a course above to view messages</p>
+            </div>
+          )}
+
+          {/* Messages UI */}
+          {effectiveCourseId && (
+            <>
+              {loading ? (
+                <div className="flex justify-center items-center py-20">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading messages...</p>
+                  </div>
+                </div>
+              ) : error ? (
+                <div className="p-6">
+                  <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded">
+                    <p className="font-semibold">Error</p>
+                    <p>{error}</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Messages Container */}
+                  <div className="h-[500px] overflow-y-auto p-6 bg-gray-50">
+                    {sortedMessages.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                        <FaComments className="text-6xl mb-4 opacity-50" />
+                        <p className="text-lg">No messages yet</p>
+                        <p className="text-sm">Be the first to start the conversation!</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {(() => {
+                          let currentDate = null;
+                          return sortedMessages.map(msg => {
+                            const msgDate = new Date(msg.timestamp).toLocaleDateString();
+                            const showDate = msgDate !== currentDate;
+                            currentDate = msgDate;
+                            const isSelf = msg.user_public_id === currentUserId;
+
+                            return (
+                              <div key={msg.id}>
+                                {showDate && (
+                                  <div className="flex justify-center my-4">
+                                    <span className="bg-white px-4 py-1 rounded-full text-xs text-gray-500 shadow-sm">
+                                      {msgDate}
+                                    </span>
+                                  </div>
+                                )}
+                                <div className={`flex ${isSelf ? "justify-end" : "justify-start"}`}>
+                                  <div className={`max-w-md ${isSelf ? "order-2" : "order-1"}`}>
+                                    {!isSelf && (
+                                      <div className="text-xs text-gray-600 mb-1 ml-3">
+                                        {msg.user?.name || "Teacher"}
+                                      </div>
+                                    )}
+                                    <div
+                                      className={`p-4 rounded-2xl shadow-md ${
+                                        isSelf
+                                          ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-br-none"
+                                          : "bg-white text-gray-800 rounded-bl-none"
+                                      }`}
+                                    >
+                                      <div className="break-words">{msg.content}</div>
+                                      <div className={`text-xs mt-2 ${isSelf ? "text-blue-100" : "text-gray-500"}`}>
+                                        {new Date(msg.timestamp).toLocaleTimeString([], {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          });
+                        })()}
+                        <div ref={messagesEndRef} />
+                      </div>
+                    )}
+
+                    {hasMore && (
+                      <div className="text-center mt-4">
+                        <button
+                          className="bg-white text-blue-600 px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-all font-medium"
+                          onClick={() => fetchMessages(page + 1)}
+                          disabled={loadingMore}
+                        >
+                          {loadingMore ? "Loading..." : "Load older messages"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Message Input */}
+                  <div className="p-6 bg-white border-t">
+                    <form onSubmit={handleSendMessage} className="flex gap-3">
+                      <input
+                        type="text"
+                        value={newMessage}
+                        onChange={e => setNewMessage(e.target.value)}
+                        placeholder="Type your message..."
+                        className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                        disabled={sending}
+                      />
+                      <button
+                        type="submit"
+                        className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all font-medium flex items-center gap-2 disabled:opacity-50"
+                        disabled={sending || !newMessage.trim()}
+                      >
+                        {sending ? (
+                          "Sending..."
+                        ) : (
+                          <>
+                            <FaPaperPlane />
+                            Send
+                          </>
+                        )}
+                      </button>
+                    </form>
+                  </div>
+                </>
+              )}
             </>
           )}
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 };

@@ -14,7 +14,7 @@ class MessageSchema(ma.SQLAlchemySchema):
         load_instance = True
 
     id = ma.auto_field()
-    user_public_id = ma.auto_field(dump_only=True)
+    user_public_id = ma.auto_field(required=True)
     course_id = ma.auto_field(required=True)
     parent_id = ma.auto_field(allow_none=True)
     content = ma.auto_field(required=True, validate=validate.Length(min=2))
