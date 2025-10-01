@@ -1,7 +1,7 @@
 // src/components/owner/Sidebar.jsx
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { Home, Users, BookOpen, BarChart3, School } from "lucide-react";
+import { Home, School, Users, BookOpen, FileText, BarChart3, LogOut } from "lucide-react";
 
 // Reusable menu item component
 const MenuItem = ({ to, icon: Icon, children }) => (

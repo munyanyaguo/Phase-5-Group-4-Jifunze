@@ -1,5 +1,5 @@
 // src/pages/educator/Dashboard.jsx
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardCard from "../../components/common/DashboardCard";
 import { Users, BookOpen, MessageSquare, FileText, ClipboardCheck, UserCircle, TrendingUp, Calendar } from "lucide-react";
@@ -83,14 +83,11 @@ export default function EducatorDashboard() {
           // Filter resources by educator's courses
           const educatorResources = allResources.filter(resource => {
             const matches = courseIds.includes(resource.course_id);
-            if (matches) {
-              console.log(`📚 Resource "${resource.title}" matches course ${resource.course_id}`);
-            }
             return matches;
           });
           resourcesCount = educatorResources.length;
-        } catch (err) {
-          console.error('Failed to fetch resources:', err);
+        } catch (error) {
+          console.error('Failed to fetch resources:', error);
           resourcesCount = 0;
         }
 
@@ -178,7 +175,9 @@ export default function EducatorDashboard() {
           setProfile({ name: user.name || "", email: user.email || "", school: user.school?.name || "" });
           setProfileForm({ name: user.name || "", email: user.email || "" });
         }
-      } catch (_) {}
+      } catch (err) {
+        console.error('Failed to load profile:', err);
+      }
     };
     loadProfile();
   }, []);
@@ -209,7 +208,8 @@ export default function EducatorDashboard() {
       } else {
         setProfileError(data.message || "Failed to update profile.");
       }
-    } catch (_) {
+    } catch (err) {
+      console.error('Profile update error:', err);
       setProfileError("Network error");
     }
   };

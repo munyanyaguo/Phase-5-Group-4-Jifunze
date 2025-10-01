@@ -12,7 +12,8 @@ async function handleResponse(res) {
   let result;
   try {
     result = await res.json();
-  } catch {
+  } catch (err) {
+    console.error('Failed to parse response:', err);
     throw new Error("Invalid server response");
   }
 
@@ -52,12 +53,11 @@ export async function login(email, password) {
   
 
   if (data && data.user) {
-    
+    console.log('Login successful:', data.user.email);
   } else {
-    
+    console.warn('Login response missing user data');
   }
 
-  // Save tokens + user info in localStorage
   localStorage.setItem("token", data.access_token);
   localStorage.setItem("refresh_token", data.refresh_token);
   localStorage.setItem("role", data.user && data.user.role);
@@ -67,7 +67,6 @@ export async function login(email, password) {
   } else {
     localStorage.removeItem("user_id");
   }
-
   return data;
 }
 

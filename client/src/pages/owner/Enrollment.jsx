@@ -1,14 +1,13 @@
 // src/pages/manager/ManagerEnrollments.jsx
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from 'react';
 import {
-  fetchDashboard,
+  fetchSchoolCourses,
   fetchSchoolEnrollments,
   fetchOwnerStudents,
-  fetchSchoolCourses,
+  fetchDashboard,
   createEnrollment,
   deleteEnrollment,
-} from "../../api";
-import { motion, AnimatePresence } from "framer-motion";
+} from '../../api';
 import { PlusCircle, UserMinus } from "lucide-react";
 
 export default function ManagerEnrollments() {

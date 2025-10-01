@@ -1,7 +1,6 @@
 // src/pages/educator/CourseDetails.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import { 
   ArrowLeft, 
   BookOpen, 
@@ -31,7 +30,6 @@ export default function CourseDetails() {
   const [enrollments, setEnrollments] = useState([]);
   const [showStudentsModal, setShowStudentsModal] = useState(false);
   const [attendanceStats, setAttendanceStats] = useState(null);
-
   useEffect(() => {
     const load = async () => {
       try {
@@ -49,8 +47,8 @@ export default function CourseDetails() {
           // Handle different response structures from YOUR API
           const list = res?.data?.resources || res?.data?.items || res?.resources || [];
           setResources(Array.isArray(list) ? list : []);
-        } catch (resError) {
-          
+        } catch (resourceError) {
+          console.error('Failed to fetch resources:', resourceError);
           // Fallback to resources from course data
           setResources(c?.resources || []);
         }

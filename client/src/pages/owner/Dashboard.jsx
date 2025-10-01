@@ -1,14 +1,12 @@
 // src/pages/Dashboard.jsx
 import React, { useEffect, useState } from "react";
+import { Users, BookOpen, School, TrendingUp, DollarSign } from "lucide-react";
 import { fetchDashboard } from "../../api";
-import { Card, CardContent } from "@/components/ui/card";
-import { motion } from "framer-motion";
 
 export default function Dashboard() {
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
   useEffect(() => {
     const loadDashboard = async () => {
       try {

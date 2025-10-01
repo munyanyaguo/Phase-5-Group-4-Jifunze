@@ -203,7 +203,9 @@ export default function EducatorMessages() {
             return prev;
           });
         }
-      } catch (_) {}
+      } catch (err) {
+        console.error('Failed to fetch messages:', err);
+      }
     }, 8000);
     return () => clearInterval(interval);
   }, [selectedCourseId, courses]);

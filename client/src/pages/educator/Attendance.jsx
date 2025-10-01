@@ -55,8 +55,8 @@ export default function Attendance() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [attendanceData, setAttendanceData] = useState({});
   const [initialLoading, setInitialLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [userIdMapping, setUserIdMapping] = useState({}); // Map public_id -> user_id
   const [success, setSuccess] = useState("");
   const [attendanceHistory, setAttendanceHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
@@ -399,7 +399,7 @@ export default function Attendance() {
     return;
   }
 
-  setLoading(true);
+  setSaving(true);
   setError('');
   setSuccess('');
 
@@ -524,12 +524,11 @@ export default function Attendance() {
       }, 2000);
     }
 
-  } catch (err) {
-    console.error('Save attendance error:', err);
-    setError(err.message || 'Failed to save attendance');
-    
+  } catch (error) {
+    console.error('Failed to save attendance:', error);
+    setError(error.message || 'Failed to save attendance');
   } finally {
-    setLoading(false);
+    setSaving(false);
   }
 };
 
@@ -653,15 +652,15 @@ export default function Attendance() {
               <div className="flex justify-end pt-4 border-t">
                 <button 
                   onClick={saveAttendance}
-                  disabled={loading}
+                  disabled={saving}
                   className={`px-8 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center gap-2 ${
-                    loading 
+                    saving 
                       ? 'bg-gray-400 cursor-not-allowed text-white' 
                       : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-xl'
                   }`}
                 >
                   <Save className="w-5 h-5" />
-                  {loading 
+                  {saving 
                     ? 'Saving...' 
                     : Object.values(attendanceData).some(a => a.id) 
                       ? 'Update Attendance' 
@@ -672,7 +671,7 @@ export default function Attendance() {
             </>
           )}
 
-          {selectedCourse && students.length === 0 && !loading && (
+          {selectedCourse && students.length === 0 && !initialLoading && (
             <div className="text-center py-12">
               <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500 text-lg">No students enrolled in this course</p>

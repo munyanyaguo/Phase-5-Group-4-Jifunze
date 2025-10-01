@@ -1,7 +1,7 @@
 // src/components/student/Sidebar.jsx
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { Home, BookOpen, FileText } from "lucide-react";
+import { Home, BookOpen, FileText, Calendar, MessageSquare, LogOut } from "lucide-react";
 
 export default function Sidebar() {
   const Item = ({ to, icon: Icon, children }) => (

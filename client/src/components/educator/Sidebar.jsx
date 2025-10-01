@@ -1,7 +1,7 @@
 // src/components/educator/Sidebar.jsx
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { Home, Users, BookOpen, CalendarCheck, BookLock, MessageSquare } from "lucide-react";
+import { BookOpen, Users, FileText, MessageSquare, ClipboardCheck, Home, LogOut, Settings, User } from "lucide-react";
 
 // Navigation item component
 const Item = ({ to, icon: I, children }) => (

@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
 import { User, Mail, Search, Users, BookOpen, Calendar, ArrowRight, Filter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { fetchEducatorCourses } from "../../services/courseService";
@@ -14,6 +13,10 @@ export default function Students() {
   const [error, setError] = useState("");
 
   const [search, setSearch] = useState("");
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+  };
 
   useEffect(() => {
     const loadStudents = async () => {
@@ -142,26 +145,19 @@ export default function Students() {
               type="text"
               placeholder="Search students by name or email..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={handleSearchChange}
               className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             />
           </div>
         </div>
 
-        {error && (
+        {!initialLoading && error && (
           <div className="mb-6 bg-red-50 border-l-4 border-red-500 text-red-700 px-6 py-4 rounded-xl shadow-sm">
             {error}
           </div>
         )}
 
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading students...</p>
-            </div>
-          </div>
-        ) : filteredStudents.length === 0 ? (
+        {filteredStudents.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-2xl shadow-lg">
             <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-500 text-lg">No students found</p>
