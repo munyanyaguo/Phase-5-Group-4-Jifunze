@@ -558,9 +558,11 @@ class ManagerStudentsResource(Resource):
                 if u.role == "student":
                     students.append({
                         "id": u.id,
+                        "public_id": u.public_id,
                         "name": u.name,
                         "email": u.email,
                         "school": school.name,
+                        "school_id": school.id,
                         "courses": [c.title for c in u.courses]  # if students have courses
                     })
 

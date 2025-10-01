@@ -1,15 +1,18 @@
 // src/pages/Auth/ResetPassword.jsx
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const API_URL = "http://127.0.0.1:5000/api";
 
 const ResetPassword = () => {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1); // 1 = request token, 2 = reset password
   const [email, setEmail] = useState("");
   const [token, setToken] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [debugToken, setDebugToken] = useState("");
 
   // Step 1: Request reset token
   const handleRequestToken = async (e) => {
@@ -28,6 +31,12 @@ const ResetPassword = () => {
       if (!res.ok) throw new Error(result.message || "Failed to request reset");
 
       setSuccess("If email exists, reset instructions have been sent.");
+      // Show token for local testing (in production, this would be sent via email)
+      if (result?.data?.reset_token) {
+        setDebugToken(result.data.reset_token);
+      } else {
+        setDebugToken("");
+      }
       setStep(2);
     } catch (err) {
       setError(err.message);
@@ -51,10 +60,8 @@ const ResetPassword = () => {
       if (!res.ok) throw new Error(result.message || "Failed to reset password");
 
       setSuccess("Password reset successfully! You can now log in.");
-      setStep(1);
-      setEmail("");
-      setToken("");
-      setNewPassword("");
+      // Redirect to login after successful reset
+      navigate("/login");
     } catch (err) {
       setError(err.message);
     }
@@ -76,12 +83,19 @@ const ResetPassword = () => {
             className="w-full p-2 border rounded"
             required
           />
+          <p className="text-xs text-gray-500">We'll generate a reset token and (for local testing) show it below.</p>
           <button
             type="submit"
             className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
           >
             Request Reset Token
           </button>
+          {debugToken && (
+            <div className="mt-3 p-2 border rounded bg-gray-50">
+              <p className="text-sm text-gray-800">Reset token (local testing):</p>
+              <code className="break-all text-xs">{debugToken}</code>
+            </div>
+          )}
         </form>
       )}
 
@@ -103,6 +117,7 @@ const ResetPassword = () => {
             className="w-full p-2 border rounded"
             required
           />
+          <p className="text-xs text-gray-500">Password must have at least 6 characters, one uppercase letter, and one number.</p>
           <button
             type="submit"
             className="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600"

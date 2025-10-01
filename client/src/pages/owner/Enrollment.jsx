@@ -11,6 +11,7 @@ import {
 
 export default function ManagerEnrollments() {
   const [schoolId, setSchoolId] = useState(null);
+  const [schools, setSchools] = useState([]);
   const [enrollments, setEnrollments] = useState([]);
   const [students, setStudents] = useState([]);
   const [courses, setCourses] = useState([]);
@@ -25,8 +26,11 @@ export default function ManagerEnrollments() {
   const loadSchool = async () => {
     try {
       const dash = await fetchDashboard();
-      if (dash.school?.id) {
-        setSchoolId(dash.school.id);
+      // Backend returns { dashboard: { schools: [...] } }
+      const list = dash?.dashboard?.schools || [];
+      setSchools(list);
+      if (list.length > 0) {
+        setSchoolId(list[0].id);
       } else {
         alert("No school found for this manager.");
       }
@@ -49,8 +53,8 @@ export default function ManagerEnrollments() {
         fetchSchoolCourses(id),
       ]);
       setEnrollments(enrs || []);
-      setStudents(studs || []);
-      setCourses(crs || []);
+      setStudents((studs && studs.students) || []);
+      setCourses((crs && crs.courses) || []);
     } catch (err) {
       console.error("Failed to load enrollment data:", err.message);
       alert("Failed to load enrollment data.");
@@ -70,11 +74,16 @@ export default function ManagerEnrollments() {
     if (schoolId) loadData(schoolId);
   }, [schoolId]);
 
+  // When student changes, clear previously selected course to avoid mismatch
+  useEffect(() => {
+    setSelectedCourse("");
+  }, [selectedStudent]);
+
   // --------------------
   // Helpers
   // --------------------
   const getStudentName = (publicId) => {
-    const s = students.find((st) => st.public_id === publicId);
+    const s = students.find((st) => (st.public_id || st.id) === publicId);
     return s ? `${s.full_name || s.username} (${s.email})` : publicId;
   };
 
@@ -124,6 +133,24 @@ export default function ManagerEnrollments() {
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Manage Enrollments</h1>
 
+      {/* School selector */}
+      {schools.length > 0 && (
+        <div className="mb-4">
+          <label className="block text-sm mb-1">School</label>
+          <select
+            className="border p-2 w-full"
+            value={schoolId || ""}
+            onChange={(e) => setSchoolId(parseInt(e.target.value))}
+          >
+            {schools.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {/* Enroll Form */}
       <form className="mb-6 border p-4 rounded" onSubmit={handleEnroll}>
         <select
@@ -132,9 +159,11 @@ export default function ManagerEnrollments() {
           onChange={(e) => setSelectedStudent(e.target.value)}
         >
           <option value="">-- Select Student --</option>
-          {students.map((s) => (
-            <option key={s.public_id} value={s.public_id}>
-              {s.full_name || s.username} ({s.email})
+          {students
+            .filter((s) => (schoolId ? String(s.school_id) === String(schoolId) : true))
+            .map((s) => (
+            <option key={s.public_id || s.id} value={s.public_id || s.id}>
+              {(s.full_name || s.name || s.username) + ` (${s.email})`}
             </option>
           ))}
         </select>
@@ -146,7 +175,7 @@ export default function ManagerEnrollments() {
         >
           <option value="">-- Select Course --</option>
           {courses.map((c) => (
-            <option key={c.id} value={c.id}>
+            <option key={c.id} value={String(c.id)}>
               {c.title}
             </option>
           ))}
@@ -181,13 +210,13 @@ export default function ManagerEnrollments() {
               <tr key={en.id}>
                 <td className="border px-2 py-1">{en.id}</td>
                 <td className="border px-2 py-1">
-                  {en.user?.full_name || getStudentName(en.user_public_id)}
+                  {en.user?.name || en.user?.full_name || getStudentName(en.user_public_id)}
                 </td>
                 <td className="border px-2 py-1">
                   {en.course?.title || getCourseTitle(en.course_id)}
                 </td>
                 <td className="border px-2 py-1">
-                  {en.created_at
+                  {(en.date_enrolled || en.created_at)
                     ? new Date(en.created_at).toLocaleDateString()
                     : "—"}
                 </td>

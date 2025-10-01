@@ -1,7 +1,7 @@
 # app/resources/enrollments.py
 from flask import request, jsonify
 from flask_restful import Resource
-from flask_jwt_extended import jwt_required, get_jwt
+from flask_jwt_extended import jwt_required, get_jwt, get_jwt_identity
 from datetime import datetime
 
 from app.models import db
@@ -14,14 +14,70 @@ from app.utils.responses import error_response
 
 class EnrollmentListResource(Resource):
     @jwt_required()
-    def get(self):
-        """List all enrollments (admin only)."""
-        claims = get_jwt()
-        if claims.get("role") != "admin":
-            return error_response("Admins only.", 403)
+    def get(self, school_id=None, course_id=None):
+        """
+        List enrollments.
 
-        enrollments = Enrollment.query.all()
-        return enrollments_schema.dump(enrollments), 200
+        - Admin: can list all, or filter by school/course if provided
+        - Manager: can list only within their own school; supports
+          /schools/<school_id>/enrollments and /courses/<course_id>/enrollments
+        """
+        claims = get_jwt()
+        role = claims.get("role")
+
+        # Base query
+        query = Enrollment.query
+
+        if role == "admin":
+            # Admin can filter optionally
+            if course_id is not None:
+                query = query.filter_by(course_id=course_id)
+            if school_id is not None:
+                # Filter by course.school_id when school_id is given
+                query = (
+                    query.join(Course, Enrollment.course_id == Course.id)
+                    .filter(Course.school_id == school_id)
+                )
+            results = query.all()
+            return enrollments_schema.dump(results), 200
+
+        if role == "manager":
+            # Scope to schools owned by this manager OR the manager's assigned school
+            manager_public_id = get_jwt_identity()
+            manager = User.query.filter_by(public_id=manager_public_id).first()
+            if not manager:
+                return error_response("Manager not found", 404)
+
+            from app.models.school import School
+            owned_school_ids = [s.id for s in School.query.filter_by(owner_id=manager.id).all()]
+            scope_school_ids = set(owned_school_ids)
+            if manager.school_id:
+                scope_school_ids.add(manager.school_id)
+            if not scope_school_ids:
+                return error_response("No school scope found for this manager", 404)
+
+            # Base joins
+            query = (
+                query
+                .join(Course, Enrollment.course_id == Course.id)
+                .join(User, Enrollment.user_public_id == User.public_id)
+            )
+
+            # If specific school requested, ensure it's in scope
+            if school_id is not None:
+                if school_id not in scope_school_ids:
+                    return error_response("Unauthorized: cannot access another school's enrollments.", 403)
+                query = query.filter(Course.school_id == school_id)
+            else:
+                query = query.filter(Course.school_id.in_(list(scope_school_ids)))
+
+            if course_id is not None:
+                query = query.filter(Enrollment.course_id == course_id)
+
+            results = query.all()
+            return enrollments_schema.dump(results), 200
+
+        return error_response("Admins or managers only.", 403)
 
     @jwt_required()
     def post(self):
@@ -32,7 +88,6 @@ class EnrollmentListResource(Resource):
         """
         claims = get_jwt()
         role = claims.get("role")
-        school_id_claim = claims.get("school_id")
 
         if role not in ["admin", "manager"]:
             return error_response("Only managers or admins can enroll students.", 403)
@@ -61,11 +116,18 @@ class EnrollmentListResource(Resource):
 
         # Enforce school scope for managers
         if role == "manager":
-            if not school_id_claim:
-                return error_response("JWT missing school_id. Check login claims.", 403)
-            if str(course.school_id) != str(school_id_claim):
+            # Verify manager is scoped to the course's school (owner or assigned)
+            manager_public_id = get_jwt_identity()
+            manager = User.query.filter_by(public_id=manager_public_id).first()
+            if not manager:
+                return error_response("Manager not found", 404)
+            from app.models.school import School
+            school = School.query.get(course.school_id)
+            if not school:
+                return error_response("Course school not found", 404)
+            if not (school.owner_id == manager.id or (manager.school_id and manager.school_id == school.id)):
                 return error_response("Unauthorized: course belongs to another school.", 403)
-            if str(user.school_id) != str(school_id_claim):
+            if str(user.school_id) != str(course.school_id):
                 return error_response("Unauthorized: student belongs to another school.", 403)
 
         # Prevent duplicate enrollment
@@ -102,17 +164,22 @@ class EnrollmentResource(Resource):
         """Delete an enrollment (manager/admin only)."""
         claims = get_jwt()
         role = claims.get("role")
-        school_id_claim = claims.get("school_id")
 
         enrollment = Enrollment.query.get_or_404(enrollment_id)
 
         if role == "manager":
-            if not school_id_claim:
-                return error_response("JWT missing school_id.", 403)
-            if str(enrollment.course.school_id) != str(school_id_claim):
-                return error_response("Unauthorized: course belongs to another school.", 403)
-            if str(enrollment.user.school_id) != str(school_id_claim):
-                return error_response("Unauthorized: student belongs to another school.", 403)
+            # Verify manager is scoped to the course's school (owner or assigned)
+            manager_public_id = get_jwt_identity()
+            manager = User.query.filter_by(public_id=manager_public_id).first()
+            if not manager:
+                return error_response("Manager not found", 404)
+            from app.models.school import School
+            course_school_id = enrollment.course.school_id
+            school = School.query.get(course_school_id)
+            if not school:
+                return error_response("Course school not found", 404)
+            if not (school.owner_id == manager.id or (manager.school_id and manager.school_id == school.id)):
+                return error_response("Unauthorized: cannot modify enrollments outside your schools.", 403)
 
         db.session.delete(enrollment)
         db.session.commit()
