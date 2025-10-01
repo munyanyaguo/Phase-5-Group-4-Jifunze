@@ -13,13 +13,14 @@ class EnrollmentSchema(ma.SQLAlchemySchema):
     id = ma.auto_field()
     user_public_id = ma.auto_field()
     course_id = ma.auto_field()
+    date_enrolled = ma.auto_field()
     created_at = ma.auto_field()
     updated_at = ma.auto_field()
     
 
     # Nested relationships (with circular reference protection)
     user = fields.Nested('UserSchema', only=('public_id', 'name', 'email'))
-    course = fields.Nested('CourseSchema', only=('id', 'title', 'description'))
+    course = fields.Nested('CourseSchema', only=('id', 'title', 'description', 'educator', 'school'))
 
     # Custom validation
     @validates('course_id')

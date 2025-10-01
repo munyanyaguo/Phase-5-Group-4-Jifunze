@@ -2,13 +2,10 @@ from flask import request
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from marshmallow import ValidationError
-from werkzeug.security import generate_password_hash
+
 from app.models.user import User, ROLES
 from app.models.school import School
-from app.models.reset_password import ResetPassword
 from app.models.base import db
-from app.utils.responses import success_response, error_response
-from datetime import datetime, timedelta
 from app.schemas.user import (
     UserSchema, UserCreateSchema, UserUpdateSchema, PasswordChangeSchema,
     UserListResponseSchema, UserStatsSchema, UserQuerySchema
@@ -30,7 +27,7 @@ user_query_schema = UserQuerySchema()
 
 class UserResource(Resource):
     @jwt_required()
-    def get(self, user_id):
+    def get(self, user_id=None):
         """Get user by ID (int) or public_id (string) or current user"""
         try:
             user = None
@@ -292,43 +289,6 @@ class UserProfileResource(Resource):
 
         except Exception as e:
             return error_response("Something went wrong", {"error": str(e)}, status_code=500)
-    
-
-
-    @jwt_required()
-    def put(self):
-        """Update current user's profile (self or manager can update)"""
-        try:
-            current_user_public_id = get_jwt_identity()
-            current_user = User.query.filter_by(public_id=current_user_public_id).first()
-            current_user_claims = get_jwt()
-
-            if not current_user:
-                return error_response("User not found", status_code=404)
-
-            # Validate input
-            user_update_schema.context = {"user_id": current_user.id}
-            validated_data = user_update_schema.load(request.get_json() or {})
-
-            for field, value in validated_data.items():
-                # Managers can change role/school_id, normal users cannot
-                if field in ["role", "school_id"]:
-                    if current_user_claims.get("role") == "manager":
-                        setattr(current_user, field, value)
-                else:
-                    setattr(current_user, field, value)
-
-            current_user.save()
-            return success_response("Profile updated successfully", {"profile": user_schema.dump(current_user)})
-
-        except ValidationError as err:
-            return error_response("Validation error", err.messages, status_code=400)
-        except Exception as e:
-            db.session.rollback()
-            return error_response("Something went wrong", {"error": str(e)}, status_code=500)   
-
-    
-
 
 
 class UserDashboardResource(Resource):
@@ -379,11 +339,49 @@ class UserDashboardResource(Resource):
             elif role == "student":
                 from app.schemas.enrollment import enrollments_schema
                 from app.schemas.attendance import attendances_schema
-                enrollments = user.enrollments or []
-                attendance = user.attendance or []
-                dashboard_data["my_enrollments"] = enrollments_schema.dump(enrollments)
-                dashboard_data["enrolled_courses"] = len(enrollments)
-                dashboard_data["recent_attendance"] = attendances_schema.dump(attendance[-5:])
+                from app.models.message import Message
+                from app.models.resource import Resource
+                from sqlalchemy.orm import joinedload
+                
+                # Optimize queries with eager loading - only get counts and recent items
+                enrollments_count = len(user.enrollments) if user.enrollments else 0
+                attendance_count = len(user.attendance) if user.attendance else 0
+                
+                # Get only recent enrollments with eager loading (limit to 5)
+                recent_enrollments = user.enrollments[-5:] if user.enrollments else []
+                
+                # Get only recent attendance with eager loading (limit to 5)
+                recent_attendance_records = user.attendance[-5:] if user.attendance else []
+                
+                # Get recent messages (limit to 5)
+                recent_messages = Message.query.filter_by(user_public_id=user.public_id).order_by(Message.timestamp.desc()).limit(5).all()
+                
+                # Count resources efficiently
+                enrolled_course_ids = [e.course_id for e in user.enrollments] if user.enrollments else []
+                resources_count = Resource.query.filter(Resource.course_id.in_(enrolled_course_ids)).count() if enrolled_course_ids else 0
+                
+                # Count messages efficiently
+                messages_count = Message.query.filter_by(user_public_id=user.public_id).count()
+                
+                # Dashboard data - simplified
+                dashboard_data["enrolled_courses"] = enrollments_count
+                dashboard_data["attendance_count"] = attendance_count
+                dashboard_data["resources_count"] = resources_count
+                dashboard_data["messages_count"] = messages_count
+                
+                # Recent activity - only what's needed for dashboard
+                dashboard_data["recent_enrollments"] = [
+                    {"id": e.id, "course_title": e.course.title if e.course else "Unknown", "date_enrolled": e.date_enrolled.isoformat() if e.date_enrolled else None}
+                    for e in recent_enrollments
+                ]
+                dashboard_data["recent_attendance"] = [
+                    {"date": str(a.date), "status": a.status, "course": a.course.title if a.course else "Unknown"}
+                    for a in recent_attendance_records
+                ]
+                dashboard_data["recent_messages"] = [
+                    {"id": m.id, "content": m.content, "timestamp": m.timestamp.isoformat() if m.timestamp else None}
+                    for m in recent_messages
+                ]
 
             return success_response("Dashboard data retrieved successfully", {"dashboard": dashboard_data})
 
@@ -422,51 +420,3 @@ class UserPasswordChangeResource(Resource):
         except Exception as e:
             db.session.rollback()
             return error_response("Something went wrong", {"error": str(e)}, status_code=500)
-        
-class UserPasswordResetResource(Resource):
-    def post(self):
-        """
-        Reset password using a token (no login required)
-        Payload:
-        {
-            "token": "<reset-token>",
-            "new_password": "newStrongPassword123!"
-        }
-        """
-        try:
-            data = request.get_json() or {}
-            token = data.get("token")
-            new_password = data.get("new_password")
-
-            if not token or not new_password:
-                return error_response("Token and new password are required", status_code=400)
-
-            # Look up token
-            reset_entry = ResetPassword.query.filter_by(token=token).first()
-            if not reset_entry:
-                return error_response("Invalid or expired token", status_code=400)
-
-            # Check expiration (e.g., 1 hour)
-            if reset_entry.created_at + timedelta(hours=1) < datetime.utcnow():
-                db.session.delete(reset_entry)
-                db.session.commit()
-                return error_response("Token has expired", status_code=400)
-
-            # Get user
-            user = User.query.get(reset_entry.user_id)
-            if not user:
-                return error_response("User not found", status_code=404)
-
-            # Hash and update password
-            user.set_password(new_password)
-            user.save()
-
-            # Invalidate the token
-            db.session.delete(reset_entry)
-            db.session.commit()
-
-            return success_response("Password has been successfully reset")
-
-        except Exception as e:
-            db.session.rollback()
-            return error_response("Something went wrong", {"error": str(e)}, status_code=500)        
