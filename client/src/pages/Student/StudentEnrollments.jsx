@@ -54,7 +54,7 @@ const StudentEnrollments = () => {
 
   useEffect(() => {
     fetchEnrollments(page);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [page]);
 
   if (loading) return (
