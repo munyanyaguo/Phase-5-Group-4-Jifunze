@@ -118,7 +118,8 @@ export default function EducatorDashboard() {
                 return unreadCount;
               }
               return 0;
-            } catch (err) {
+            } catch (error) {
+              console.error('Failed to fetch messages:', error);
               return 0;
             }
           });

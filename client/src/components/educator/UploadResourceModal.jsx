@@ -30,11 +30,8 @@ export default function UploadResourceModal({
     reset, 
     setValue,
     setError,
-    clearErrors,
-    watch 
+    clearErrors
   } = useForm();
-
-  const watchedType = watch('type');
 
   // Handle drag events
   const handleDrag = (e) => {

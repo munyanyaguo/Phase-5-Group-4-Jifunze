@@ -78,6 +78,8 @@ export default function Profile() {
       setSaving(false);
     }
   };
+
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
         <div className="text-center">

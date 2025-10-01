@@ -4,6 +4,7 @@ import { NavLink } from "react-router-dom";
 import { Home, BookOpen, FileText, Calendar, MessageSquare, LogOut } from "lucide-react";
 
 export default function Sidebar() {
+  // eslint-disable-next-line no-unused-vars
   const Item = ({ to, icon: Icon, children }) => (
     <NavLink to={to} className={({ isActive }) => `flex items-center gap-2 px-3 py-2 rounded ${isActive ? "bg-blue-50 text-blue-600" : "text-gray-700 hover:bg-gray-100"}`}>
       <Icon size={16} /> {children}

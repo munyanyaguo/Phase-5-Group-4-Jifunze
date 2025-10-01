@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 // src/pages/educator/Attendance.jsx
 import React, { useState, useEffect } from "react";
 import { Calendar, Users, CheckCircle, XCircle, Save, History, Eye, Filter, UserCheck, BookOpen, TrendingUp } from "lucide-react";
@@ -6,7 +7,7 @@ import { AttendanceSkeleton } from "../../components/common/SkeletonLoader";
 const BASE_URL = "http://127.0.0.1:5000/api";
 
 // Helper for authenticated requests
-async function authFetch(url, options = {}) {
+export async function authFetch(url, options = {}) {
   const token = localStorage.getItem("token");
   const headers = {
     "Content-Type": "application/json",
@@ -26,7 +27,8 @@ function decodeJwt(token) {
     if (pad) base64 += "=".repeat(4 - pad);
     const json = atob(base64);
     return JSON.parse(json);
-  } catch (_) {
+  } catch (error) {
+    console.error('Failed to decode JWT:', error);
     return null;
   }
 }
@@ -234,8 +236,8 @@ export default function Attendance() {
       });
       setAttendanceData(existingAttendance);
     }
-  } catch (err) {
-    
+  } catch (error) {
+    console.error('Failed to fetch existing attendance:', error);
   }
 };
 
