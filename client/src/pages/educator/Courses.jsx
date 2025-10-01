@@ -51,7 +51,10 @@ export default function Courses() {
               headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
             });
             const body = await r.json();
-            const total = (r.ok && body.success && body?.data?.meta?.total) ? body.data.meta.total : 0;
+            // Check multiple possible response structures
+            const total = (r.ok && body.success) 
+              ? (body?.data?.total || body?.data?.meta?.total || 0)
+              : 0;
             return [c.id, total];
           } catch {
             return [c.id, 0];
@@ -78,7 +81,10 @@ export default function Courses() {
         course.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         course.description?.toLowerCase().includes(searchTerm.toLowerCase())
       )
-      .sort((a, b) => a.title?.localeCompare(b.title));
+      .sort((a, b) => {
+        // Natural sort to handle numbers correctly (Course 2 before Course 10)
+        return a.title?.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' }) || 0;
+      });
   }, [viewMode, myCourses, allCourses, searchTerm]);
 
   if (initialLoading) {
