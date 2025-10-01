@@ -6,7 +6,6 @@ export default function SchoolForm({ onCreate, initialData = {}, onCancel }) {
   const [phone, setPhone] = useState(initialData.phone || "");
   const [loading, setLoading] = useState(false);
 
-  // Update form if initialData changes (useful when editing different schools)
   useEffect(() => {
     setName(initialData.name || "");
     setAddress(initialData.address || "");
@@ -21,7 +20,6 @@ export default function SchoolForm({ onCreate, initialData = {}, onCancel }) {
     await onCreate({ name, address, phone });
     setLoading(false);
 
-    // Clear form only if not editing
     if (!initialData.id) {
       setName("");
       setAddress("");
@@ -32,47 +30,79 @@ export default function SchoolForm({ onCreate, initialData = {}, onCancel }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white p-4 shadow-md rounded-lg grid grid-cols-1 md:grid-cols-4 gap-3 mb-6"
+      className="bg-white shadow-lg rounded-xl p-6 space-y-6 border border-gray-200"
     >
-      <input
-        type="text"
-        placeholder="School name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        required
-        className="border p-2 rounded"
-      />
-      <input
-        type="text"
-        placeholder="Address (optional)"
-        value={address}
-        onChange={(e) => setAddress(e.target.value)}
-        className="border p-2 rounded"
-      />
-      <input
-        type="text"
-        placeholder="Phone (optional)"
-        value={phone}
-        onChange={(e) => setPhone(e.target.value)}
-        className="border p-2 rounded"
-      />
-      <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-        >
-          {loading ? (initialData.id ? "Saving..." : "Creating...") : initialData.id ? "Save" : "Add School"}
-        </button>
+      <h2 className="text-lg font-semibold text-gray-800">
+        {initialData.id ? "Edit School" : "Add New School"}
+      </h2>
+
+      {/* Inputs */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            School Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            placeholder="Enter school name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            className="w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Address
+          </label>
+          <input
+            type="text"
+            placeholder="Enter address"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            className="w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Phone
+          </label>
+          <input
+            type="text"
+            placeholder="Enter phone number"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            className="w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+          />
+        </div>
+      </div>
+
+      {/* Buttons */}
+      <div className="flex justify-end gap-3">
         {onCancel && (
           <button
             type="button"
             onClick={onCancel}
-            className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition"
+            className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
           >
             Cancel
           </button>
         )}
+        <button
+          type="submit"
+          disabled={loading}
+          className="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading
+            ? initialData.id
+              ? "Saving..."
+              : "Creating..."
+            : initialData.id
+            ? "Save Changes"
+            : "Add School"}
+        </button>
       </div>
     </form>
   );

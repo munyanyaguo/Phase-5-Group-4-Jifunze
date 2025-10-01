@@ -12,16 +12,18 @@ import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 import LandingPage from "./pages/LandingPage";
 
-// Lazy load other pages for code splitting
-const ResetPassword = lazy(() => import("./pages/Auth/ResetPassword"));
-
-// Owner pages - Lazy loaded
-const OwnerDashboard = lazy(() => import("./pages/owner/Dashboard"));
-const Schools = lazy(() => import("./pages/owner/Schools"));
-const OwnerStudents = lazy(() => import("./pages/owner/Students"));
-const Educators = lazy(() => import("./pages/owner/Educators"));
-const Reports = lazy(() => import("./pages/owner/Reports"));
-const Users = lazy(() => import("./pages/owner/Users"));
+// Owner pages
+import OwnerDashboard from "./pages/owner/Dashboard";
+import Schools from "./pages/owner/Schools";
+import OwnerStudents from "./pages/owner/Students";
+import Educators from "./pages/owner/Educators";
+// import ResourcesOwner from "./pages/owner/Resources";
+import Reports from "./pages/owner/Reports";
+import Users from "./pages/owner/Users";
+import ManagerCourses from "./pages/owner/Courses";
+import Enrollments from "./pages/owner/Enrollment";
+import OwnerProfile from "./pages/owner/Profile";
+// import OwnerSettings from "./pages/owner/Settings";
 
 // Educator pages - Lazy loaded with preloading hints
 const EducatorDashboard = lazy(() => import(/* webpackPrefetch: true */ "./pages/educator/Dashboard"));
@@ -99,6 +101,10 @@ export default function App() {
           {/* <Route path="resources" element={<ResourcesOwner />} /> */}
           <Route path="reports" element={<Reports />} />
           <Route path="users" element={<Users />} />
+          <Route path="courses" element={<ManagerCourses />} />
+          <Route path="enrollments" element={<Enrollments />} />
+          <Route path="profile" element={<OwnerProfile />} />
+       
         </Route>
 
         {/* Educator routes */}

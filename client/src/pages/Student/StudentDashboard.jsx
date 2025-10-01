@@ -47,15 +47,16 @@ const StudentDashboard = () => {
     setProfileError("");
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`${API_URL}/api/users/profile`, {
+      const res = await fetch(`${API_URL}/api/users/me`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(profileForm),
+        body: JSON.stringify({ name: profileForm.name, email: profileForm.email }),
       });
       const data = await res.json();
+      console.log('Profile update status:', res.status, data);
       if (res.ok && data.success) {
         setProfileSuccess("Profile updated successfully.");
         setShowEditProfile(false);
@@ -110,9 +111,8 @@ const StudentDashboard = () => {
         {["overview", "messages", "profile"].map((tab) => (
           <button
             key={tab}
-            className={`px-4 py-2 rounded ${
-              activeTab === tab ? "bg-blue-600 text-white" : "bg-gray-200 text-blue-700"
-            }`}
+            className={`px-4 py-2 rounded ${activeTab === tab ? "bg-blue-600 text-white" : "bg-gray-200 text-blue-700"
+              }`}
             onClick={() => setActiveTab(tab)}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -226,11 +226,13 @@ const StudentDashboard = () => {
       )}
 
       {activeTab === "messages" && (() => {
-  const firstCourse = dashboard.user?.enrollments?.[0];
-  return (
-    <StudentMessages courseId={firstCourse?.course_id} />
-  );
-  })()}
+        const firstCourse = dashboard.user?.enrollments?.[0];
+        console.log("First enrolled course:", firstCourse); // safe outside JSX return
+        console.log("Course ID:", firstCourse?.course_id);
+        return (
+          <StudentMessages courseId={firstCourse?.course_id} />
+        );
+      })()}
 
 
       {/* Profile Tab (expanded) */}
@@ -247,4 +249,3 @@ const StudentDashboard = () => {
 };
 
 export default StudentDashboard;
-  

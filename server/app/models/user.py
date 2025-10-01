@@ -23,6 +23,12 @@ class User(BaseModel):
 
     # Relationships
     school = db.relationship("School", back_populates="users", foreign_keys="User.school_id")
+    owned_schools = db.relationship(
+        "School",
+        back_populates="owner",
+        foreign_keys="School.owner_id",
+        cascade="all, delete-orphan",
+    )
     courses = db.relationship("Course", back_populates="educator", foreign_keys="Course.educator_id")
     resources = db.relationship("Resource", back_populates="uploader", foreign_keys="Resource.uploaded_by_public_id")
     messages = db.relationship("Message", back_populates="user", foreign_keys="Message.user_public_id")
@@ -34,9 +40,7 @@ class User(BaseModel):
         foreign_keys="Enrollment.user_public_id",
     )
     attendance = db.relationship("Attendance", back_populates="user", foreign_keys="Attendance.user_public_id")
-    verifications = db.relationship("Attendance", back_populates="verifier", foreign_keys="Attendance.verified_by")
-    # NEW: schools owned by this user (manager/owner)
-    owned_schools = db.relationship("School", back_populates="owner", foreign_keys="School.owner_id")
+    # Note: removed verifications relationship to match current Attendance model/table
     reset_passwords = db.relationship("ResetPassword", back_populates="user")
     # Password methods
 

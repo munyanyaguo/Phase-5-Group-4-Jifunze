@@ -4,7 +4,7 @@ from .course import Course
 from sqlalchemy.orm import synonym
 
 class Attendance(BaseModel):
-    __tablename__ = "attendance"
+    _tablename_ = "attendance"
 
     # Foreign Keys
     user_public_id = db.Column(db.String(50), db.ForeignKey("users.public_id"), nullable=False)
@@ -21,9 +21,9 @@ class Attendance(BaseModel):
     verifier = db.relationship("User", foreign_keys=[verified_by_public_id], back_populates="verifications")
     course = db.relationship("Course", back_populates="attendance", foreign_keys=[course_id])
 
-    __table_args__ = (
+    _table_args_ = (
         db.UniqueConstraint("user_public_id", "course_id", "date", name="unique_attendance"),
     )
 
-    def __repr__(self):
+    def _repr_(self):
         return f"<Attendance user={self.user_public_id}, course={self.course_id}, date={self.date}>"
