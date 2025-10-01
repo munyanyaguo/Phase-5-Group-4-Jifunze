@@ -8,6 +8,8 @@ from app.models.school import School
 from app.models.user import User, ROLES
 from app.models.base import db
 from app.models.course import Course
+from app.models.attendance import Attendance
+
 from app.schemas.schools import SchoolSchema
 from app.schemas.user import UserSchema
 from app.utils.responses import success_response, error_response
@@ -191,7 +193,7 @@ class SchoolListResource(Resource):
 class SchoolStatsResource(Resource):
     @jwt_required()
     def get(self, school_id=None):
-        """Get school statistics"""
+        """Get school statistics (attendance + course-based performance)"""
         try:
             current_user_claims = get_jwt()
             current_user_public_id = get_jwt_identity()
@@ -200,41 +202,52 @@ class SchoolStatsResource(Resource):
             # Determine which school to get stats for
             target_school_id = school_id or current_user.school_id
 
-            # Check suthorization
+            # Authorization: managers can only view their own schools
             if (current_user_claims.get("role") != "manager" and
                 current_user.school_id != target_school_id):
                 return error_response("Not authorized to view school stats", status_code=403)
+
             school = School.query.get(target_school_id)
             if not school:
                 return error_response("School not found", status_code=404)
-            
-            # Calculate stats
-            stats = {}
 
-            # User counts by role
-            for role in ROLES:
-                count = User.query.filter(User.school_id == target_school_id, User.role == role).count()
-            stats[f"{role}s"] = count
+            # --- Attendance Summary ---
+            # Attendance has no direct school_id; compute via Course.school_id
+            total_sessions = (
+                db.session.query(Attendance)
+                .join(Course, Attendance.course_id == Course.id)
+                .filter(Course.school_id == target_school_id)
+                .count()
+            )
+            present_sessions = (
+                db.session.query(Attendance)
+                .join(Course, Attendance.course_id == Course.id)
+                .filter(Course.school_id == target_school_id, Attendance.status == "present")
+                .count()
+            )
+            attendance_rate = round((present_sessions / total_sessions) * 100, 2) if total_sessions > 0 else 0
 
-            # Total users
-            stats["total_users"] = User.query.filter(User.school_id == target_school_id).count()
+            # --- Course Performance ---
+            performance_data = []
+            for course in school.courses:
+                total_course_attendance = Attendance.query.filter_by(course_id=course.id).count()
+                present_course_attendance = Attendance.query.filter_by(course_id=course.id, status="present").count()
 
-            # Course count
-            stats["total_courses"] = len(school.courses)
+                avg_attendance = round(
+                    (present_course_attendance / total_course_attendance) * 100, 2
+                ) if total_course_attendance > 0 else 0
 
-            # Recent registrations (last 30 days)
-            from datetime import datetime, timedelta
-            month_ago = datetime.now() - timedelta(days=30)
-            recent_users = User.query.filter(
-                User.school_id == target_school_id,
-                User.created_at >= month_ago
-            ).count()
-            stats["recent_registrations"] = recent_users
+                performance_data.append({
+                    "course": course.title,
+                    "avg_attendance": avg_attendance
+                })
 
             return success_response("School stats retrieved successfully", {
                 "school": school_schema.dump(school),
-                "stats": stats
+                "attendance": attendance_rate,
+                "courses": performance_data
             })
+
         except Exception as e:
             return error_response("Something went wrong", {"error": str(e)}, status_code=500)
 
@@ -534,7 +547,7 @@ class EducatorsByManagerResource(Resource):
                         "name": u.name,
                         "email": u.email,
                         "school": school.name,
-                        "courses": [c.name for c in u.courses]  # assuming educator has courses
+                        "courses": [c.title for c in u.courses]  # assuming educator has courses
                     })
 
         return success_response("Educators retrieved successfully", {"educators": educators})
@@ -556,10 +569,12 @@ class ManagerStudentsResource(Resource):
                 if u.role == "student":
                     students.append({
                         "id": u.id,
+                        "public_id": u.public_id,
                         "name": u.name,
                         "email": u.email,
                         "school": school.name,
-                        "courses": [c.name for c in u.courses]  # if students have courses
+                        "school_id": school.id,
+                        "courses": [c.title for c in u.courses]  # if students have courses
                     })
 
         return success_response("Students retrieved successfully", {"students": students})

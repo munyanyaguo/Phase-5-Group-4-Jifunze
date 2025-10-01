@@ -29,14 +29,18 @@ api.add_resource(LoginResource, "/auth/login")
 api.add_resource(LogoutResource, "/auth/logout")
 api.add_resource(ResetPasswordResource, "/auth/reset-password")
 
+# -------------------
 # User endpoints
+# -------------------
 api.add_resource(UserListResource, "/users")
 api.add_resource(UserResource, "/users/me", "/users/<int:user_id>")
 api.add_resource(UserProfileResource, "/users/profile")
 api.add_resource(UserDashboardResource, "/users/dashboard")
 api.add_resource(UsersBySchoolResource, "/schools/<int:school_id>/users")
 
+# -------------------
 # School endpoints
+# -------------------
 api.add_resource(SchoolListResource, "/schools")
 api.add_resource(SchoolResource, "/schools/me", "/schools/<int:school_id>")
 api.add_resource(SchoolStatsResource, "/schools/stats", "/schools/<int:school_id>/stats")
@@ -54,8 +58,10 @@ api.add_resource(CourseResourcesApi, "/courses/<int:course_id>/resources")
 api.add_resource(StudentResourcesApi, "/student/resources")
 
 
+# -------------------
 # Enrollment endpoints
-api.add_resource(EnrollmentListResource, "/enrollments")
-api.add_resource(EnrollmentResource, "/enrollments/<int:enrollment_id>")
+# -------------------
+api.add_resource(EnrollmentListResource, "/enrollments", "/schools/<int:school_id>/enrollments", "/courses/<int:course_id>/enrollments")  # GET all / POST new
+api.add_resource(EnrollmentResource, "/enrollments/<int:enrollment_id>")  # GET / PUT / PATCH / DELETE
 
 

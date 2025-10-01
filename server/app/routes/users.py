@@ -30,30 +30,36 @@ class UserResource(Resource):
     def get(self, user_id=None):
         """Get user by ID (int) or public_id (string) or current user"""
         try:
-            user = None
-            if user_id:
-                # Try int id first, then public_id
-                if isinstance(user_id, int) or (isinstance(user_id, str) and user_id.isdigit()):
-                    user = User.query.get(int(user_id))
-                else:
-                    user = User.query.filter_by(public_id=str(user_id)).first()
+            current_user_public_id = get_jwt_identity()
+            
+            if user_id is None:
+                # /users/me
+                user = User.query.filter_by(public_id=current_user_public_id).first()
             else:
-                current_user_public_id = get_jwt_identity()
-                user = User.query.filter_by(public_id=str(current_user_public_id)).first()
+                # /users/<int:user_id>
+                user = User.query.get(user_id)  # safer than filter_by(id=...)
 
             if not user:
                 return error_response("User not found", status_code=404)
 
-            return success_response("User retrieved successfully", {"user": user_schema.dump(user)})
-
+            return success_response(
+                "User retrieved successfully",
+                {"user": user_schema.dump(user)}
+            )
         except Exception as e:
             return error_response("Something went wrong", {"error": str(e)}, status_code=500)
 
+
     @jwt_required()
-    def put(self, user_id):
+    def put(self, user_id=None):
         """Update user information"""
         try:
-            user = User.query.get(user_id)
+            if not user_id:
+                current_user_public_id = get_jwt_identity()
+                user = User.query.filter_by(public_id=current_user_public_id).first()
+            else:
+                user = User.query.get(user_id)
+
             if not user:
                 return error_response("User not found", status_code=404)
 
@@ -90,9 +96,12 @@ class UserResource(Resource):
             return error_response("Something went wrong", {"error": str(e)}, status_code=500)
 
     @jwt_required()
-    def delete(self, user_id):
+    def delete(self, user_id=None):
         """Delete user (managers only, same school)"""
         try:
+            if not user_id:
+                return error_response("User ID required for deletion", status_code=400)
+
             current_user_claims = get_jwt()
             if current_user_claims.get("role") != "manager":
                 return error_response("Only managers can delete users", status_code=403)
@@ -113,7 +122,6 @@ class UserResource(Resource):
         except Exception as e:
             db.session.rollback()
             return error_response("Something went wrong", {"error": str(e)}, status_code=500)
-
 
 class UserListResource(Resource):
     @jwt_required()
@@ -417,6 +425,58 @@ class UserPasswordChangeResource(Resource):
 
         except ValidationError as err:
             return error_response("Validation error", err.messages, status_code=400)
+        except Exception as e:
+            db.session.rollback()
+            return error_response("Something went wrong", {"error": str(e)}, status_code=500)
+
+        
+class UserPasswordResetResource(Resource):
+    def post(self):
+        """
+        Reset password using a token (no login required)
+        Payload:
+        {
+            "token": "<reset-token>",
+            "new_password": "newStrongPassword123!"
+        }
+        """
+        try:
+            from app.models.reset_password import ResetPassword
+            from datetime import datetime, timedelta
+            
+            data = request.get_json() or {}
+            token = data.get("token")
+            new_password = data.get("new_password")
+
+            if not token or not new_password:
+                return error_response("Token and new password are required", status_code=400)
+
+            # Look up token
+            reset_entry = ResetPassword.query.filter_by(token=token).first()
+            if not reset_entry:
+                return error_response("Invalid or expired token", status_code=400)
+
+            # Check expiration (e.g., 1 hour)
+            if reset_entry.created_at + timedelta(hours=1) < datetime.utcnow():
+                db.session.delete(reset_entry)
+                db.session.commit()
+                return error_response("Token has expired", status_code=400)
+
+            # Get user
+            user = User.query.get(reset_entry.user_id)
+            if not user:
+                return error_response("User not found", status_code=404)
+
+            # Hash and update password
+            user.set_password(new_password)
+            user.save()
+
+            # Invalidate the token
+            db.session.delete(reset_entry)
+            db.session.commit()
+
+            return success_response("Password has been successfully reset")
+
         except Exception as e:
             db.session.rollback()
             return error_response("Something went wrong", {"error": str(e)}, status_code=500)

@@ -1,168 +1,175 @@
+const API_URL = "http://localhost:5000/api";
 
-const BASE_URL = "http://localhost:5000";
-
-export async function fetchDashboard() {
-  const res = await authFetch(`${BASE_URL}/dashboard`);
-  if (!res.ok) {
-    throw new Error("Failed to fetch dashboard data");
-  }
-  return res.json();
+// --------------------
+// Helpers
+// --------------------
+function getToken() {
+  return localStorage.getItem("token");
 }
 
-// Helper for authenticated requests
-export async function authFetch(url, options = {}) {
-  const token = localStorage.getItem("token");
-  const headers = {
+async function handleResponse(res) {
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    data = {};
+  }
+  if (!res.ok) {
+    const message = data.message || (data.errors && JSON.stringify(data.errors)) || "Something went wrong";
+    throw new Error(message);
+  }
+  return data;
+}
+
+// Common fetch with auth
+async function fetchWithAuth(url, options = {}) {
+  options.headers = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${getToken()}`,
     ...(options.headers || {}),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
-  return fetch(url, { ...options, headers });
+  return handleResponse(await fetch(url, options));
 }
 
+// --------------------
+// SCHOOL API
+// --------------------
+export const fetchSchools = async () => (await fetchWithAuth(`${API_URL}/schools`)) || [];
+export const createSchool = (schoolData) =>
+  fetchWithAuth(`${API_URL}/schools`, { method: "POST", body: JSON.stringify(schoolData) });
+export const fetchSchoolById = (id) =>
+  fetchWithAuth(`${API_URL}/schools/${id}`) || {};
+export const updateSchool = (id, updates) =>
+  fetchWithAuth(`${API_URL}/schools/${id}`, { method: "PUT", body: JSON.stringify(updates) });
+export const deleteSchool = (id) =>
+  fetchWithAuth(`${API_URL}/schools/${id}`, { method: "DELETE" });
 
-export async function fetchSchools() {
-  const res = await fetch(`${BASE_URL}/schools`);
-  return res.json();
-}
+// --------------------
+// SCHOOL STATS & USERS
+// --------------------
+export const fetchSchoolStats = (schoolId) =>
+  fetchWithAuth(`${API_URL}/schools/${schoolId}/stats`) || {};
 
+export const fetchSchoolUsers = (schoolId, { page = 1, per_page = 20, role, search } = {}) => {
+  const params = new URLSearchParams({ page, per_page });
+  if (role) params.append("role", role);
+  if (search) params.append("search", search);
+  return fetchWithAuth(`${API_URL}/schools/${schoolId}/users?${params.toString()}`) || [];
+};
 
-// Use authFetch for protected endpoint
-export async function fetchCourses() {
-  const res = await authFetch(`${BASE_URL}/courses`);
-  return res.json();
-}
+// --------------------
+// SCHOOL COURSES
+// --------------------
+export const fetchSchoolCourses = (schoolId, { educator_id, search } = {}) => {
+  const params = new URLSearchParams();
+  if (educator_id) params.append("educator_id", educator_id);
+  if (search) params.append("search", search);
+  return fetchWithAuth(`${API_URL}/schools/${schoolId}/courses?${params.toString()}`) || [];
+};
 
+// --------------------
+// DASHBOARD
+// --------------------
+export const fetchDashboard = (schoolId) => {
+  const url = schoolId ? `${API_URL}/schools/${schoolId}/dashboard` : `${API_URL}/schools/dashboard`;
+  return fetchWithAuth(url) || {};
+};
 
-export async function fetchHealth() {
-  const res = await fetch(`${BASE_URL}/health`);
-  return res.json();
-}
-
-
-// Create a new school (managers only)
-export async function createSchool(schoolData) {
-  const res = await authFetch(`${BASE_URL}/schools`, {
+// --------------------
+// ASSIGN USER
+// --------------------
+export const apiAssignUser = (schoolId, role, payload) =>
+  fetchWithAuth(`${API_URL}/schools/${schoolId}/assign/${role}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(schoolData),
+    body: JSON.stringify(payload),
   });
 
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data?.message || "Failed to create school");
-  }
+// --------------------
+// EDUCATORS / STUDENTS
+// --------------------
+export const fetchEducators = async () => (await fetchWithAuth(`${API_URL}/users?role=educator`)) || [];
+export const fetchManagerEducators = async () => (await fetchWithAuth(`${API_URL}/manager/educators`)) || [];
+export const fetchOwnerStudents = async () => (await fetchWithAuth(`${API_URL}/manager/students`)) || [];
 
-  return res.json();
-}
+// --------------------
+// STUDENT CRUD
+// --------------------
+export const createStudent = (studentData) =>
+  fetchWithAuth(`${API_URL}/users`, { method: "POST", body: JSON.stringify(studentData) });
+export const fetchStudentById = (id) => fetchWithAuth(`${API_URL}/users/${id}`) || {};
+export const updateStudent = (id, updates) =>
+  fetchWithAuth(`${API_URL}/users/${id}`, { method: "PUT", body: JSON.stringify(updates) });
+export const deleteUser = (id) =>
+  fetchWithAuth(`${API_URL}/users/${id}`, { method: "DELETE" });
+export const fetchOwnerUsers = async () => (await fetchWithAuth(`${API_URL}/manager/users`)) || [];
+export const updateUser = (id, updates) =>
+  fetchWithAuth(`${API_URL}/users/${id}`, { method: "PUT", body: JSON.stringify(updates) });
 
-// Update an existing school (managers only)
-export async function updateSchool(schoolId, schoolData) {
-  const res = await authFetch(`${BASE_URL}/schools/${schoolId}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(schoolData),
-  });
+// --------------------
+// COURSES CRUD
+// --------------------
+export const fetchCourses = async ({ school_id, educator_id, search, page = 1, per_page = 20 } = {}) => {
+  const params = new URLSearchParams({ page, per_page });
+  if (school_id) params.append("school_id", school_id);
+  if (educator_id) params.append("educator_id", educator_id);
+  if (search) params.append("search", search);
+  return fetchWithAuth(`${API_URL}/courses?${params.toString()}`) || [];
+};
 
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data?.message || "Failed to update school");
-  }
+export const createCourse = (courseData) =>
+  fetchWithAuth(`${API_URL}/courses`, { method: "POST", body: JSON.stringify(courseData) });
+export const updateCourse = (course_id, updates) =>
+  fetchWithAuth(`${API_URL}/courses/${course_id}`, { method: "PATCH", body: JSON.stringify(updates) });
+export const deleteCourse = (course_id) =>
+  fetchWithAuth(`${API_URL}/courses/${course_id}`, { method: "DELETE" });
 
-  return res.json();
-}
+// --------------------
+// ENROLLMENTS
+// --------------------
+export const fetchEnrollments = async () =>
+  (await fetchWithAuth(`${API_URL}/enrollments`)) || [];
 
-// Delete a school (managers only)
-export async function deleteSchool(schoolId) {
-  const res = await authFetch(`${BASE_URL}/schools/${schoolId}`, {
-    method: "DELETE",
-  });
+export const fetchSchoolEnrollments = async (schoolId) =>
+  (await fetchWithAuth(`${API_URL}/schools/${schoolId}/enrollments`)) || [];
 
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data?.message || "Failed to delete school");
-  }
-
-  return res.json();
-}
-
-// Fetch students for the manager (all students in manager's schools)
-export async function fetchOwnerStudents() {
-  const res = await authFetch(`${BASE_URL}/manager/students`);
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data?.message || "Failed to fetch students");
-  }
-  return res.json();
-}
-
-// Fetch educators for the manager (all educators in manager's schools)
-export async function fetchManagerEducators() {
-  const res = await authFetch(`${BASE_URL}/manager/educators`);
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data?.message || "Failed to fetch educators");
-  }
-  return res.json();
-}
-
-// Fetch all users for the manager (all users in manager's schools)
-export async function fetchOwnerUsers() {
-  const res = await authFetch(`${BASE_URL}/manager/users`);
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data?.message || "Failed to fetch users");
-  }
-  return res.json();
-}
-
-// Create a new student
-export async function createStudent(studentData) {
-  const res = await authFetch(`${BASE_URL}/users`, {
+export const createEnrollment = (payload) =>
+  fetchWithAuth(`${API_URL}/enrollments`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...studentData, role: "student" }),
+    body: JSON.stringify(payload), // { user_public_id, course_id }
   });
 
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data?.message || "Failed to create student");
-  }
+export const deleteEnrollment = (enrollmentId) =>
+  fetchWithAuth(`${API_URL}/enrollments/${enrollmentId}`, { method: "DELETE" });
 
-  return res.json();
-}
-
-// Delete a user (student, educator, etc.)
-export async function deleteUser(userId) {
-  const res = await authFetch(`${BASE_URL}/users/${userId}`, {
-    method: "DELETE",
-  });
-
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data?.message || "Failed to delete user");
-  }
-
-  return res.json();
-}
-
-// Assign a user (student or educator) to a school (managers only)
-export async function apiAssignUser(schoolId, role, { email }) {
-  const res = await authFetch(`${BASE_URL}/schools/${schoolId}/assign/${role}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email }),
-  });
-
-  if (!res.ok) {
-    // Try to extract error message from API
-    try {
-      const data = await res.json();
-      throw new Error(data?.message || "Failed to assign user");
-    } catch (_) {
-      throw new Error("Failed to assign user");
-    }
-  }
-
-  return res.json();
-}
-
+// --------------------
+// EXPORT ALL SERVICES
+// --------------------
+export default {
+  fetchSchools,
+  createSchool,
+  fetchSchoolById,
+  updateSchool,
+  deleteSchool,
+  fetchSchoolStats,
+  fetchSchoolUsers,
+  fetchSchoolCourses,
+  fetchDashboard,
+  apiAssignUser,
+  fetchEducators,
+  fetchManagerEducators,
+  fetchOwnerStudents,
+  fetchOwnerUsers,
+  createStudent,
+  fetchStudentById,
+  updateStudent,
+  deleteUser,
+  updateUser,
+  fetchCourses,
+  createCourse,
+  updateCourse,
+  deleteCourse,
+  fetchEnrollments,
+  fetchSchoolEnrollments,
+  createEnrollment,
+  deleteEnrollment,
+};

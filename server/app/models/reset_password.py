@@ -26,14 +26,22 @@ class ResetPassword(BaseModel):
     
     def is_valid(self):
         now = datetime.now(timezone.utc)
-        return not self.used and self.expires_at > now
+        expires_at = self.expires_at
+        # Normalize to timezone-aware UTC for safe comparison
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        return not self.used and expires_at > now
     
     def mark_as_used(self):
         self.used = True
         self.save()
 
     def is_expired(self):
-        return datetime.now(timezone.utc) > self.expires_at
+        now = datetime.now(timezone.utc)
+        expires_at = self.expires_at
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        return now > expires_at
     
     @classmethod
     def find_valid_token(cls, token):
