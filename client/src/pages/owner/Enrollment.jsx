@@ -8,6 +8,8 @@ import {
   createEnrollment,
   deleteEnrollment,
 } from "../../api";
+import { motion, AnimatePresence } from "framer-motion";
+import { PlusCircle, UserMinus } from "lucide-react";
 
 export default function ManagerEnrollments() {
   const [schoolId, setSchoolId] = useState(null);
@@ -26,14 +28,10 @@ export default function ManagerEnrollments() {
   const loadSchool = async () => {
     try {
       const dash = await fetchDashboard();
-      // Backend returns { dashboard: { schools: [...] } }
       const list = dash?.dashboard?.schools || [];
       setSchools(list);
-      if (list.length > 0) {
-        setSchoolId(list[0].id);
-      } else {
-        alert("No school found for this manager.");
-      }
+      if (list.length > 0) setSchoolId(list[0].id);
+      else alert("No school found for this manager.");
     } catch (err) {
       console.error("Failed to load dashboard:", err.message);
       alert("Failed to load school.");
@@ -63,9 +61,6 @@ export default function ManagerEnrollments() {
     }
   };
 
-  // --------------------
-  // Effects
-  // --------------------
   useEffect(() => {
     loadSchool();
   }, []);
@@ -74,14 +69,10 @@ export default function ManagerEnrollments() {
     if (schoolId) loadData(schoolId);
   }, [schoolId]);
 
-  // When student changes, clear previously selected course to avoid mismatch
   useEffect(() => {
     setSelectedCourse("");
   }, [selectedStudent]);
 
-  // --------------------
-  // Helpers
-  // --------------------
   const getStudentName = (publicId) => {
     const s = students.find((st) => (st.public_id || st.id) === publicId);
     return s ? `${s.full_name || s.username} (${s.email})` : publicId;
@@ -108,7 +99,6 @@ export default function ManagerEnrollments() {
       await loadData(schoolId);
       setSelectedStudent("");
       setSelectedCourse("");
-      alert("Student enrolled successfully.");
     } catch (err) {
       console.error("Enroll failed:", err.message);
       alert(err.message || "Failed to enroll student.");
@@ -130,15 +120,15 @@ export default function ManagerEnrollments() {
   };
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Manage Enrollments</h1>
+    <div className="p-6 max-w-6xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6">Manage Enrollments</h1>
 
-      {/* School selector */}
+      {/* School Selector */}
       {schools.length > 0 && (
-        <div className="mb-4">
-          <label className="block text-sm mb-1">School</label>
+        <div className="mb-6">
+          <label className="block text-sm font-semibold mb-2">School</label>
           <select
-            className="border p-2 w-full"
+            className="border p-2 rounded-lg w-full"
             value={schoolId || ""}
             onChange={(e) => setSchoolId(parseInt(e.target.value))}
           >
@@ -152,24 +142,35 @@ export default function ManagerEnrollments() {
       )}
 
       {/* Enroll Form */}
-      <form className="mb-6 border p-4 rounded" onSubmit={handleEnroll}>
+      <motion.form
+        layout
+        onSubmit={handleEnroll}
+        className="mb-8 bg-white shadow p-6 rounded-xl"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+          <PlusCircle className="w-5 h-5 text-green-600" /> Enroll a Student
+        </h2>
         <select
-          className="border p-2 w-full mb-2"
+          className="border p-2 rounded-lg w-full mb-3"
           value={selectedStudent}
           onChange={(e) => setSelectedStudent(e.target.value)}
         >
           <option value="">-- Select Student --</option>
           {students
-            .filter((s) => (schoolId ? String(s.school_id) === String(schoolId) : true))
+            .filter((s) =>
+              schoolId ? String(s.school_id) === String(schoolId) : true
+            )
             .map((s) => (
-            <option key={s.public_id || s.id} value={s.public_id || s.id}>
-              {(s.full_name || s.name || s.username) + ` (${s.email})`}
-            </option>
-          ))}
+              <option key={s.public_id || s.id} value={s.public_id || s.id}>
+                {(s.full_name || s.username) + ` (${s.email})`}
+              </option>
+            ))}
         </select>
 
         <select
-          className="border p-2 w-full mb-2"
+          className="border p-2 rounded-lg w-full mb-4"
           value={selectedCourse}
           onChange={(e) => setSelectedCourse(e.target.value)}
         >
@@ -183,55 +184,65 @@ export default function ManagerEnrollments() {
 
         <button
           type="submit"
-          className="bg-green-600 text-white px-4 py-2 rounded"
+          className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg shadow transition"
         >
           Enroll Student
         </button>
-      </form>
+      </motion.form>
 
-      {/* Enrollment Table */}
+      {/* Enrollment List */}
       {loading ? (
-        <p>Loading...</p>
+        <p className="text-gray-500">Loading...</p>
       ) : enrollments.length === 0 ? (
-        <p>No enrollments found.</p>
+        <p className="text-gray-500">No enrollments found.</p>
       ) : (
-        <table className="w-full border">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="border px-2 py-1">ID</th>
-              <th className="border px-2 py-1">Student</th>
-              <th className="border px-2 py-1">Course</th>
-              <th className="border px-2 py-1">Date Enrolled</th>
-              <th className="border px-2 py-1">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {enrollments.map((en) => (
-              <tr key={en.id}>
-                <td className="border px-2 py-1">{en.id}</td>
-                <td className="border px-2 py-1">
-                  {en.user?.name || en.user?.full_name || getStudentName(en.user_public_id)}
-                </td>
-                <td className="border px-2 py-1">
-                  {en.course?.title || getCourseTitle(en.course_id)}
-                </td>
-                <td className="border px-2 py-1">
-                  {(en.date_enrolled || en.created_at)
-                    ? new Date(en.created_at).toLocaleDateString()
-                    : "—"}
-                </td>
-                <td className="border px-2 py-1">
-                  <button
-                    className="text-red-600"
-                    onClick={() => handleDelete(en.id)}
-                  >
-                    Unenroll
-                  </button>
-                </td>
+        <div className="bg-white shadow rounded-xl overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-100 text-left">
+                <th className="px-4 py-2">Student</th>
+                <th className="px-4 py-2">Course</th>
+                <th className="px-4 py-2">Date Enrolled</th>
+                <th className="px-4 py-2 text-center">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              <AnimatePresence>
+                {enrollments.map((en) => (
+                  <motion.tr
+                    key={en.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="border-t"
+                  >
+                    <td className="px-4 py-2">
+                      {en.user?.name ||
+                        en.user?.full_name ||
+                        getStudentName(en.user_public_id)}
+                    </td>
+                    <td className="px-4 py-2">
+                      {en.course?.title || getCourseTitle(en.course_id)}
+                    </td>
+                    <td className="px-4 py-2">
+                      {en.created_at
+                        ? new Date(en.created_at).toLocaleDateString()
+                        : "—"}
+                    </td>
+                    <td className="px-4 py-2 text-center">
+                      <button
+                        className="flex items-center gap-1 text-red-600 hover:text-red-800 mx-auto"
+                        onClick={() => handleDelete(en.id)}
+                      >
+                        <UserMinus className="w-4 h-4" /> Unenroll
+                      </button>
+                    </td>
+                  </motion.tr>
+                ))}
+              </AnimatePresence>
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

@@ -1,15 +1,9 @@
 // src/pages/owner/Reports.jsx
 import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { BarChart3, FileText } from "lucide-react";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-} from "recharts";
+import { motion, AnimatePresence } from "framer-motion";
+import { BarChart3, FileText, Activity } from "lucide-react";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
+import { fetchDashboard, fetchSchoolStats } from "../../api";
 
 export default function Reports() {
   const [schools, setSchools] = useState([]);
@@ -18,19 +12,15 @@ export default function Reports() {
   const [courseStats, setCourseStats] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch manager's schools
+  // Fetch manager's schools via dashboard
   const loadSchools = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/manager/schools", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
-      const data = await res.json();
-      if (data.success) {
-        setSchools(data.schools);
-        if (data.schools.length > 0) {
-          setSelectedSchool(data.schools[0]);
-        }
+      const dash = await fetchDashboard();
+      const list = dash?.dashboard?.schools || [];
+      setSchools(list);
+      if (list.length > 0) {
+        setSelectedSchool(list[0]);
       }
     } catch (err) {
       console.error("Failed to fetch schools:", err);
@@ -43,14 +33,9 @@ export default function Reports() {
   const loadSchoolStats = async (schoolId) => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/schools/${schoolId}/stats`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
-      const data = await res.json();
-      if (data.success) {
-        setAttendance(data.attendance || 0);
-        setCourseStats(data.courses || []);
-      }
+      const stats = await fetchSchoolStats(schoolId);
+      setAttendance(stats?.attendance || 0);
+      setCourseStats(stats?.courses || []);
     } catch (err) {
       console.error("Failed to fetch stats:", err);
     } finally {
@@ -72,85 +57,109 @@ export default function Reports() {
 
   return (
     <motion.div
-      className="p-6"
+      className="p-4 md:p-6 bg-gradient-to-br from-slate-50 via-white to-slate-50 min-h-[calc(100vh-64px)]"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
+      transition={{ duration: 0.4 }}
     >
-      <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
-        <FileText className="w-6 h-6 text-blue-600" />
-        Reports & Analytics
-      </h1>
+      <div className="flex items-center justify-between gap-3 mb-5 md:mb-6">
+        <h1 className="text-xl md:text-2xl font-bold tracking-tight flex items-center gap-2">
+          <FileText className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
+          Reports & Analytics
+        </h1>
+        {schools.length > 0 && (
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-slate-600">School</label>
+            <select
+              className="border border-slate-200 bg-white text-slate-800 rounded-lg px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+              value={selectedSchool?.id || ""}
+              onChange={(e) => setSelectedSchool(schools.find((s) => s.id === parseInt(e.target.value)))}
+            >
+              {schools.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+      </div>
 
-      {/* School Selector */}
-      {schools.length > 0 && (
-        <div className="mb-6">
-          <label className="mr-3 font-medium">Select School:</label>
-          <select
-            className="border p-2 rounded"
-            value={selectedSchool?.id || ""}
-            onChange={(e) =>
-              setSelectedSchool(
-                schools.find((s) => s.id === parseInt(e.target.value))
-              )
-            }
-          >
-            {schools.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {loading ? (
-        <p className="text-gray-500">Loading reports...</p>
-      ) : (
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Attendance Summary */}
+      <AnimatePresence mode="wait">
+        {loading ? (
           <motion.div
-            className="bg-white shadow rounded-2xl p-5"
-            whileHover={{ scale: 1.02 }}
+            key="loading"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="text-slate-500 text-sm"
           >
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-green-600" />
-              Attendance Summary
-            </h2>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={[{ name: selectedSchool?.name, attendance }]}>
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="attendance" fill="#2563eb" radius={8} />
-              </BarChart>
-            </ResponsiveContainer>
+            Loading reports...
           </motion.div>
-
-          {/* Course Performance */}
+        ) : (
           <motion.div
-            className="bg-white shadow rounded-2xl p-5"
-            whileHover={{ scale: 1.02 }}
+            key="content"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="grid gap-4 md:gap-6 md:grid-cols-2"
           >
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-purple-600" />
-              Course Attendance Rates
-            </h2>
-            {courseStats.length === 0 ? (
-              <p className="text-gray-500">No course data available.</p>
-            ) : (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={courseStats}>
-                  <XAxis dataKey="course" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="avg_attendance" fill="#9333ea" radius={8} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
+            {/* Attendance Summary */}
+            <motion.div
+              className="rounded-xl bg-white/90 backdrop-blur shadow-sm ring-1 ring-slate-100 p-4 md:p-5 hover:shadow-md transition"
+              whileHover={{ y: -2 }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-base md:text-lg font-semibold flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-emerald-600" />
+                  Attendance Summary
+                </h2>
+                <span className="text-xs px-2 py-1 rounded-full bg-emerald-50 text-emerald-600">
+                  {selectedSchool?.name || "—"}
+                </span>
+              </div>
+              <div className="h-[220px] md:h-[260px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={[{ name: selectedSchool?.name || "School", attendance }]}> 
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip />
+                    <Bar dataKey="attendance" fill="#22c55e" radius={6} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </motion.div>
+
+            {/* Course Performance */}
+            <motion.div
+              className="rounded-xl bg-white/90 backdrop-blur shadow-sm ring-1 ring-slate-100 p-4 md:p-5 hover:shadow-md transition"
+              whileHover={{ y: -2 }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-base md:text-lg font-semibold flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-indigo-600" />
+                  Course Attendance Rates
+                </h2>
+                <span className="text-xs px-2 py-1 rounded-full bg-indigo-50 text-indigo-600">
+                  {courseStats?.length || 0} courses
+                </span>
+              </div>
+              {courseStats.length === 0 ? (
+                <div className="text-slate-500 text-sm">No course data available.</div>
+              ) : (
+                <div className="h-[220px] md:h-[260px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={courseStats}>
+                      <XAxis dataKey="course" tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip />
+                      <Bar dataKey="avg_attendance" fill="#6366f1" radius={6} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </motion.div>
           </motion.div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

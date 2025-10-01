@@ -23,6 +23,8 @@ import Reports from "./pages/owner/Reports";
 import Users from "./pages/owner/Users";
 import ManagerCourses from "./pages/owner/Courses";
 import Enrollments from "./pages/owner/Enrollment";
+import OwnerProfile from "./pages/owner/Profile";
+// import OwnerSettings from "./pages/owner/Settings";
 
 // Educator pages
 import EducatorDashboard from "./pages/educator/Dashboard";
@@ -95,6 +97,8 @@ export default function App() {
           <Route path="users" element={<Users />} />
           <Route path="courses" element={<ManagerCourses />} />
           <Route path="enrollments" element={<Enrollments />} />
+          <Route path="profile" element={<OwnerProfile />} />
+       
         </Route>
 
         {/* Educator routes */}

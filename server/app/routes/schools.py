@@ -212,8 +212,19 @@ class SchoolStatsResource(Resource):
                 return error_response("School not found", status_code=404)
 
             # --- Attendance Summary ---
-            total_sessions = Attendance.query.filter_by(school_id=target_school_id).count()
-            present_sessions = Attendance.query.filter_by(school_id=target_school_id, status="present").count()
+            # Attendance has no direct school_id; compute via Course.school_id
+            total_sessions = (
+                db.session.query(Attendance)
+                .join(Course, Attendance.course_id == Course.id)
+                .filter(Course.school_id == target_school_id)
+                .count()
+            )
+            present_sessions = (
+                db.session.query(Attendance)
+                .join(Course, Attendance.course_id == Course.id)
+                .filter(Course.school_id == target_school_id, Attendance.status == "present")
+                .count()
+            )
             attendance_rate = round((present_sessions / total_sessions) * 100, 2) if total_sessions > 0 else 0
 
             # --- Course Performance ---
