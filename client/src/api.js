@@ -126,6 +126,23 @@ export const updateCourse = (course_id, updates) =>
   fetchWithAuth(`${API_URL}/courses/${course_id}`, { method: "PATCH", body: JSON.stringify(updates) });
 export const deleteCourse = (course_id) =>
   fetchWithAuth(`${API_URL}/courses/${course_id}`, { method: "DELETE" });
+// --------------------
+// ENROLLMENTS
+// --------------------
+export const fetchEnrollments = async () =>
+  (await fetchWithAuth(`${API_URL}/enrollments`)) || [];
+
+export const fetchSchoolEnrollments = async (schoolId) =>
+  (await fetchWithAuth(`${API_URL}/schools/${schoolId}/enrollments`)) || [];
+
+export const createEnrollment = (payload) =>
+  fetchWithAuth(`${API_URL}/enrollments`, {
+    method: "POST",
+    body: JSON.stringify(payload), // { user_public_id, course_id }
+  });
+
+export const deleteEnrollment = (enrollmentId) =>
+  fetchWithAuth(`${API_URL}/enrollments/${enrollmentId}`, { method: "DELETE" });
 
 // --------------------
 // EXPORT ALL SERVICES
@@ -154,4 +171,7 @@ export default {
   createCourse,
   updateCourse,
   deleteCourse,
+  fetchEnrollments,
+  createEnrollment,
+  deleteEnrollment,
 };

@@ -90,13 +90,15 @@ api.add_resource(MessageResource, "/messages/<int:message_id>")  # GET, PUT, DEL
 
 api.add_resource(ResourceListApi, "/resources")
 api.add_resource(ResourceDetailApi, "/resources/<int:resource_id>")
-api.add_resource(CourseResourcesApi, "/courses/<int:course_id>/resources")
+# api.add_resource(CourseResourcesApi, "/courses/<int:course_id>/resources")
 api.add_resource(StudentResourcesApi, "/student/resources")
-
 
 
 # -------------------
 # Enrollment endpoints
 # -------------------
-api.add_resource(EnrollmentListResource, "/enrollments")  # GET, POST
-api.add_resource(EnrollmentResource, "/enrollments/<int:enrollment_id>")  # GET, PUT, DELETE
+api.add_resource(EnrollmentListResource, "/enrollments", "/schools/<int:school_id>/enrollments", "/courses/<int:course_id>/enrollments")  # GET all / POST new
+api.add_resource(EnrollmentResource, "/enrollments/<int:enrollment_id>")  # GET / PUT / PATCH / DELETE
+
+
+
