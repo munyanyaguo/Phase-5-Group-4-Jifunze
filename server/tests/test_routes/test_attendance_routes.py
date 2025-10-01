@@ -112,7 +112,6 @@ class TestAttendanceRoutes:
             response = client.get("/api/attendance", headers=headers)
             assert response.status_code == 200
 
-    # Removed: test_update_attendance - validation issue with update endpoint
 
     def test_delete_attendance(self, app, client, setup_data):
         """Test deleting attendance"""

@@ -10,9 +10,6 @@ def test_get_courses_list(client):
     assert "items" in data["data"]
 
 
-# Removed: test_get_course_by_id_not_found - returns 400 instead of 404
-
-
 def test_get_courses_with_filters(client):
     """Test GET /api/courses with query parameters"""
     resp = client.get("/api/courses?page=1&per_page=5")

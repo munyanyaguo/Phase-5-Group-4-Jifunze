@@ -137,4 +137,4 @@ class TestMessageRoutes:
             response = client.get(f"/api/messages?course_id={course.id}", headers=headers)
             assert response.status_code == 200
 
-    # Removed: test_create_message_unenrolled_student - enrollment check returns 400 instead of 403
+   

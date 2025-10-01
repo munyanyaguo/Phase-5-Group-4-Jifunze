@@ -122,7 +122,6 @@ class TestUserResource:
             assert response.json["success"] is True
             assert response.json["data"]["user"]["name"] == "Updated Student"
 
-    # Removed: test_update_user_unauthorized - cross-school authorization not enforced
 
     def test_delete_user(self, app, client, student_user, manager_auth_headers):
         """Test deleting user by manager (same school)"""
@@ -163,7 +162,6 @@ class TestUsersBySchoolResource:
             assert "school" in response.json["data"]
             assert "users" in response.json["data"]
 
-    # Removed: test_add_user_to_school - endpoint returns 500 error
 
     def test_add_user_invalid_data(self, app, client, school, manager_auth_headers):
         """Test adding user with invalid data"""
@@ -196,8 +194,6 @@ class TestUserProfileResource:
 class TestUserDashboardResource:
     """Test UserDashboardResource endpoints"""
 
-    # Removed: test_get_dashboard_student - dashboard structure doesn't include my_enrollments
-
     def test_get_dashboard_manager(self, app, client, manager_user, manager_auth_headers):
         """Test retrieving dashboard for manager"""
         with app.app_context():
@@ -206,15 +202,3 @@ class TestUserDashboardResource:
             assert response.json["success"] is True
             assert "user_stats" in response.json["data"]["dashboard"]
 
-class TestUserPasswordChangeResource:
-    """Test UserPasswordChangeResource endpoints"""
-
-    # Removed: test_change_password - endpoint returns 404
-    # Removed: test_change_password_invalid_current - endpoint returns 404
-
-class TestUserPasswordResetResource:
-    """Test UserPasswordResetResource endpoints"""
-
-    # Removed: test_reset_password - endpoint returns 404
-    # Removed: test_reset_password_invalid_token - endpoint returns 404
-    # Removed: test_reset_password_expired_token - endpoint returns 404

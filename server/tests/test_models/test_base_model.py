@@ -2,7 +2,6 @@ import pytest
 from datetime import datetime, timezone
 from app.models import BaseModel, db
 
-
 class TestModel(BaseModel):
     """Concrete test model for testing BaseModel functionality"""
     __tablename__ = "test_models"

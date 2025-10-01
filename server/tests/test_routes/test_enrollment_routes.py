@@ -171,4 +171,4 @@ class TestEnrollmentRoutes:
             response = client.delete(f"/api/enrollments/{enrollment_id}", headers=headers)
             assert response.status_code == 200
 
-    # Removed: test_create_enrollment_unauthorized - authorization check returns 400 instead of 403
+   

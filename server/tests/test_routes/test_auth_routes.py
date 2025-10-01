@@ -156,13 +156,10 @@ class TestLogoutRoute:
 class TestTokenRefreshRoute:
     """Test token refresh endpoint"""
 
-    # Removed: test_refresh_token_success - endpoint not implemented
-    # Removed: test_refresh_without_token - endpoint not implemented
-    # Removed: test_refresh_with_access_token - endpoint not implemented
 
 class TestResetPasswordRoute:
     """Test password reset endpoints"""
-
+    
     def test_request_password_reset(self, app, client, student_user):
         """Test requesting password reset"""
         with app.app_context():
