@@ -12,6 +12,7 @@ import SchoolForm from "../../components/owner/SchoolForm";
 export default function SchoolsPage() {
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   // Load all schools
   const loadSchools = async () => {
@@ -35,6 +36,7 @@ export default function SchoolsPage() {
     try {
       await createSchool(schoolData);
       loadSchools();
+      setShowModal(false); // close modal after create
     } catch (err) {
       alert(err.message);
     }
@@ -62,15 +64,21 @@ export default function SchoolsPage() {
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">My Schools</h1>
-
-      {/* Form to create new school */}
-      <SchoolForm onCreate={handleCreate} />
+    <div className="p-6 max-w-6xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">My Schools</h1>
+        <button
+          onClick={() => setShowModal(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+        >
+          Create School
+        </button>
+      </div>
 
       {/* Schools list */}
       {loading ? (
-        <p className="text-gray-500">Loading schools...</p>
+        <p className="text-gray-500 text-center">Loading schools...</p>
       ) : schools.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {schools.map((school) => (
@@ -78,13 +86,31 @@ export default function SchoolsPage() {
               key={school.id}
               school={school}
               onDelete={handleDelete}
-              onUpdate={handleUpdate} // for inline edit
-              onAssignSuccess={loadSchools} // refresh after assigning user
+              onUpdate={handleUpdate}
+              onAssignSuccess={loadSchools}
             />
           ))}
         </div>
       ) : (
-        <p className="text-gray-500">No schools found.</p>
+        <p className="text-gray-500 text-center">No schools found.</p>
+      )}
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 relative">
+            {/* Close button */}
+            <button
+              onClick={() => setShowModal(false)}
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+            >
+              ✕
+            </button>
+
+            <h2 className="text-xl font-semibold mb-4">Create New School</h2>
+            <SchoolForm onCreate={handleCreate} onCancel={() => setShowModal(false)} />
+          </div>
+        </div>
       )}
     </div>
   );

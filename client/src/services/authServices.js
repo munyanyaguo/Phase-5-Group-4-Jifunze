@@ -154,3 +154,19 @@ export async function authFetchWithRefresh(url, options = {}) {
 
   return handleResponse(res);
 }
+
+// 🔹 Update current user's profile
+export async function updateCurrentUser(updates) {
+  return authFetchWithRefresh("/users/me", {
+    method: "PUT",
+    body: JSON.stringify(updates),
+  });
+}
+
+// 🔹 Change current user's password
+export async function changePassword(current_password, new_password) {
+  return authFetchWithRefresh("/users/password", {
+    method: "PUT",
+    body: JSON.stringify({ current_password, new_password }),
+  });
+}

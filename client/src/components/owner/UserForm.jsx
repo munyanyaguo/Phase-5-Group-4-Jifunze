@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fetchSchools } from "../../api";
+import { fetchSchools, fetchSchoolCourses } from "../../api";
 
 export default function UserForm({ onSave, onCancel, initialData = null, role = "student" }) {
   const [form, setForm] = useState({
@@ -8,8 +8,11 @@ export default function UserForm({ onSave, onCancel, initialData = null, role = 
     school_id: "",
     courses: [],
   });
+
   const [schools, setSchools] = useState([]);
+  const [courses, setCourses] = useState([]);
   const [loadingSchools, setLoadingSchools] = useState(true);
+  const [loadingCourses, setLoadingCourses] = useState(false);
 
   // Load schools on mount
   useEffect(() => {
@@ -38,9 +41,35 @@ export default function UserForm({ onSave, onCancel, initialData = null, role = 
     }
   }, [initialData]);
 
+  // Load courses whenever school changes
+  useEffect(() => {
+    const loadCourses = async () => {
+      if (!form.school_id) {
+        setCourses([]);
+        return;
+      }
+      setLoadingCourses(true);
+      try {
+        const data = await fetchSchoolCourses(form.school_id);
+        setCourses(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Failed to load courses", err);
+        setCourses([]);
+      } finally {
+        setLoadingCourses(false);
+      }
+    };
+    loadCourses();
+  }, [form.school_id]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
+  };
+
+  const handleCoursesChange = (e) => {
+    const selected = Array.from(e.target.selectedOptions, (o) => Number(o.value));
+    setForm({ ...form, courses: selected });
   };
 
   const handleSubmit = (e) => {
@@ -52,7 +81,6 @@ export default function UserForm({ onSave, onCancel, initialData = null, role = 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Name */}
       <input
         type="text"
         name="name"
@@ -62,7 +90,6 @@ export default function UserForm({ onSave, onCancel, initialData = null, role = 
         className="border border-gray-300 rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500"
       />
 
-      {/* Email */}
       <input
         type="email"
         name="email"
@@ -87,27 +114,22 @@ export default function UserForm({ onSave, onCancel, initialData = null, role = 
         ))}
       </select>
 
-      {/* Optional: add multi-select courses if needed */}
-      {/* <select
+      {/* Courses Multi-Select */}
+      <select
         name="courses"
         multiple
         value={form.courses}
-        onChange={(e) =>
-          setForm({
-            ...form,
-            courses: Array.from(e.target.selectedOptions, (o) => o.value),
-          })
-        }
+        onChange={handleCoursesChange}
+        disabled={!form.school_id || loadingCourses}
         className="border border-gray-300 rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500"
       >
         {courses.map((c) => (
           <option key={c.id} value={c.id}>
-            {c.name}
+            {c.title}
           </option>
         ))}
-      </select> */}
+      </select>
 
-      {/* Actions */}
       <div className="flex justify-end gap-3">
         <button
           type="button"
