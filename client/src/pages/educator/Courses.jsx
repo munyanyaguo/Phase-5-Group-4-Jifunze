@@ -224,7 +224,7 @@ export default function Courses() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
-                className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1 cursor-pointer"
+                className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1 cursor-pointer flex flex-col h-full"
                 onClick={() => navigate(`/educator/courses/${course.id}`)}
               >
                 {/* Card Header */}
@@ -237,8 +237,8 @@ export default function Courses() {
                   )}
                 </div>
 
-                {/* Card Body */}
-                <div className="p-6">
+                {/* Card Body - flex-grow pushes button to bottom */}
+                <div className="p-6 flex flex-col flex-grow">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2 text-gray-600">
                       <div className="p-2 bg-slate-100 rounded-lg">
@@ -256,8 +256,11 @@ export default function Courses() {
                     )}
                   </div>
 
+                  {/* Spacer to push button to bottom */}
+                  <div className="flex-grow"></div>
+
                   <button
-                    className="w-full px-4 py-3 rounded-xl bg-slate-600 hover:bg-slate-700 text-white font-semibold hover:shadow-md transition-all duration-200"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-600 hover:bg-slate-700 text-white font-semibold hover:shadow-md transition-all duration-200 mt-auto"
                     onClick={(e) => {
                       e.stopPropagation();
                       navigate(`/educator/courses/${course.id}`);
