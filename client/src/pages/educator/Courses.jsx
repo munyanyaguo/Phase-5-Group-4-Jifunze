@@ -1,10 +1,8 @@
 // src/pages/educator/Courses.jsx
 import React, { useEffect, useState, useMemo } from "react";
-import { motion } from "framer-motion";
 import { BookOpen, Users, AlertCircle, Calendar, Search, Filter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { fetchEducatorCourses } from "../../services/courseService";
-import { cache } from "../../utils/cache";
 import { CoursesSkeleton } from "../../components/common/SkeletonLoader";
 
 export default function Courses() {

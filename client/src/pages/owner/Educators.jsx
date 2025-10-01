@@ -1,6 +1,5 @@
 // src/pages/Educators.jsx
 import React, { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { UserPlus, Trash2, School } from "lucide-react";
 import UserForm from "../../components/owner/UserForm";
 import { fetchManagerEducators, fetchSchoolCourses } from "../../api";

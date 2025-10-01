@@ -1,5 +1,32 @@
 const API_URL = "http://127.0.0.1:5000/api";
 
+// 🔹 Helper: Get stored token
+export function getToken() {
+  return localStorage.getItem("token");
+}
+
+// 🔹 Helper: Handle API responses safely
+export async function handleResponse(res) {
+  let result;
+  try {
+    result = await res.json();
+  } catch (err) {
+    console.error('Failed to parse response:', err);
+    throw new Error("Invalid server response");
+  }
+
+  if (!res.ok) {
+    // Combine main message + validation errors if present
+    let errorMsg = result.message || "Request failed";
+    if (result.errors) {
+      errorMsg += " - " + JSON.stringify(result.errors);
+    }
+    throw new Error(errorMsg);
+  }
+
+  return result.data || result;
+}
+
 // 🔹 Register
 export async function register({ name, email, password, role, school_id }) {
   const res = await fetch(`${API_URL}/auth/register`, {
@@ -29,13 +56,11 @@ export async function login(email, password) {
 
   const data = result.data;
   if (data && data.user) {
-    console.log("User object:", data.user);
-    console.log("User ID:", data.user.id);
+    console.log('Login successful:', data.user.email);
   } else {
-    console.warn("No user object in login response!");
+    console.warn('Login response missing user data');
   }
 
-  // Save tokens + user info in localStorage
   localStorage.setItem("token", data.access_token);
   localStorage.setItem("refresh_token", data.refresh_token);
   localStorage.setItem("role", data.user && data.user.role);
@@ -45,7 +70,6 @@ export async function login(email, password) {
   } else {
     localStorage.removeItem("user_id");
   }
-
   return data;
 }
 
@@ -108,9 +132,23 @@ export function isAuthenticated() {
   return !!localStorage.getItem("token");
 }
 
+// 🔹 Helper: Authenticated fetch
+export async function authFetch(endpoint, options = {}) {
+  const token = getToken();
+  const res = await fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
+  });
+  return handleResponse(res);
+}
+
 // 🔹 Update current user's profile
 export async function updateCurrentUser(updates) {
-  return authFetchWithRefresh("/users/me", {
+  return authFetch("/users/me", {
     method: "PUT",
     body: JSON.stringify(updates),
   });
@@ -118,7 +156,7 @@ export async function updateCurrentUser(updates) {
 
 // 🔹 Change current user's password
 export async function changePassword(current_password, new_password) {
-  return authFetchWithRefresh("/users/password", {
+  return authFetch("/users/password", {
     method: "PUT",
     body: JSON.stringify({ current_password, new_password }),
   });

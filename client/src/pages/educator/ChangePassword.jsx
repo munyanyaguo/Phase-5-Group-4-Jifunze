@@ -94,19 +94,18 @@ export default function ChangePassword() {
           length: false,
           uppercase: false,
           lowercase: false,
-          number: false,
           match: false,
         });
       } else {
-        setError(data.message || "Failed to change password");
+        setError(data?.message || "Failed to change password");
       }
-    } catch (err) {
-      setError("Failed to change password. Please try again.");
+    } catch (error) {
+      console.error('Change password error:', error);
+      setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
   };
-
   const togglePasswordVisibility = (field) => {
     setShowPasswords({ ...showPasswords, [field]: !showPasswords[field] });
   };

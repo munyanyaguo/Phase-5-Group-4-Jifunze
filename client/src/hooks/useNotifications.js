@@ -13,8 +13,9 @@ export function useNotifications() {
 
   useEffect(() => {
     // Temporarily disabled to prevent CORS errors
-    return;
+    return () => {};
     
+    /* eslint-disable no-unreachable */
     const pollForNewMessages = async () => {
       if (isPollingRef.current) return; // Prevent concurrent polls
       isPollingRef.current = true;

@@ -1,9 +1,10 @@
 // src/components/educator/Sidebar.jsx
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { Home, Users, BookOpen, CalendarCheck, BookLock, MessageSquare } from "lucide-react";
+import { BookOpen, Users, FileText, MessageSquare, ClipboardCheck, Home, LogOut, Settings, User, BookLock, CalendarCheck } from "lucide-react";
 
 // Navigation item component
+// eslint-disable-next-line no-unused-vars
 const Item = ({ to, icon: I, children }) => (
   <NavLink
     to={to}

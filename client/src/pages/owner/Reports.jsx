@@ -1,6 +1,5 @@
 // src/pages/owner/Reports.jsx
 import React, { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { BarChart3, FileText, Activity } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
 import { fetchDashboard, fetchSchoolStats } from "../../api";

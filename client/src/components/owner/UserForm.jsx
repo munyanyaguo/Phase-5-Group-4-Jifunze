@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { fetchSchools, fetchSchoolCourses } from "../../api";
 
-export default function UserForm({ onSave, onCancel, initialData = null, role = "student" }) {
+export default function UserForm({ onSave, onCancel, initialData = null }) {
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -11,7 +11,6 @@ export default function UserForm({ onSave, onCancel, initialData = null, role = 
 
   const [schools, setSchools] = useState([]);
   const [courses, setCourses] = useState([]);
-  const [loadingSchools, setLoadingSchools] = useState(true);
   const [loadingCourses, setLoadingCourses] = useState(false);
 
   // Load schools on mount
@@ -22,8 +21,6 @@ export default function UserForm({ onSave, onCancel, initialData = null, role = 
         setSchools(data.schools || []);
       } catch (err) {
         console.error("Failed to load schools", err);
-      } finally {
-        setLoadingSchools(false);
       }
     };
     loadSchools();

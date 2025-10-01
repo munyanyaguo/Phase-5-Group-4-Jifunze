@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from "@testing-library/react";
 import UploadResourceModal from '../../components/educator/UploadResourceModal';
 
 describe('UploadResourceModal', () => {
-  it('renders and blocks submit without file', () => {
+  it('renders and blocks submit without file', async () => {
     const onSubmit = vi.fn();
     const onClose = vi.fn();
     render(

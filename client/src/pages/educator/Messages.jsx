@@ -49,7 +49,8 @@ export default function EducatorMessages() {
           } else {
             lastMessageTimes[course.id] = null;
           }
-        } catch (err) {
+        } catch (error) {
+          console.error('Failed to fetch messages for course:', course.id, error);
           counts[course.id] = 0;
           lastMessageTimes[course.id] = null;
         }
@@ -90,8 +91,8 @@ export default function EducatorMessages() {
             const decoded = JSON.parse(atob(payload));
             setCurrentUserId(decoded.sub); // 'sub' contains user_public_id
             console.log('Current educator ID:', decoded.sub);
-          } catch (err) {
-            console.error('Failed to decode token:', err);
+          } catch (error) {
+            console.error('Failed to decode token:', error);
           }
         }
         
@@ -203,7 +204,9 @@ export default function EducatorMessages() {
             return prev;
           });
         }
-      } catch (_) {}
+      } catch (err) {
+        console.error('Failed to fetch messages:', err);
+      }
     }, 8000);
     return () => clearInterval(interval);
   }, [selectedCourseId, courses]);

@@ -1,6 +1,5 @@
 // src/pages/manager/ManagerCourses.jsx
-import React, { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect } from 'react';
 import {
   fetchSchools,
   fetchSchoolCourses,

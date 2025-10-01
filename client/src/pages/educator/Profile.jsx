@@ -36,7 +36,8 @@ export default function Profile() {
       } else {
         setError(data.message || "Failed to load profile");
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('Failed to load profile:', error);
       setError("Failed to load profile");
     } finally {
       setLoading(false);
@@ -65,14 +66,14 @@ export default function Profile() {
         setSuccess("Profile updated successfully!");
         setEditing(false);
         
-        // Update localStorage
         const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
         localStorage.setItem("user", JSON.stringify({ ...storedUser, ...formData }));
       } else {
         setError(data.message || "Failed to update profile");
       }
-    } catch (err) {
-      setError("Failed to update profile");
+    } catch (error) {
+      console.error('Update profile error:', error);
+      setError("Network error. Please try again later.");
     } finally {
       setSaving(false);
     }
