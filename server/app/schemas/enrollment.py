@@ -10,7 +10,7 @@ class EnrollmentSchema(ma.SQLAlchemySchema):
         ordered = True
 
     id = ma.auto_field()
-    user_id = ma.auto_field()
+    user_public_id = ma.auto_field()
     course_id = ma.auto_field()
     date_enrolled = ma.auto_field()
     created_at = ma.auto_field()
