@@ -11,6 +11,7 @@ import {
 } from "recharts";
 
 import { getCurrentUser } from "../../services/authServices";
+import { fetchDashboard } from "../../api";
 
 export default function ReportChart() {
   const [data, setData] = useState([]);
@@ -28,7 +29,7 @@ export default function ReportChart() {
         }
 
         // ✅ Use API helper
-        const dashboardData = await getOwnerDashboard(user.school_id);
+        const dashboardData = await fetchDashboard();
 
         // Example: backend might return { registrations: [...] }
         setData(dashboardData.registrations || []);

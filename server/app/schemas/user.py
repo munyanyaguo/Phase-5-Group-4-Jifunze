@@ -14,20 +14,29 @@ class UserSchema(BaseSchema):
     email = fields.Email(required=True, validate=validate.Length(max=120))
     role = fields.String(required=True, validate=validate.OneOf(ROLES))
     school_id = fields.Integer(required=False)
-    owned_schools = fields.Nested(
-        "SchoolSchema",
-        many=True,
-        dump_only=True,
-        exclude=["owner", "users", "courses"]  # avoid recursion
-    )
 
     # Password fields
     password = fields.String(load_only=True, required=True, validate=validate.Length(min=6))
     password_hash = fields.String(dump_only=True)
 
-    # Nested fields (using strings to avoid circular imports)
-    school = fields.Nested('SchoolSchema', dump_only=True, exclude=["users"])
-    courses = fields.Nested("CourseSchema", many=True, dump_only=True, exclude=["educator"])
+    # ✅ Relationships
+    school = fields.Nested(
+        "SchoolSchema",
+        dump_only=True,
+        exclude=["users", "courses", "owner"]
+    )
+    owned_schools = fields.Nested(   # <-- Added here
+        "SchoolSchema",
+        many=True,
+        dump_only=True,
+        exclude=["users", "courses", "owner"]
+    )
+    courses = fields.Nested(
+        "CourseSchema",
+        many=True,
+        dump_only=True,
+        exclude=["educator"]
+    )
     from app.schemas.enrollment import EnrollmentSchema
     enrollments = fields.Nested(EnrollmentSchema, many=True, dump_only=True)
 
@@ -35,18 +44,19 @@ class UserSchema(BaseSchema):
     def validate_email_format(self, value):
         if not EMAIL_REGEX.match(value):
             raise ValidationError("Invalid email format")
-        
-        # Check fi email already exists(for creation)
+
+        # Check if email already exists (only on creation)
         if self.context.get("is_new_user", False):
             existing_user = User.query.filter_by(email=value.lower()).first()
             if existing_user:
                 raise ValidationError("Email already registered")
-            
+
     @validates("school_id")
     def validate_school_exists(self, value):
         if value is not None:
             if not School.query.get(value):
                 raise ValidationError("School not found")
+
 
 class UserCreateSchema(UserSchema):
     """Schema for creating users"""
@@ -54,6 +64,7 @@ class UserCreateSchema(UserSchema):
 
     class Meta:
         exclude = ["password_hash"]
+
 
 class UserUpdateSchema(Schema):
     """Schema for updating users"""
@@ -66,27 +77,30 @@ class UserUpdateSchema(Schema):
     def validate_email_unique(self, value):
         if not EMAIL_REGEX.match(value):
             raise ValidationError("Invalid email format")
-        
+
         # Check uniqueness excluding current user
         user_id = self.context.get("user_id")
         existing_user = User.query.filter(User.email == value.lower(), User.id != user_id).first()
         if existing_user:
             raise ValidationError("Email already taken")
-    
+
     @validates("school_id")
     def validate_school_exists(self, value):
         if value and not School.query.get(value):
             raise ValidationError("School not found")
-        
+
+
 class PasswordChangeSchema(Schema):
     """Schema for changing password"""
     current_password = fields.String(load_only=True, required=True)
     new_password = fields.String(load_only=True, required=True, validate=validate.Length(min=6))
 
+
 class UserListResponseSchema(Schema):
     """Schema for user list response"""
     users = fields.Nested(UserSchema, many=True)
     pagination = fields.Dict()
+
 
 class UserStatsSchema(Schema):
     """Schema for user statistics"""
@@ -95,6 +109,7 @@ class UserStatsSchema(Schema):
     managers = fields.Integer()
     total_users = fields.Integer()
     recent_registrations = fields.Integer(allow_none=True)
+
 
 class UserQuerySchema(Schema):
     """Schema for user query parameters"""

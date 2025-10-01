@@ -45,6 +45,15 @@ class FaviconResource(Resource):
         from flask import Response
         return Response('', status=204, mimetype='image/x-icon')
 
+# Route to serve uploaded files
+@root_bp.route('/uploads/<path:filename>')
+def serve_upload(filename):
+    """
+    Serve uploaded files from the uploads directory
+    """
+    upload_dir = os.path.join(os.getcwd(), "uploads")
+    return send_from_directory(upload_dir, filename)
+
 # Add resources to the blueprint
 from flask_restful import Api
 api = Api(root_bp)

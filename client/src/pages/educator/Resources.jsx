@@ -12,13 +12,19 @@ import {
   Image, 
   FileText,
   Download,
-  Eye
+  Eye,
+  Calendar,
+  BookOpen,
+  User,
+  Grid3x3,
+  List
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 
 import UploadResourceModal from '../../components/educator/UploadResourceModal';
 import { fetchResources, createResource, updateResource, deleteResource } from '../../services/resourceService';
 import { fetchEducatorCourses } from '../../services/courseService';
+import { ResourcesSkeleton } from '../../components/common/SkeletonLoader';
 
 // Resource type icons
 const getResourceIcon = (type) => {
@@ -38,20 +44,21 @@ const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
-    day: 'numeric',
+    day: 'numeric'
   });
 };
 
-export default function EducatorResources() {
+export default function Resources() {
   const [resources, setResources] = useState([]);
   const [courses, setCourses] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [editingResource, setEditingResource] = useState(null);
   const [uploadLoading, setUploadLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCourse, setSelectedCourse] = useState('');
   const [selectedType, setSelectedType] = useState('');
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
   const [pagination, setPagination] = useState({
     page: 1,
     per_page: 10,
@@ -72,7 +79,6 @@ export default function EducatorResources() {
 
   const loadResources = async () => {
     try {
-      setLoading(true);
       const result = await fetchResources(pagination.page, pagination.per_page);
       const list = Array.isArray(result.data) ? result.data : [];
       setResources(list);
@@ -85,7 +91,7 @@ export default function EducatorResources() {
       console.error('Error loading resources:', error);
       alert('Failed to load resources');
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
     }
   };
 
@@ -139,27 +145,39 @@ export default function EducatorResources() {
     return matchesSearch && matchesCourse && matchesType;
   });
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">My Resources</h2>
-          <p className="text-gray-600">
-            Manage and organize your course resources
-          </p>
-        </div>
-        <button
-          onClick={() => setUploadModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Upload size={16} />
-          Upload Resource
-        </button>
-      </div>
+  if (initialLoading) {
+    return <ResourcesSkeleton />;
+  }
 
-      {/* Search and Filters */}
-      <div className="bg-white p-4 rounded-lg shadow-sm border space-y-4">
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+                <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl">
+                  <File className="w-8 h-8 text-white" />
+                </div>
+                My Resources
+              </h1>
+              <p className="text-gray-600">
+                Manage and organize your course resources
+              </p>
+            </div>
+            <button
+              onClick={() => setUploadModalOpen(true)}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-200 transform hover:scale-105"
+            >
+              <Upload size={20} />
+              Upload Resource
+            </button>
+          </div>
+        </div>
+
+        {/* Search and Filters */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
@@ -203,25 +221,44 @@ export default function EducatorResources() {
           </select>
         </div>
 
-        {/* Stats */}
+        {/* Stats and View Toggle */}
         <div className="flex items-center justify-between text-sm text-gray-600">
           <span>
             {filteredResources.length} of {resources.length} resources
           </span>
           <div className="flex items-center gap-4">
             <span>Page {pagination.page} of {pagination.pages}</span>
+            <div className="flex items-center gap-2 ml-4">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded-lg transition-colors ${
+                  viewMode === 'grid'
+                    ? 'bg-blue-100 text-blue-600'
+                    : 'text-gray-400 hover:bg-gray-100'
+                }`}
+                title="Grid view"
+              >
+                <Grid3x3 size={18} />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded-lg transition-colors ${
+                  viewMode === 'list'
+                    ? 'bg-blue-100 text-blue-600'
+                    : 'text-gray-400 hover:bg-gray-100'
+                }`}
+                title="List view"
+              >
+                <List size={18} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Resources List */}
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mt-2 text-gray-600">Loading resources...</p>
-          </div>
-        ) : filteredResources.length === 0 ? (
+        {/* Resources List */}
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        {filteredResources.length === 0 ? (
           <div className="p-8 text-center">
             <Upload size={48} className="mx-auto text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No resources found</h3>
@@ -234,75 +271,155 @@ export default function EducatorResources() {
             {!searchTerm && !selectedCourse && !selectedType && (
               <button
                 onClick={() => setUploadModalOpen(true)}
+                disabled={uploadLoading}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Upload Resource
               </button>
             )}
           </div>
+        ) : viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+            {filteredResources.map((resource) => (
+              <div key={resource.id} className="bg-white rounded-2xl p-6 border-2 border-gray-100 hover:border-blue-300 hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    {/* Resource Icon */}
+                    <div className="p-3 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg">
+                      {getResourceIcon(resource.type)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900 truncate mb-1">
+                        {resource.title}
+                      </h3>
+                      <span className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+                        {resource.type.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-2 text-sm text-gray-600 mb-4">
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="w-4 h-4 text-blue-600" />
+                    <span className="truncate">{resource.course?.title || 'Unknown'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-purple-600" />
+                    <span>{formatDate(resource.created_at)}</span>
+                  </div>
+                  {resource.uploader && (
+                    <div className="flex items-center gap-2">
+                      <User className="w-4 h-4 text-green-600" />
+                      <span className="truncate">{resource.uploader.name}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 pt-3 border-t border-gray-200">
+                  <button
+                    onClick={() => {
+                      const url = resource.url.startsWith('http') 
+                        ? resource.url 
+                        : `http://127.0.0.1:5000${resource.url}`;
+                      window.open(url, '_blank');
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg transition-colors font-medium text-sm"
+                    title={resource.type === 'url' ? 'Open link' : 'View resource'}
+                  >
+                    {resource.type === 'url' ? <ExternalLink size={16} /> : <Eye size={16} />}
+                    View
+                  </button>
+
+                  <button
+                    onClick={() => setEditingResource(resource)}
+                    className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                    title="Edit resource"
+                  >
+                    <Edit3 size={18} />
+                  </button>
+
+                  <button
+                    onClick={() => handleDelete(resource.id, resource.title)}
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Delete resource"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
           <div className="divide-y divide-gray-200">
             {filteredResources.map((resource) => (
-              <div key={resource.id} className="p-4 hover:bg-gray-50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3 flex-1">
-                    {/* Resource Icon */}
-                    <div className="flex-shrink-0">
-                      {getResourceIcon(resource.type)}
-                    </div>
+              <div key={resource.id} className="p-6 hover:bg-gray-50 transition-colors">
+                <div className="flex items-center gap-4">
+                  {/* Resource Icon */}
+                  <div className="p-4 bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl flex-shrink-0">
+                    {getResourceIcon(resource.type)}
+                  </div>
 
-                    {/* Resource Info */}
-                    <div className="flex-1 min-w-0">
+                  {/* Resource Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-lg font-semibold text-gray-900 truncate">
+                        {resource.title}
+                      </h3>
+                      <span className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-gradient-to-r from-blue-500 to-purple-600 text-white flex-shrink-0">
+                        {resource.type.toUpperCase()}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-6 text-sm text-gray-600">
                       <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-medium text-gray-900 truncate">
-                          {resource.title}
-                        </h3>
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                          {resource.type.toUpperCase()}
-                        </span>
+                        <BookOpen className="w-4 h-4 text-blue-600" />
+                        <span className="truncate">{resource.course?.title || 'Unknown'}</span>
                       </div>
-                      
-                      <div className="mt-1 flex items-center gap-4 text-xs text-gray-500">
-                        <span>Course: {resource.course?.title || 'Unknown'}</span>
-                        <span>•</span>
-                        <span>Added: {formatDate(resource.created_at)}</span>
-                        {resource.uploader && (
-                          <>
-                            <span>•</span>
-                            <span>By: {resource.uploader.name}</span>
-                          </>
-                        )}
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-purple-600" />
+                        <span>{formatDate(resource.created_at)}</span>
                       </div>
+                      {resource.uploader && (
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4 text-green-600" />
+                          <span className="truncate">{resource.uploader.name}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center space-x-2">
-                    {/* View/Download */}
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <button
-                      onClick={() => window.open(resource.url, '_blank')}
-                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      onClick={() => {
+                        const url = resource.url.startsWith('http') 
+                          ? resource.url 
+                          : `http://127.0.0.1:5000${resource.url}`;
+                        window.open(url, '_blank');
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg transition-colors font-medium text-sm"
                       title={resource.type === 'url' ? 'Open link' : 'View resource'}
                     >
                       {resource.type === 'url' ? <ExternalLink size={16} /> : <Eye size={16} />}
+                      View
                     </button>
 
-                    {/* Edit */}
                     <button
                       onClick={() => setEditingResource(resource)}
-                      className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                      className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                       title="Edit resource"
                     >
-                      <Edit3 size={16} />
+                      <Edit3 size={20} />
                     </button>
 
-                    {/* Delete */}
                     <button
                       onClick={() => handleDelete(resource.id, resource.title)}
-                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       title="Delete resource"
                     >
-                      <Trash2 size={16} />
+                      <Trash2 size={20} />
                     </button>
                   </div>
                 </div>
@@ -310,10 +427,10 @@ export default function EducatorResources() {
             ))}
           </div>
         )}
-      </div>
+        </div>
 
-      {/* Pagination */}
-      {pagination.pages > 1 && (
+        {/* Pagination */}
+        {pagination.pages > 1 && (
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button
@@ -377,24 +494,25 @@ export default function EducatorResources() {
         loading={uploadLoading}
       />
 
-      {/* Edit Modal */}
-      {editingResource && (
-        <EditResourceModal
-          resource={editingResource}
-          courses={courses}
-          onClose={() => setEditingResource(null)}
-          onSubmit={async (data) => {
-            try {
-              await updateResource(editingResource.id, data);
-              setEditingResource(null);
-              loadResources();
-              alert('Resource updated successfully!');
-            } catch (error) {
-              alert(error.message || 'Failed to update resource');
-            }
-          }}
-        />
-      )}
+        {/* Edit Modal */}
+        {editingResource && (
+          <EditResourceModal
+            resource={editingResource}
+            courses={courses}
+            onClose={() => setEditingResource(null)}
+            onSubmit={async (data) => {
+              try {
+                await updateResource(editingResource.id, data);
+                setEditingResource(null);
+                loadResources();
+                alert('Resource updated successfully!');
+              } catch (error) {
+                alert(error.message || 'Failed to update resource');
+              }
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 }
