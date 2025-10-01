@@ -53,3 +53,4 @@ class BaseModel(db.Model):
     def get_all(cls):
         """Retrieves all instances of the model."""
         return cls.query.all()
+

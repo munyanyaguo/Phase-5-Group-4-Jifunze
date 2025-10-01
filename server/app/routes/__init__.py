@@ -6,7 +6,7 @@ from flask import Blueprint
 # -------------------
 from .courses import CourseListResource, CourseResource
 from .attendance import AttendanceListResource, AttendanceResource
-from .auth import RegisterResource, LoginResource, LogoutResource, ResetPasswordResource
+from .auth import RegisterResource, LoginResource, LogoutResource, ResetPasswordResource, TokenRefreshResource
 from .users import (
     UserResource, UserListResource,
     UserProfileResource, UsersBySchoolResource,
@@ -15,10 +15,10 @@ from .users import (
 from .schools import (
     SchoolListResource, SchoolResource,
     SchoolAssignUserResource, EducatorsByManagerResource, ManagerStudentsResource,
-    SchoolStatsResource, SchoolUsersResource, SchoolCoursesResource, SchoolDashboardResource, UserListResource, UserResource, ManagerUsersResource
+    SchoolStatsResource, SchoolUsersResource, SchoolCoursesResource, SchoolDashboardResource, ManagerUsersResource
 )
 from .messages import MessageListResource, MessageResource
-from .resources import ResourceListApi, ResourceDetailApi, CourseResourcesApi
+from .resources import ResourceListApi, ResourceDetailApi, CourseResourcesApi, StudentResourcesApi
 from .enrollment import EnrollmentListResource, EnrollmentResource
 
 
@@ -26,8 +26,6 @@ from .enrollment import EnrollmentListResource, EnrollmentResource
 # Blueprint and API
 # -------------------
 
-from .resources import CourseResourcesApi
-from .resources import StudentResourcesApi
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 api = Api(api_bp)
@@ -40,13 +38,14 @@ api.add_resource(LoginResource, "/auth/login")
 api.add_resource(LogoutResource, "/auth/logout")
 api.add_resource(ResetPasswordResource, "/auth/reset-password")
 api.add_resource(UserPasswordResetResource, "/auth/reset-password-token")
+api.add_resource(TokenRefreshResource, "/auth/refresh")
 
 # ------------------- 
 # User endpoints
 # -------------------
 api.add_resource(UserListResource, "/users")  # GET all users, POST new
-api.add_resource(UserResource, "/users/me", "/users/<int:user_id>")  # GET/PUT/DELETE own profile or by ID
-api.add_resource(UserProfileResource, "/users/profile")
+api.add_resource(UserResource, "/users/<int:user_id>")  # GET/PUT own profile or by ID
+api.add_resource(UserProfileResource, "/users/me")
 api.add_resource(UserDashboardResource, "/users/dashboard")
 api.add_resource(UsersBySchoolResource, "/schools/<int:school_id>/users")  # Users in a school
 
@@ -71,7 +70,7 @@ api.add_resource(ManagerUsersResource, "/manager/users")  # Manager's users
 # -------------------
 api.add_resource(CourseListResource, "/courses")  # GET all, POST new
 api.add_resource(CourseResource, "/courses/<int:course_id>")  # GET, PUT, DELETE
-api.add_resource(CourseResourcesApi, "/courses/<int:course_id>/resources")  # Course resources
+
 
 # -------------------
 # Attendance endpoints
@@ -90,7 +89,7 @@ api.add_resource(MessageResource, "/messages/<int:message_id>")  # GET, PUT, DEL
 
 api.add_resource(ResourceListApi, "/resources")
 api.add_resource(ResourceDetailApi, "/resources/<int:resource_id>")
-# api.add_resource(CourseResourcesApi, "/courses/<int:course_id>/resources")
+api.add_resource(CourseResourcesApi, "/courses/<int:course_id>/resources")  # Course resources
 api.add_resource(StudentResourcesApi, "/student/resources")
 
 
