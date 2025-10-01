@@ -29,7 +29,7 @@ const StudentMessages = ({ courseId }) => {
 
   // Fetch enrolled courses
   const fetchEnrolledCourses = async () => {
-    if (!currentUserId) return console.log("Waiting for user authentication...");
+    if (!currentUserId) return;
 
     setCoursesLoading(true);
     const token = localStorage.getItem("token");
@@ -154,7 +154,7 @@ const StudentMessages = ({ courseId }) => {
         content: newMessage.trim(),
       };
 
-      console.log("📤 Sending message:", requestData);
+      
 
       const res = await fetch(`${API_URL}/api/messages`, {
         method: "POST",
@@ -166,18 +166,18 @@ const StudentMessages = ({ courseId }) => {
       });
 
       const data = await res.json();
-      console.log("📥 Response:", res.status, data);
+      
 
       if (data.success) {
         setMessages(prev => [...prev, data.data]);
         setNewMessage("");
       }
       else {
-        console.error("❌ Validation failed:", data.errors || data.message);
+        
         setError(`Validation failed: ${data.errors || data.message}`);
       }
     } catch (err) {
-      console.error("❌ Network error:", err);
+      
       setError("Network error occurred.");
     } finally {
       setSending(false);
@@ -207,7 +207,7 @@ const StudentMessages = ({ courseId }) => {
           value={selectedCourseId || ""}
           onChange={e => {
             const courseId = parseInt(e.target.value) || "";
-            console.log(" Selected course:", courseId);
+            
             setSelectedCourseId(courseId);
           }}
           className="mb-2 border p-1 rounded w-full"
