@@ -1,10 +1,12 @@
 // src/pages/educator/Courses.jsx
-import React, { useEffect, useState, useMemo } from "react";
-import { BookOpen, Users, AlertCircle, Calendar, Search, Filter } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
+import React, { useState, useEffect, useMemo } from "react";
+import { useLocation } from "react-router-dom";
+import { BookOpen, Users, Calendar, TrendingUp, Search, Grid3x3, List } from "lucide-react";
 import { fetchEducatorCourses } from "../../services/courseService";
 import { CoursesSkeleton } from "../../components/common/SkeletonLoader";
+import { API_URL as CONFIG_URL } from '../../config';
+
+const API_URL = `${CONFIG_URL}/api`;
 
 export default function Courses() {
   const navigate = useNavigate();
@@ -16,7 +18,6 @@ export default function Courses() {
   const [enrollmentCounts, setEnrollmentCounts] = useState({});
   const [viewMode, setViewMode] = useState('my'); // 'my' or 'all'
   const [searchTerm, setSearchTerm] = useState('');
-  const API_URL = "http://127.0.0.1:5000/api";
 
   useEffect(() => {
     const load = async () => {

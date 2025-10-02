@@ -1,7 +1,8 @@
 // src/hooks/useNotifications.js
 import { useEffect, useRef } from 'react';
+import { API_URL as BASE_URL } from '../config';
 
-const API_URL = 'http://127.0.0.1:5000/api';
+const API_URL = `${BASE_URL}/api`;
 
 /**
  * Global notification hook that polls for new messages

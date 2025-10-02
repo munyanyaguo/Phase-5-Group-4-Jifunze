@@ -274,13 +274,13 @@ export default function EducatorMessages() {
       const token = localStorage.getItem('token');
       
       // Fetch course details
-      const courseRes = await fetch(`http://127.0.0.1:5000/api/courses/${courseId}`, {
+      const courseRes = await fetch(`${API_URL}/courses/${courseId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const courseData = await courseRes.json();
       
       // Fetch enrollments with user data
-      const enrollRes = await fetch(`http://127.0.0.1:5000/api/enrollments?course_id=${courseId}&page=1&per_page=100`, {
+      const enrollRes = await fetch(`${API_URL}/enrollments?course_id=${courseId}&page=1&per_page=100`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const enrollData = await enrollRes.json();
@@ -293,7 +293,7 @@ export default function EducatorMessages() {
         const enrichedEnrollments = await Promise.all(
           enrollments.map(async (enrollment) => {
             try {
-              const userRes = await fetch(`http://127.0.0.1:5000/api/users/${enrollment.user_public_id}`, {
+              const userRes = await fetch(`${API_URL}/users/${enrollment.user_public_id}`, {
                 headers: { Authorization: `Bearer ${token}` }
               });
               const userData = await userRes.json();
