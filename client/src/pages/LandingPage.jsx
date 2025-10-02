@@ -6,30 +6,38 @@ const LandingPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white">
       {/* Hero Section */}
-      <section className="flex flex-col items-center justify-center text-center py-20 px-6">
-        <h1 className="text-5xl md:text-6xl font-bold mb-6">Welcome to Jifunze</h1>
-        <p className="text-lg md:text-xl max-w-2xl mb-8">
-          A complete online school system designed for <span className="font-semibold">students, educators, and school owners</span>.  
-          Manage classes, track attendance, share resources, and collaborate — all in one platform.
-        </p>
-        <div className="space-x-4">
-          <Link
-            to="/register"
-            className="bg-yellow-400 text-indigo-900 px-6 py-3 rounded-lg font-semibold hover:bg-yellow-300 transition"
-          >
-            Get Started
-          </Link>
-          <Link
-            to="/login"
-            className="bg-white text-indigo-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-200 transition"
-          >
-            Login
-          </Link>
-        </div>
-      </section>
+<section className="relative min-h-screen flex flex-col items-center justify-center text-center px-6 bg-cover bg-center bg-no-repeat bg-[url('/hero2.jpg')]">
+  {/* Overlay gradient for readability */}
+  <div className="absolute inset-0 bg-gradient-to-r from-indigo-800/70 via-purple-800/70 to-pink-800/70"></div>
+
+  {/* Content on top */}
+  <div className="relative z-10">
+    <h1 className="text-5xl md:text-6xl font-bold mb-6 text-white drop-shadow-lg">
+      Welcome to Jifunze
+    </h1>
+    <p className="text-lg md:text-xl max-w-2xl mb-8 text-white drop-shadow">
+      A complete online school system designed for <span className="font-semibold">students, educators, and school owners</span>.  
+      Manage classes, track attendance, share resources, and collaborate — all in one platform.
+    </p>
+    <div className="space-x-4">
+      <Link
+        to="/register"
+        className="bg-yellow-400 text-indigo-900 px-6 py-3 rounded-lg font-semibold hover:bg-yellow-300 transition transform hover:scale-105 shadow-lg"
+      >
+        Get Started
+      </Link>
+      <Link
+        to="/login"
+        className="bg-white text-indigo-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-200 transition transform hover:scale-105 shadow-lg"
+      >
+        Login
+      </Link>
+    </div>
+  </div>
+</section>
 
       {/* Features Section */}
-      <section className="bg-white text-gray-800 py-16 px-6">
+      <section className="bg-purple text-gray-800 py-16 px-6">
         <h2 className="text-3xl font-bold text-center mb-10">Why Choose Jifunze?</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
           <div className="card text-center">
@@ -56,7 +64,7 @@ const LandingPage = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 px-6 text-center bg-indigo-700">
+      <section className="py-16 px-6 text-center bg-indigo-700 bg-cover bg-center bg-[url('/hero1.jpg')]">
         <h2 className="text-3xl font-bold mb-6">Ready to Transform Learning?</h2>
         <p className="mb-8 text-lg">Join thousands of schools moving education online with Jifunze.</p>
         <Link
@@ -67,10 +75,18 @@ const LandingPage = () => {
         </Link>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-indigo-900 text-center py-6 text-sm">
-        © {new Date().getFullYear()} Jifunze. All Rights Reserved.
-      </footer>
+    
+     {/* Footer */}
+<footer className="relative bg-indigo-900 text-white text-center py-6 text-sm ">
+  {/* Overlay for readability */}
+  <div className="absolute inset-0 bg-indigo-900/80"></div>
+
+  <div className="relative z-10">
+   
+    <p>© {new Date().getFullYear()} Jifunze. All Rights Reserved.</p>
+  </div>
+</footer>
+
     </div>
   );
 };
