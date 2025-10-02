@@ -297,6 +297,43 @@ class UserProfileResource(Resource):
 
         except Exception as e:
             return error_response("Something went wrong", {"error": str(e)}, status_code=500)
+    
+
+
+    @jwt_required()
+    def put(self):
+        """Update current user's profile (self or manager can update)"""
+        try:
+            current_user_public_id = get_jwt_identity()
+            current_user = User.query.filter_by(public_id=current_user_public_id).first()
+            current_user_claims = get_jwt()
+
+            if not current_user:
+                return error_response("User not found", status_code=404)
+
+            # Validate input
+            user_update_schema.context = {"user_id": current_user.id}
+            validated_data = user_update_schema.load(request.get_json() or {})
+
+            for field, value in validated_data.items():
+                # Managers can change role/school_id, normal users cannot
+                if field in ["role", "school_id"]:
+                    if current_user_claims.get("role") == "manager":
+                        setattr(current_user, field, value)
+                else:
+                    setattr(current_user, field, value)
+
+            current_user.save()
+            return success_response("Profile updated successfully", {"profile": user_schema.dump(current_user)})
+
+        except ValidationError as err:
+            return error_response("Validation error", err.messages, status_code=400)
+        except Exception as e:
+            db.session.rollback()
+            return error_response("Something went wrong", {"error": str(e)}, status_code=500)   
+
+    
+
 
 
 class UserDashboardResource(Resource):
@@ -429,7 +466,7 @@ class UserPasswordChangeResource(Resource):
             db.session.rollback()
             return error_response("Something went wrong", {"error": str(e)}, status_code=500)
 
-        
+
 class UserPasswordResetResource(Resource):
     def post(self):
         """
@@ -470,7 +507,7 @@ class UserPasswordResetResource(Resource):
             # Hash and update password
             user.set_password(new_password)
             user.save()
-
+            
             # Invalidate the token
             db.session.delete(reset_entry)
             db.session.commit()

@@ -58,6 +58,17 @@ def create_app(config_name=None):
     if config_name == "testing":
         cors.init_app(app, origins=["*"])
     else:
+        # Allow local dev and optional production origins from env FRONTEND_ORIGINS (comma-separated)
+        default_origins = [
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            # production client on Render
+            "https://phase-5-group-4-jifunze.onrender.com",
+        ]
+        extra_origins = os.getenv("FRONTEND_ORIGINS", "").strip()
+        if extra_origins:
+            default_origins.extend([o.strip() for o in extra_origins.split(",") if o.strip()])
+
         cors.init_app(
             app,
             resources={

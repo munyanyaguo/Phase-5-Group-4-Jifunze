@@ -133,10 +133,26 @@ class ResourceDetailApi(ApiResource):
 class CourseResourcesApi(ApiResource):
     @jwt_required()
     def get(self, course_id):
-        """List all resources for a specific course (students only, paginated)."""
+        """List all resources for a specific course (students, educators, managers)."""
         user_public_id = get_jwt_identity()
+        claims = get_jwt()
+        role = claims.get("role")
 
-        # Check enrollment
+        # Educators and managers can access course resources without enrollment check
+        if role in ["educator", "manager", "admin"]:
+            # Educators can access their own courses
+            if role == "educator":
+                from app.models.user import User
+                user = User.query.filter_by(public_id=user_public_id).first()
+                course = db.session.get(Course, course_id)
+                if course and course.educator_id != user.id:
+                    return error_response("You are not the educator of this course", 403)
+            
+            # Paginated query
+            query = Resource.query.filter_by(course_id=course_id).order_by(Resource.created_at.desc())
+            return paginate(query, resources_schema, resource_name="resources")
+
+        # Students need to be enrolled
         enrollment = Enrollment.query.filter_by(
             user_public_id=user_public_id,
             course_id=course_id

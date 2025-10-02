@@ -1,4 +1,4 @@
-"""Merge teammate's and my UUID changes
+"""Merge teammate's and my UUID changes (no-op)
 
 Revision ID: 519b8e00b4fb
 Revises: bcf92740b66c, be71704f8178
@@ -17,8 +17,10 @@ depends_on = None
 
 
 def upgrade():
+    # This is a merge migration; no schema changes.
     pass
 
 
 def downgrade():
+    # This is a merge migration; no schema changes.
     pass
