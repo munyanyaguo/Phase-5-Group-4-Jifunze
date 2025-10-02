@@ -77,6 +77,33 @@ class EnrollmentListResource(Resource):
             results = query.all()
             return enrollments_schema.dump(results), 200
 
+        if role == "educator":
+            # Educators can see enrollments for their assigned courses
+            educator_public_id = get_jwt_identity()
+            educator = User.query.filter_by(public_id=educator_public_id).first()
+            if not educator:
+                return error_response("Educator not found", 404)
+            
+            # Get courses assigned to this educator
+            educator_course_ids = [c.id for c in educator.courses]
+            if not educator_course_ids:
+                # Return empty list if educator has no courses
+                from app.extensions import paginate
+                return paginate(query.filter(Enrollment.course_id.in_([])), enrollments_schema, resource_name="enrollments")
+            
+            # Filter enrollments to educator's courses
+            query = query.filter(Enrollment.course_id.in_(educator_course_ids))
+            
+            # Optional: filter by specific course_id if provided
+            if course_id is not None:
+                if course_id not in educator_course_ids:
+                    return error_response("Unauthorized: cannot access enrollments for this course.", 403)
+                query = query.filter_by(course_id=course_id)
+            
+            # Handle pagination
+            from app.extensions import paginate
+            return paginate(query, enrollments_schema, resource_name="enrollments")
+
         if role == "student":
             # Students can only see their own enrollments
             student_public_id = get_jwt_identity()

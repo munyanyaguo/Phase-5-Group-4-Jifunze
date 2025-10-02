@@ -39,27 +39,31 @@ export default function EducatorDashboard() {
       const courses = Array.isArray(coursesRes?.data) ? coursesRes.data : [];
       const courseIds = courses.map((c) => c.id);
 
-        // 2) Aggregate unique students from enrollments per course (optimized - batch request)
+        // 2) Aggregate unique students from enrollments (backend now filters by educator's courses)
         let studentsTotal = 0;
         try {
-          // Instead of multiple requests, get all enrollments at once
           const allEnrollmentsRes = await fetch(`${API_URL}/enrollments?per_page=1000`, {
             headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
           });
           if (allEnrollmentsRes.ok) {
             const allEnrollmentsBody = await allEnrollmentsRes.json();
-            const allEnrollments = allEnrollmentsBody?.data?.enrollments || [];
-            // Count unique students in educator's courses
+            console.log('📊 Enrollments response:', allEnrollmentsBody);
+            
+            // Backend now filters enrollments to educator's courses automatically
+            const allEnrollments = allEnrollmentsBody?.data?.enrollments || allEnrollmentsBody?.data?.items || [];
+            
+            // Count unique students
             const uniqueStudents = new Set();
             allEnrollments.forEach(enrollment => {
-              if (courseIds.includes(enrollment.course_id) && enrollment.user_public_id) {
+              if (enrollment.user_public_id) {
                 uniqueStudents.add(enrollment.user_public_id);
               }
             });
             studentsTotal = uniqueStudents.size;
+            console.log('👥 Total unique students:', studentsTotal);
           }
-        } catch (err) {
-          console.error('Failed to fetch enrollments:', err);
+        } catch (error) {
+          console.error('Failed to fetch enrollments:', error);
         }
 
         // 3) Count resources across educator's courses
