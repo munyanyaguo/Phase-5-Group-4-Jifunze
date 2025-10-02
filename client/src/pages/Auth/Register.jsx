@@ -23,9 +23,9 @@ export default function Register() {
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
       {/* LEFT SIDE - Illustration + Tagline */}
-      <div className="hidden md:flex w-1/2 relative bg-gradient-to-br from-purple-600 to-indigo-600 text-white items-center justify-center p-12 bg-cover bg-center bg-[url('/hero1.jpg')]">
+      <div className="hidden md:flex w-1/2 relative text-white items-center justify-center p-12 bg-cover bg-center bg-[url('/hero1.jpg')]">
   {/* Overlay for text visibility */}
-  <div className="absolute inset-0 bg-black bg-opacity-50"></div>
+  <div className="absolute inset-0 bg-gradient-to-br from-purple-900/70 to-indigo-900/70"></div>
 
   {/* Content */}
   <div className="relative text-center space-y-6 max-w-md z-10">
