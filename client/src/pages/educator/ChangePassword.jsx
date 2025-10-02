@@ -1,8 +1,9 @@
 // src/pages/educator/ChangePassword.jsx
 import React, { useState } from "react";
 import { Lock, Eye, EyeOff, CheckCircle, XCircle, Shield } from "lucide-react";
+import { API_URL as BASE_URL } from '../../config';
 
-const API_URL = "http://127.0.0.1:5000/api";
+const API_URL = `${BASE_URL}/api`;
 
 export default function ChangePassword() {
   const [formData, setFormData] = useState({

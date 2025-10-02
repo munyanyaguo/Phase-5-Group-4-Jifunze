@@ -1,5 +1,7 @@
 // src/services/messageService.js
-const API_URL = "http://127.0.0.1:5000/api";
+import { API_URL as BASE_URL } from '../config';
+
+const API_URL = `${BASE_URL}/api`;
 
 const getToken = () => localStorage.getItem("token");
 
