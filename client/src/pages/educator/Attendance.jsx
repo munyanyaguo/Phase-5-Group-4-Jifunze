@@ -82,33 +82,6 @@ export default function Attendance() {
     return token;
   };
 
-  // Fetch courses on component mount
-  useEffect(() => {
-    fetchCourses();
-  }, [fetchCourses]);
-
-  // Fetch students when course is selected
-  useEffect(() => {
-    if (selectedCourse) {
-      fetchStudents();
-      fetchExistingAttendance();
-    }
-  }, [selectedCourse, selectedDate, fetchStudents, fetchExistingAttendance]);
-  
-  // Fetch history when filters or view changes
-  useEffect(() => {
-    if (showHistory) {
-      fetchAttendanceHistory();
-    }
-  }, [historyView, historyFilter, showHistory, fetchAttendanceHistory]);
-  
-  // Fetch all courses and students for filters on mount
-  useEffect(() => {
-    if (showHistory && courses.length === 0) {
-      fetchCourses();
-    }
-  }, [showHistory, courses.length, fetchCourses]);
-
   const fetchCourses = useCallback(async () => {
     try {
       const token = getToken();
@@ -373,6 +346,33 @@ export default function Attendance() {
       setHistoryLoading(false);
     }
   }, [historyView, historyFilter]);
+
+  // Fetch courses on component mount
+  useEffect(() => {
+    fetchCourses();
+  }, [fetchCourses]);
+
+  // Fetch students when course is selected
+  useEffect(() => {
+    if (selectedCourse) {
+      fetchStudents();
+      fetchExistingAttendance();
+    }
+  }, [selectedCourse, selectedDate, fetchStudents, fetchExistingAttendance]);
+  
+  // Fetch history when filters or view changes
+  useEffect(() => {
+    if (showHistory) {
+      fetchAttendanceHistory();
+    }
+  }, [historyView, historyFilter, showHistory, fetchAttendanceHistory]);
+  
+  // Fetch all courses and students for filters on mount
+  useEffect(() => {
+    if (showHistory && courses.length === 0) {
+      fetchCourses();
+    }
+  }, [showHistory, courses.length, fetchCourses]);
 
   const toggleAttendance = (userId) => {
     setAttendanceData(prev => {
