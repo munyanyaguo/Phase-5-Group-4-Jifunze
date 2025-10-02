@@ -208,28 +208,28 @@ const StudentMessages = ({ courseId }) => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-4 px-4">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">💬 Messages</h1>
-          <p className="text-gray-600">Chat with your educators and classmates</p>
+        <div className="mb-4">
+          <h1 className="text-3xl font-bold text-gray-800 mb-1">💬 Messages</h1>
+          <p className="text-sm text-gray-600">Chat with your educators and classmates</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
           {/* Course selection dropdown */}
           {!courseId && (
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4">
               {coursesLoading ? (
-                <div className="text-white text-center">Loading courses...</div>
+                <div className="text-white text-center text-sm">Loading courses...</div>
               ) : enrolledCourses.length === 0 ? (
-                <div className="text-center text-white">
-                  <FaComments className="mx-auto text-4xl mb-2 opacity-70" />
-                  <p>You are not enrolled in any courses.</p>
+                <div className="text-center text-white py-4">
+                  <FaComments className="mx-auto text-3xl mb-2 opacity-70" />
+                  <p className="text-sm">You are not enrolled in any courses.</p>
                 </div>
               ) : (
                 <div>
-                  <label className="block text-white text-sm font-medium mb-2">Select Course</label>
+                  <label className="block text-white text-xs font-medium mb-2">Select Course</label>
                   <select
                     value={selectedCourseId || ""}
                     onChange={e => {
@@ -237,7 +237,7 @@ const StudentMessages = ({ courseId }) => {
                       console.log("Selected course:", courseId);
                       setSelectedCourseId(courseId);
                     }}
-                    className="w-full p-3 rounded-lg border-0 focus:ring-2 focus:ring-white/50 outline-none"
+                    className="w-full p-2 text-sm rounded-lg border-0 focus:ring-2 focus:ring-white/50 outline-none"
                   >
                     <option value="">Choose a course...</option>
                     {enrolledCourses.map(enrollment => (
@@ -253,9 +253,9 @@ const StudentMessages = ({ courseId }) => {
 
           {/* Feedback if no course selected */}
           {!courseId && enrolledCourses.length > 0 && !selectedCourseId && (
-            <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-              <FaComments className="text-6xl mb-4 opacity-50" />
-              <p className="text-lg">Please select a course above to view messages</p>
+            <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+              <FaComments className="text-4xl mb-3 opacity-50" />
+              <p className="text-sm">Please select a course above to view messages</p>
             </div>
           )}
 
@@ -279,12 +279,12 @@ const StudentMessages = ({ courseId }) => {
               ) : (
                 <>
                   {/* Messages Container */}
-                  <div className="h-[500px] overflow-y-auto p-6 bg-gray-50">
+                  <div className="h-[400px] overflow-y-auto p-4 bg-gray-50">
                     {sortedMessages.length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                        <FaComments className="text-6xl mb-4 opacity-50" />
-                        <p className="text-lg">No messages yet</p>
-                        <p className="text-sm">Be the first to start the conversation!</p>
+                        <FaComments className="text-4xl mb-3 opacity-50" />
+                        <p className="text-base">No messages yet</p>
+                        <p className="text-xs">Be the first to start the conversation!</p>
                       </div>
                     ) : (
                       <div className="space-y-4">
@@ -351,26 +351,26 @@ const StudentMessages = ({ courseId }) => {
                   </div>
 
                   {/* Message Input */}
-                  <div className="p-6 bg-white border-t">
-                    <form onSubmit={handleSendMessage} className="flex gap-3">
+                  <div className="p-4 bg-white border-t">
+                    <form onSubmit={handleSendMessage} className="flex gap-2">
                       <input
                         type="text"
                         value={newMessage}
                         onChange={e => setNewMessage(e.target.value)}
                         placeholder="Type your message..."
-                        className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                        className="flex-1 p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                         disabled={sending}
                       />
                       <button
                         type="submit"
-                        className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all font-medium flex items-center gap-2 disabled:opacity-50"
+                        className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 text-sm rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all font-medium flex items-center gap-2 disabled:opacity-50"
                         disabled={sending || !newMessage.trim()}
                       >
                         {sending ? (
                           "Sending..."
                         ) : (
                           <>
-                            <FaPaperPlane />
+                            <FaPaperPlane className="text-xs" />
                             Send
                           </>
                         )}
