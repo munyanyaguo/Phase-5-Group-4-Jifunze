@@ -3,6 +3,9 @@ import { Send, MessageSquare, BookOpen, Inbox, User, Clock, CheckCircle2, Chevro
 import { fetchEducatorCourses } from "../../services/courseService";
 import { fetchMessagesByCourse, sendMessage } from "../../services/messageService";
 import { MessagesSkeleton } from "../../components/common/SkeletonLoader";
+import { API_URL as CONFIG_URL } from '../../config';
+
+const API_URL = `${CONFIG_URL}/api`;
 
 export default function EducatorMessages() {
   const [courses, setCourses] = useState([]);
@@ -57,22 +60,6 @@ export default function EducatorMessages() {
       }));
       
       setUnreadCounts(counts);
-      
-      // Sort courses by most recent message
-      const sortedCourses = [...courses].sort((a, b) => {
-        const timeA = lastMessageTimes[a.id];
-        const timeB = lastMessageTimes[b.id];
-        
-        // Courses with messages come first
-        if (!timeA && !timeB) return 0;
-        if (!timeA) return 1;
-        if (!timeB) return -1;
-        
-        // Sort by most recent message
-        return new Date(timeB) - new Date(timeA);
-      });
-      
-      setCourses(sortedCourses);
     } catch (err) {
       console.error('Failed to update unread counts:', err);
     }
@@ -97,10 +84,42 @@ export default function EducatorMessages() {
         
         const res = await fetchEducatorCourses();
         const list = Array.isArray(res?.data) ? res.data : [];
-        setCourses(list);
-        if (list.length > 0) {
+        
+        // Sort courses by most recent message activity
+        const lastMessageTimes = {};
+        await Promise.all(list.map(async (course) => {
+          try {
+            const data = await fetchMessagesByCourse(Number(course.id));
+            const msgs = Array.isArray(data?.messages) ? data.messages : [];
+            if (msgs.length > 0) {
+              const sortedMsgs = [...msgs].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+              lastMessageTimes[course.id] = sortedMsgs[0].timestamp;
+            } else {
+              lastMessageTimes[course.id] = null;
+            }
+          } catch {
+            lastMessageTimes[course.id] = null;
+          }
+        }));
+        
+        // Sort courses by most recent message
+        const sortedCourses = [...list].sort((a, b) => {
+          const timeA = lastMessageTimes[a.id];
+          const timeB = lastMessageTimes[b.id];
+          
+          // Courses with messages come first
+          if (!timeA && !timeB) return 0;
+          if (!timeA) return 1;
+          if (!timeB) return -1;
+          
+          // Sort by most recent message
+          return new Date(timeB) - new Date(timeA);
+        });
+        
+        setCourses(sortedCourses);
+        if (sortedCourses.length > 0) {
           const saved = localStorage.getItem(STORAGE_KEY);
-          const initial = saved && list.find((c) => String(c.id) === saved) ? saved : String(list[0].id);
+          const initial = saved && sortedCourses.find((c) => String(c.id) === saved) ? saved : String(sortedCourses[0].id);
           setSelectedCourseId(initial);
         }
         setInitialLoading(false);
@@ -142,9 +161,6 @@ export default function EducatorMessages() {
         // Mark messages as read for this course
         const lastReadKey = `lastRead_course_${selectedCourseId}`;
         localStorage.setItem(lastReadKey, new Date().toISOString());
-        
-        // Update unread counts
-        updateUnreadCounts();
       } catch (e) {
         setError(e.message || "Failed to load messages");
       } finally {
@@ -152,7 +168,7 @@ export default function EducatorMessages() {
       }
     };
     loadMessages();
-  }, [selectedCourseId, currentUserId, updateUnreadCounts]);
+  }, [selectedCourseId, currentUserId]);
 
   // Poll for new incoming messages for the selected course
   useEffect(() => {

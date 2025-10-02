@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useEffect, useState, useMemo } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { User, Mail, ArrowLeft, BarChart3, Calendar, BookOpen, CheckCircle, XCircle, Clock, TrendingUp, Award, ArrowRight } from "lucide-react";
 import { API_URL as CONFIG_URL } from '../../config';

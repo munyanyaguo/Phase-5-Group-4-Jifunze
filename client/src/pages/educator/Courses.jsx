@@ -1,10 +1,12 @@
 // src/pages/educator/Courses.jsx
 import React, { useState, useEffect, useMemo } from "react";
-import { useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
 import { BookOpen, Users, Calendar, TrendingUp, Search, Grid3x3, List } from "lucide-react";
 import { fetchEducatorCourses } from "../../services/courseService";
 import { CoursesSkeleton } from "../../components/common/SkeletonLoader";
 import { API_URL as CONFIG_URL } from '../../config';
+
 
 const API_URL = `${CONFIG_URL}/api`;
 

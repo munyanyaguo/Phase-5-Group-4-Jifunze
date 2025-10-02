@@ -26,9 +26,8 @@ export default function ManagerEnrollments() {
   // --------------------
   const loadSchool = async () => {
     try {
-      const res = await fetchDashboard();
-      const data = await res.json();
-      const list = data?.dashboard?.schools || [];
+      const data = await fetchDashboard();
+      const list = data?.dashboard?.schools || data?.schools || [];
       setSchools(list);
       if (list.length > 0) setSchoolId(list[0].id);
       else alert("No school found for this manager.");

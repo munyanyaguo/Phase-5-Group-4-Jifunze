@@ -2,12 +2,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardCard from "../../components/common/DashboardCard";
-import { Users, BookOpen, FileText, MessageSquare, TrendingUp, Calendar, Award, Clock } from "lucide-react";
+import { Users, BookOpen, FileText, MessageSquare, TrendingUp, Calendar, Award, Clock, UserCircle, ClipboardCheck } from "lucide-react";
 import { fetchEducatorCourses } from "../../services/courseService";
 import { DashboardSkeleton } from "../../components/common/SkeletonLoader";
 import { cache } from '../../utils/cache';
 import { API_URL as CONFIG_URL } from '../../config';
-
 const API_URL = `${CONFIG_URL}/api`;
 
 export default function EducatorDashboard() {
