@@ -1,17 +1,17 @@
 // src/pages/educator/Dashboard.jsx
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardCard from "../../components/common/DashboardCard";
-import { Users, BookOpen, MessageSquare, FileText, ClipboardCheck, UserCircle, TrendingUp, Calendar } from "lucide-react";
+import { Users, BookOpen, FileText, MessageSquare, TrendingUp, Calendar, Award, Clock, UserCircle, ClipboardCheck } from "lucide-react";
 import { fetchEducatorCourses } from "../../services/courseService";
-import EducatorMessages from "./Messages";
-import { cache } from "../../utils/cache";
 import { DashboardSkeleton } from "../../components/common/SkeletonLoader";
+import { cache } from '../../utils/cache';
+import { API_URL as CONFIG_URL } from '../../config';
+const API_URL = `${CONFIG_URL}/api`;
 
 export default function EducatorDashboard() {
   const [stats, setStats] = useState({ students: 0, classes: 0, resources: 0, sessions: 0 });
   const [initialLoading, setInitialLoading] = useState(true);
-  const API_URL = "http://127.0.0.1:5000/api";
   const [activeTab, setActiveTab] = useState("overview");
   const navigate = useNavigate();
   const [profile, setProfile] = useState({ name: "", email: "", school: "" });

@@ -4,8 +4,9 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { fetchEducatorCourses } from "../../services/courseService";
 import { StudentsSkeleton } from "../../components/common/SkeletonLoader";
+import { API_URL as CONFIG_URL } from '../../config';
 
-const API_URL = "http://127.0.0.1:5000/api";
+const API_URL = `${CONFIG_URL}/api`;
 
 export default function Students() {
   const navigate = useNavigate();

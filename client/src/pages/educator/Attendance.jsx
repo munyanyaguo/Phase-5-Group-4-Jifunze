@@ -3,8 +3,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Calendar, Users, CheckCircle, XCircle, Save, History, Eye, Filter, UserCheck, BookOpen, TrendingUp } from "lucide-react";
 import { AttendanceSkeleton } from "../../components/common/SkeletonLoader";
+import { API_URL as CONFIG_URL } from '../../config';
 
-const BASE_URL = "http://127.0.0.1:5000/api";
+const BASE_URL = `${CONFIG_URL}/api`;
 
 // Helper for authenticated requests
 export async function authFetch(url, options = {}) {

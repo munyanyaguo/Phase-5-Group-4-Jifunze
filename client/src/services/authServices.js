@@ -1,4 +1,6 @@
-const API_URL = "http://127.0.0.1:5000/api";
+import { API_URL as BASE_URL } from '../config';
+
+const API_URL = `${BASE_URL}/api`;
 
 // 🔹 Helper: Get stored token
 export function getToken() {
@@ -52,11 +54,7 @@ export async function login(email, password) {
   if (!res.ok) throw new Error(result.message || "Login failed");
 
   const data = result.data;
-  if (data && data.user) {
-  } else {
-    console.warn('Login response missing user data');
-  }
-
+  
   localStorage.setItem("token", data.access_token);
   localStorage.setItem("refresh_token", data.refresh_token);
   localStorage.setItem("role", data.user && data.user.role);
