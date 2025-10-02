@@ -1,24 +1,17 @@
-import { Routes, Route } from "react-router-dom";
-import Navbar from "../components/Navbar";
-import Sidebar from "../components/Sidebar";
-import Dashboard from "../pages/SchoolOwner/Dashboard";
+// src/layouts/OwnerLayout.jsx
+import React from "react";
+import { Outlet } from "react-router-dom";
+import Sidebar from "../components/owner/Sidebar";
+import Navbar from "../components/owner/Navbar";
 
 export default function OwnerLayout() {
-  const dummyCourses = [
-    { id: 1, title: "Math", educator: "Mr. Otieno" },
-    { id: 2, title: "Physics", educator: "Ms. Achieng" },
-  ];
-
   return (
-    <div className="flex h-screen bg-gray-100">
-      <Sidebar role="owner" />
+    <div className="min-h-screen flex bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      <Sidebar />
       <div className="flex-1 flex flex-col">
-        {/* ✅ Pass courses here */}
-        <Navbar courses={dummyCourses} />
-        <main className="p-6 overflow-y-auto">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-          </Routes>
+        <Navbar />
+        <main className="p-4 md:p-6 max-h-screen overflow-auto">
+          <Outlet />
         </main>
       </div>
     </div>

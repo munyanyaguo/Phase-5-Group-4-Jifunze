@@ -3,14 +3,18 @@ from flask import Blueprint
 from .courses import CourseListResource, CourseResource
 from .attendance import AttendanceListResource, AttendanceResource
 from .auth import RegisterResource, LoginResource, LogoutResource, ResetPasswordResource 
-from .users import (UserResource, UserListResource, UserPasswordResource, 
+from .users import (UserResource, UserListResource, 
     UserProfileResource, UsersBySchoolResource, UserDashboardResource)
 from .schools import (SchoolResource, SchoolListResource, SchoolStatsResource,
-    SchoolUsersResource, SchoolCoursesResource, SchoolDashboardResource)
+    SchoolUsersResource, SchoolCoursesResource, SchoolDashboardResource,
+    EducatorsByManagerResource, ManagerStudentsResource, ManagerUsersResource)
 from .messages import MessageListResource, MessageResource
 from .resources import ResourceListApi, ResourceDetailApi
 from .enrollment import EnrollmentListResource, EnrollmentResource
-
+from .resources import CourseResourcesApi
+from .resources import StudentResourcesApi
+from .notifications import (NotificationListResource, NotificationResource, 
+    NotificationMarkAllReadResource)
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 api = Api(api_bp)
 
@@ -28,15 +32,18 @@ api.add_resource(LoginResource, "/auth/login")
 api.add_resource(LogoutResource, "/auth/logout")
 api.add_resource(ResetPasswordResource, "/auth/reset-password")
 
+# -------------------
 # User endpoints
+# -------------------
 api.add_resource(UserListResource, "/users")
 api.add_resource(UserResource, "/users/me", "/users/<int:user_id>")
-api.add_resource(UserPasswordResource, "/users/password")
 api.add_resource(UserProfileResource, "/users/profile")
 api.add_resource(UserDashboardResource, "/users/dashboard")
 api.add_resource(UsersBySchoolResource, "/schools/<int:school_id>/users")
 
+# -------------------
 # School endpoints
+# -------------------
 api.add_resource(SchoolListResource, "/schools")
 api.add_resource(SchoolResource, "/schools/me", "/schools/<int:school_id>")
 api.add_resource(SchoolStatsResource, "/schools/stats", "/schools/<int:school_id>/stats")
@@ -44,14 +51,33 @@ api.add_resource(SchoolUsersResource, "/schools/<int:school_id>/users")
 api.add_resource(SchoolCoursesResource, "/schools/<int:school_id>/courses")
 api.add_resource(SchoolDashboardResource, "/schools/dashboard", "/schools/<int:school_id>/dashboard")
 
+# -------------------
+# Manager-specific endpoints
+# -------------------
+api.add_resource(EducatorsByManagerResource, "/manager/educators")
+api.add_resource(ManagerStudentsResource, "/manager/students")
+api.add_resource(ManagerUsersResource, "/manager/users")
+
 # Message endpoints
 api.add_resource(MessageListResource, "/messages")
 api.add_resource(MessageResource, "/messages/<int:message_id>")
+
+# Notification endpoints
+api.add_resource(NotificationListResource, "/notifications")
+api.add_resource(NotificationResource, "/notifications/<int:notification_id>")
+api.add_resource(NotificationMarkAllReadResource, "/notifications/mark-all-read")
+
 # Resource endpoints
 api.add_resource(ResourceListApi, "/resources")
 api.add_resource(ResourceDetailApi, "/resources/<int:resource_id>")
+api.add_resource(CourseResourcesApi, "/courses/<int:course_id>/resources")
+api.add_resource(StudentResourcesApi, "/student/resources")
+
+
+# -------------------
 # Enrollment endpoints
-api.add_resource(EnrollmentListResource, "/enrollments")
-api.add_resource(EnrollmentResource, "/enrollments/<int:enrollment_id>")
+# -------------------
+api.add_resource(EnrollmentListResource, "/enrollments", "/schools/<int:school_id>/enrollments", "/courses/<int:course_id>/enrollments")  # GET all / POST new
+api.add_resource(EnrollmentResource, "/enrollments/<int:enrollment_id>")  # GET / PUT / PATCH / DELETE
 
 

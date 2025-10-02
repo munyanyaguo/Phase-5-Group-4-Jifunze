@@ -14,7 +14,7 @@ class MessageSchema(ma.SQLAlchemySchema):
         load_instance = True
 
     id = ma.auto_field()
-    user_id = ma.auto_field(required=True)
+    user_public_id = ma.auto_field(required=True)
     course_id = ma.auto_field(required=True)
     parent_id = ma.auto_field(allow_none=True)
     content = ma.auto_field(required=True, validate=validate.Length(min=2))
@@ -22,7 +22,7 @@ class MessageSchema(ma.SQLAlchemySchema):
 
     # Nested minimal user & course details (for responses only)
     user = fields.Nested(
-        lambda: UserSchema(only=("id", "name")),
+        lambda: UserSchema(only=("public_id", "name")),
         dump_only=True
     )
     course = fields.Nested(

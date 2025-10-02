@@ -1,60 +1,159 @@
-// src/services/authServices.js
+const API_URL = "http://127.0.0.1:5000/api";
 
-// 🔹 Mock users (acting like a fake DB)
-const users = {
-  "owner@example.com": { role: "owner", password: "1234" },
-  "educator@example.com": { role: "educator", password: "1234" },
-  "student@example.com": { role: "student", password: "1234" },
-};
+// 🔹 Helper: Get stored token
+export function getToken() {
+  return localStorage.getItem("token");
+}
 
-export const login = async (email, password) => {
-  const user = users[email];
-
-  if (user && user.password === password) {
-    const fakeToken = `fake-jwt-${user.role}`;
-    localStorage.setItem("token", fakeToken);
-    localStorage.setItem("role", user.role);
-    return { role: user.role, token: fakeToken };
+// 🔹 Helper: Handle API responses safely
+export async function handleResponse(res) {
+  let result;
+  try {
+    result = await res.json();
+  } catch (err) {
+    console.error('Failed to parse response:', err);
+    throw new Error("Invalid server response");
   }
 
-  throw new Error("Invalid credentials");
-};
-
-export const logout = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("role");
-};
-
-export const getRole = () => {
-  return localStorage.getItem("role");
-};
-
-export const isAuthenticated = () => {
-  return !!localStorage.getItem("token");
-};
-
-// 🔹 Mock forgot-password (normally sends email)
-export const forgotPassword = async (email) => {
-  if (!users[email]) {
-    throw new Error("Email not found");
+  if (!res.ok) {
+    // Combine main message + validation errors if present
+    let errorMsg = result.message || "Request failed";
+    if (result.errors) {
+      errorMsg += " - " + JSON.stringify(result.errors);
+    }
+    throw new Error(errorMsg);
   }
 
-  // In real app → send email with token
-  // For mock → return a fake token
-  return { message: "Reset link sent to email", token: "fake-reset-token" };
-};
+  return result.data || result;
+}
 
-// 🔹 Mock reset-password
-export const resetPassword = async (token, newPassword) => {
-  // In real app → verify token & update DB
-  if (token !== "fake-reset-token") {
-    throw new Error("Invalid or expired reset token");
-  }
-
-  // For demo → just update all users with new password
-  Object.keys(users).forEach((email) => {
-    users[email].password = newPassword;
+// 🔹 Register
+export async function register({ name, email, password, role, school_id }) {
+  const res = await fetch(`${API_URL}/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, email, password, role, school_id }),
   });
 
-  return { message: "Password reset successful" };
-};
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.message || "Registration failed");
+  return result.data;
+}
+
+// 🔹 Login
+export async function login(email, password) {
+  const res = await fetch(`${API_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.message || "Login failed");
+
+  const data = result.data;
+  if (data && data.user) {
+  } else {
+    console.warn('Login response missing user data');
+  }
+
+  localStorage.setItem("token", data.access_token);
+  localStorage.setItem("refresh_token", data.refresh_token);
+  localStorage.setItem("role", data.user && data.user.role);
+  localStorage.setItem("user", JSON.stringify(data.user));
+  if (data.user && data.user.id) {
+    localStorage.setItem("user_id", data.user.id);
+  } else {
+    localStorage.removeItem("user_id");
+  }
+  return data;
+}
+
+// 🔹 Logout
+export async function logout() {
+  const token = localStorage.getItem("token");
+  await fetch(`${API_URL}/auth/logout`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  localStorage.clear();
+}
+
+// 🔹 Request Password Reset
+export async function resetPasswordRequest(email) {
+  const res = await fetch(`${API_URL}/auth/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.message || "Password reset request failed");
+  return result.data;
+}
+
+// 🔹 Confirm Password Reset
+export async function resetPasswordConfirm(token, new_password) {
+  const res = await fetch(`${API_URL}/auth/reset-password`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, new_password }),
+  });
+
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.message || "Password reset failed");
+  return result.data;
+}
+
+// 🔹 Get current user
+export async function getCurrentUser() {
+  const token = localStorage.getItem("token");
+  if (!token) return null;
+
+  const res = await fetch(`${API_URL}/users/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch user");
+  return await res.json();
+}
+
+// 🔹 Role helper
+export function getRole() {
+  return localStorage.getItem("role");
+}
+
+// 🔹 Auth check
+export function isAuthenticated() {
+  return !!localStorage.getItem("token");
+}
+
+// 🔹 Helper: Authenticated fetch
+export async function authFetch(endpoint, options = {}) {
+  const token = getToken();
+  const res = await fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
+  });
+  return handleResponse(res);
+}
+
+// 🔹 Update current user's profile
+export async function updateCurrentUser(updates) {
+  return authFetch("/users/me", {
+    method: "PUT",
+    body: JSON.stringify(updates),
+  });
+}
+
+// 🔹 Change current user's password
+export async function changePassword(current_password, new_password) {
+  return authFetch("/users/password", {
+    method: "PUT",
+    body: JSON.stringify({ current_password, new_password }),
+  });
+}

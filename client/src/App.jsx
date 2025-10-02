@@ -1,49 +1,96 @@
-import React from "react";
+// src/App.jsx
+import React, { Suspense, lazy } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
-// landing Page
-import LandingPage from "./pages/LandingPage";
-
-// Layouts
+// Layouts - Load immediately (needed for structure)
 import OwnerLayout from "./layouts/OwnerLayout";
 import EducatorLayout from "./layouts/EducatorLayout";
 import StudentLayout from "./layouts/StudentLayout";
 
-// Auth Pages
+// Public pages - Load immediately (first interaction)
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
-import ResetPassword from "./pages/Auth/ResetPassword";
+import LandingPage from "./pages/LandingPage";
 
-// Dashboards
-import OwnerDashboard from "./pages/SchoolOwner/Dashboard";
-import EducatorDashboard from "./pages/Educator/Dashboard";
-import StudentDashboard from "./pages/Student/Dashboard";
+// Lazy load other pages for code splitting
+const ResetPassword = lazy(() => import("./pages/Auth/ResetPassword"));
+
+// Owner pages - Lazy loaded
+const OwnerDashboard = lazy(() => import(/* webpackPrefetch: true */ "./pages/owner/Dashboard"));
+const Schools = lazy(() => import("./pages/owner/Schools"));
+const OwnerStudents = lazy(() => import("./pages/owner/Students"));
+const Educators = lazy(() => import("./pages/owner/Educators"));
+const Reports = lazy(() => import("./pages/owner/Reports"));
+const Users = lazy(() => import("./pages/owner/Users"));
+const ManagerCourses = lazy(() => import("./pages/owner/Courses"));
+const Enrollments = lazy(() => import("./pages/owner/Enrollment"));
+const OwnerProfile = lazy(() => import("./pages/owner/Profile"));
+const OwnerSettings = lazy(() => import("./pages/owner/Settings"));
+const OwnerChangePassword = lazy(() => import("./pages/owner/ChangePassword"));
+
+// Educator pages - Lazy loaded with preloading hints
+const EducatorDashboard = lazy(() => import(/* webpackPrefetch: true */ "./pages/educator/Dashboard"));
+const EducatorStudents = lazy(() => import("./pages/educator/Students"));
+const EducatorResources = lazy(() => import("./pages/educator/Resources"));
+const Attendance = lazy(() => import("./pages/educator/Attendance"));
+const Classes = lazy(() => import(/* webpackPrefetch: true */ "./pages/educator/Courses"));
+const ClassDetails = lazy(() => import("./pages/educator/CourseDetails"));
+const StudentProfile = lazy(() => import("./pages/educator/StudentProfile"));
+const EducatorMessages = lazy(() => import(/* webpackPrefetch: true */ "./pages/educator/Messages"));
+const EducatorProfile = lazy(() => import("./pages/educator/Profile"));
+const ChangePassword = lazy(() => import("./pages/educator/ChangePassword"));
+
+// Student pages - Lazy loaded
+const StudentDashboard = lazy(() => import("./pages/Student/StudentDashboard"));
+const StudentCourses = lazy(() => import("./pages/Student/StudentCourses"));
+const StudentResources = lazy(() => import("./pages/Student/StudentResources"));
+const StudentEnrollments = lazy(() => import("./pages/Student/StudentEnrollments"));
+const StudentAttendance = lazy(() => import("./pages/Student/StudentAttendance"));
+const StudentMessages = lazy(() => import("./pages/Student/StudentMessages"));
+const StudentOwnProfile = lazy(() => import("./pages/Student/StudentProfile"));
+const StudentSettings = lazy(() => import("./pages/Student/StudentSettings"));
+const StudentChangePassword = lazy(() => import("./pages/Student/StudentChangePassword"));
 
 // Utils
-import { getRole } from "./services/authServices";
+import { isAuthenticated, getRole } from "./services/authServices";
+import { PageSkeleton } from "./components/common/SkeletonLoader";
 
+// Loading fallback component
+const PageLoader = () => <PageSkeleton />;
+
+// 🔹 PrivateRoute wrapper
 const PrivateRoute = ({ children, role }) => {
-  const token = localStorage.getItem("token");
-  const userRole = getRole();
+  let userRole = getRole();
 
-  if (!token) return <Navigate to="/login" />;
-  if (role && role !== userRole) return <Navigate to="/login" />;
+  // normalize backend → frontend
+  if (userRole === "manager") {
+    userRole = "owner";
+  }
+
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (role && role !== userRole) {
+    // role mismatch → redirect to that role’s dashboard
+    return <Navigate to={`/${userRole}/dashboard`} replace />;
+  }
 
   return children;
 };
 
-function App() {
+export default function App() {
   return (
     <Router>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<LandingPage />} />
-        {/* Auth */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* School Owner Routes */}
+        {/* Owner routes */}
         <Route
           path="/owner/*"
           element={
@@ -52,10 +99,23 @@ function App() {
             </PrivateRoute>
           }
         >
+          <Route index element={<OwnerDashboard />} />
           <Route path="dashboard" element={<OwnerDashboard />} />
+          <Route path="schools" element={<Schools />} />
+          <Route path="students" element={<OwnerStudents />} />
+          <Route path="educators" element={<Educators />} />
+          {/* <Route path="resources" element={<ResourcesOwner />} /> */}
+          <Route path="reports" element={<Reports />} />
+          <Route path="users" element={<Users />} />
+          <Route path="courses" element={<ManagerCourses />} />
+          <Route path="enrollments" element={<Enrollments />} />
+          <Route path="profile" element={<OwnerProfile />} />
+          <Route path="settings" element={<OwnerSettings />} />
+          <Route path="change-password" element={<OwnerChangePassword />} />
+       
         </Route>
 
-        {/* Educator Routes */}
+        {/* Educator routes */}
         <Route
           path="/educator/*"
           element={
@@ -64,10 +124,27 @@ function App() {
             </PrivateRoute>
           }
         >
+          <Route index element={<EducatorDashboard />} />
           <Route path="dashboard" element={<EducatorDashboard />} />
+          <Route path="students" element={<EducatorStudents />} />
+          <Route path="resources" element={<EducatorResources />} />
+          <Route path="attendance" element={<Attendance />} />
+          {/* Classes (primary) */}
+          <Route path="classes" element={<Classes />} />
+          <Route path="classes/:id" element={<ClassDetails />} />
+          {/* Courses alias to support sidebar links */}
+          <Route path="courses" element={<Classes />} />
+          <Route path="courses/:id" element={<ClassDetails />} />
+          {/* Messages */}
+          <Route path="messages" element={<EducatorMessages />} />
+          <Route path="students/:id" element={<StudentProfile />} />
+          {/* Profile & Settings */}
+          <Route path="profile" element={<EducatorProfile />} />
+          <Route path="settings" element={<EducatorProfile />} />
+          <Route path="change-password" element={<ChangePassword />} />
         </Route>
 
-        {/* Student Routes */}
+        {/* Student routes (NEW) */}
         <Route
           path="/student/*"
           element={
@@ -76,14 +153,22 @@ function App() {
             </PrivateRoute>
           }
         >
+          <Route index element={<StudentDashboard />} />
           <Route path="dashboard" element={<StudentDashboard />} />
+          <Route path="courses" element={<StudentCourses />} />
+          <Route path="resources" element={<StudentResources />} />
+          <Route path="enrollments" element={<StudentEnrollments />} />
+          <Route path="attendance" element={<StudentAttendance />} />
+          <Route path="messages" element={<StudentMessages />} />
+          <Route path="profile" element={<StudentOwnProfile />} />
+          <Route path="settings" element={<StudentSettings />} />
+          <Route path="change-password" element={<StudentChangePassword />} />
         </Route>
 
-        {/* Default redirect */}
-        <Route path="*" element={<Navigate to="/login" />} />
-      </Routes>
+          {/* Catch-all redirect */}
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </Suspense>
     </Router>
   );
 }
-
-export default App;

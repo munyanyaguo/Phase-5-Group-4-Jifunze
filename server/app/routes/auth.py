@@ -32,12 +32,16 @@ class RegisterResource(Resource):
             return error_response("Validation error", err.messages, status_code=400)
 
         try:
-            new_user = User(
-                name=validated_data['name'],
-                email=validated_data['email'],
-                role=validated_data['role'],
-                school_id=validated_data['school_id']
-            )
+            # Create user with optional school_id
+            user_data = {
+                'name': validated_data['name'],
+                'email': validated_data['email'],
+                'role': validated_data['role'],
+                # Only include school_id if it's in validated_data
+                **({'school_id': validated_data['school_id']} if 'school_id' in validated_data else {})
+            }
+            
+            new_user = User(**user_data)
             new_user.set_password(validated_data['password'])
 
             db.session.add(new_user)
@@ -53,7 +57,6 @@ class RegisterResource(Resource):
 class LoginResource(Resource):
     def post(self):
         try:
-            # Validate input data
             validated_data = login_schema.load(request.get_json() or {})
         except ValidationError as err:
             return error_response("Validation error", err.messages, status_code=400)
@@ -66,6 +69,7 @@ class LoginResource(Resource):
             if not user or not user.check_password(password):
                 return error_response("Invalid credentials", status_code=401)
 
+            # Use string id for identity to avoid JWT subject error
             claims = {
                 "role": user.role,
                 "email": user.email,
@@ -74,22 +78,62 @@ class LoginResource(Resource):
             access_token = create_access_token(identity=user.public_id, additional_claims=claims)
             refresh_token = create_refresh_token(identity=user.public_id, additional_claims=claims)
 
+            # Build courses list depending on role
+            user_courses = []
+
+            if user.role == "educator":
+                # Educator → their courses
+                for course in user.courses:
+                    course_data = {
+                        "id": course.id,
+                        "title": course.title,
+                        "description": course.description,
+                        "resources": [
+                            {
+                                "id": res.id,
+                                "title": res.title,
+                                "url": res.url
+                            } for res in getattr(course, "resources", [])
+                        ]
+                    }
+                    user_courses.append(course_data)
+
+            elif user.role == "student":
+                # Student → courses via enrollments
+                for enrollment in user.enrollments:
+                    course = enrollment.course
+                    course_data = {
+                        "id": course.id,
+                        "title": course.title,
+                        "description": course.description,
+                        "resources": [
+                            {
+                                "id": res.id,
+                                "title": res.title,
+                                "url": res.url
+                            } for res in getattr(course, "resources", [])
+                        ]
+                    }
+                    user_courses.append(course_data)
+
+            # Still expose UUID (public_id) to the frontend
             token_data = {
                 "access_token": access_token,
                 "refresh_token": refresh_token,
                 "user": {
+                    "id": user.public_id,   # obfuscated UUID for frontend
                     "email": user.email,
                     "role": user.role,
                     "name": user.name,
-                    "school_id": user.school_id
+                    "school_id": user.school_id,
+                    "courses": user_courses
                 }
             }
-            
+
             return success_response("Login successful", token_data)
 
         except Exception as e:
             return error_response("Something went wrong", {"error": str(e)}, status_code=500)
-
 
 class LogoutResource(Resource):
     @jwt_required()

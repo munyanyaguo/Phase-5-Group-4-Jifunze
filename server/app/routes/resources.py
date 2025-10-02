@@ -4,8 +4,9 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from app.extensions import db, paginate
 from functools import wraps
 from werkzeug.utils import secure_filename  # For file uploads (if supported)
+import os
 
-from app.models import Resource, Course
+from app.models import Resource, Course, Enrollment
 from app.schemas.resources import resource_schema, resources_schema
 from app.utils.responses import success_response, error_response
 
@@ -61,21 +62,26 @@ class ResourceListApi(ApiResource):
         if file:
             # Sanitize filename before saving
             filename = secure_filename(file.filename)
-            file.save(f"uploads/{filename}")  # Example path
+            # Ensure uploads directory exists
+            upload_dir = os.path.join(os.getcwd(), "uploads")
+            os.makedirs(upload_dir, exist_ok=True)
+            file_path = os.path.join(upload_dir, filename)
+            file.save(file_path)
+            # Public URL path (adjust if serving static differently)
             url = f"/uploads/{filename}"
 
         # Validate course existence
-        course = Course.query.get(course_id)
+        course = db.session.get(Course, course_id)
         if not course:
-            return error_response("Invalid course_id", 404)
+            return error_response("Invalid course_id", status_code=404)
 
-        user_id = get_jwt_identity()
+        user_public_id = get_jwt_identity()
         resource = Resource(
             title=title,
             url=url,
             type=type_,
             course_id=course_id,
-            uploaded_by=user_id,
+            uploaded_by_public_id=user_public_id,
         )
         db.session.add(resource)
         db.session.commit()
@@ -85,16 +91,20 @@ class ResourceListApi(ApiResource):
 
 class ResourceDetailApi(ApiResource):
     @jwt_required()
-    def get(self, id):
+    def get(self, resource_id):
         """Get a single resource"""
-        resource = Resource.query.get_or_404(id)
+        resource = db.session.get(Resource, resource_id)
+        if not resource:
+            return error_response("Resource not found", status_code=404)
         return success_response("Fetched resource", resource_schema.dump(resource))
 
     @jwt_required()
     @role_required("educator", "manager")
-    def put(self, id):
+    def put(self, resource_id):
         """Update resource (educator/manager only)"""
-        resource = Resource.query.get_or_404(id)
+        resource = db.session.get(Resource, resource_id)
+        if not resource:
+            return error_response("Resource not found", status_code=404)
         data = request.get_json()
 
         if not data:
@@ -109,11 +119,64 @@ class ResourceDetailApi(ApiResource):
 
     @jwt_required()
     @role_required("educator", "manager")
-    def delete(self, id):
+    def delete(self, resource_id):
         """Delete resource (educator/manager only)"""
-        resource = Resource.query.get_or_404(id)
+        resource = db.session.get(Resource, resource_id)
+        if not resource:
+            return error_response("Resource not found", status_code=404)
         db.session.delete(resource)
         db.session.commit()
 
         return success_response("Resource deleted successfully")
 
+
+class CourseResourcesApi(ApiResource):
+    @jwt_required()
+    def get(self, course_id):
+        """List all resources for a specific course (students, educators, managers)."""
+        user_public_id = get_jwt_identity()
+        claims = get_jwt()
+        role = claims.get("role")
+
+        # Educators and managers can access course resources without enrollment check
+        if role in ["educator", "manager", "admin"]:
+            # Educators can access their own courses
+            if role == "educator":
+                from app.models.user import User
+                user = User.query.filter_by(public_id=user_public_id).first()
+                course = db.session.get(Course, course_id)
+                if course and course.educator_id != user.id:
+                    return error_response("You are not the educator of this course", 403)
+            
+            # Paginated query
+            query = Resource.query.filter_by(course_id=course_id).order_by(Resource.created_at.desc())
+            return paginate(query, resources_schema, resource_name="resources")
+
+        # Students need to be enrolled
+        enrollment = Enrollment.query.filter_by(
+            user_public_id=user_public_id,
+            course_id=course_id
+        ).first()
+        if not enrollment:
+            return error_response("You are not enrolled in this course", 403)
+
+        # Paginated query
+        query = Resource.query.filter_by(course_id=course_id).order_by(Resource.created_at.desc())
+        return paginate(query, resources_schema, resource_name="resources")
+
+
+class StudentResourcesApi(ApiResource):
+    @jwt_required()
+    def get(self):
+        """Return all resources for the logged-in student across enrolled courses (paginated)."""
+        user_public_id = get_jwt_identity()
+
+        enrollments = Enrollment.query.filter_by(user_public_id=user_public_id).all()
+        if not enrollments:
+            return success_response("No enrollments found", {"resources": []})
+
+        course_ids = [e.course_id for e in enrollments]
+
+        # Paginated query
+        query = Resource.query.filter(Resource.course_id.in_(course_ids)).order_by(Resource.created_at.desc())
+        return paginate(query, resources_schema, resource_name="resources")
