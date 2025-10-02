@@ -34,7 +34,10 @@ async function fetchWithAuth(url, options = {}) {
 // --------------------
 // SCHOOL API
 // --------------------
-export const fetchSchools = async () => (await fetchWithAuth(`${API_URL}/schools`)) || [];
+export const fetchSchools = async () => {
+  const response = await fetchWithAuth(`${API_URL}/schools`);
+  return response.data || response || [];
+};
 export const createSchool = (schoolData) =>
   fetchWithAuth(`${API_URL}/schools`, { method: "POST", body: JSON.stringify(schoolData) });
 export const fetchSchoolById = (id) =>
@@ -47,32 +50,37 @@ export const deleteSchool = (id) =>
 // --------------------
 // SCHOOL STATS & USERS
 // --------------------
-export const fetchSchoolStats = (schoolId) =>
-  fetchWithAuth(`${API_URL}/schools/${schoolId}/stats`) || {};
+export const fetchSchoolStats = async (schoolId) => {
+  const response = await fetchWithAuth(`${API_URL}/schools/${schoolId}/stats`);
+  return response.data || response || {};
+};
 
-export const fetchSchoolUsers = (schoolId, { page = 1, per_page = 20, role, search } = {}) => {
+export const fetchSchoolUsers = async (schoolId, { page = 1, per_page = 20, role, search } = {}) => {
   const params = new URLSearchParams({ page, per_page });
   if (role) params.append("role", role);
   if (search) params.append("search", search);
-  return fetchWithAuth(`${API_URL}/schools/${schoolId}/users?${params.toString()}`) || [];
+  const response = await fetchWithAuth(`${API_URL}/schools/${schoolId}/users?${params.toString()}`);
+  return response.data || response || [];
 };
 
 // --------------------
 // SCHOOL COURSES
 // --------------------
-export const fetchSchoolCourses = (schoolId, { educator_id, search } = {}) => {
+export const fetchSchoolCourses = async (schoolId, { educator_id, search } = {}) => {
   const params = new URLSearchParams();
   if (educator_id) params.append("educator_id", educator_id);
   if (search) params.append("search", search);
-  return fetchWithAuth(`${API_URL}/schools/${schoolId}/courses?${params.toString()}`) || [];
+  const response = await fetchWithAuth(`${API_URL}/schools/${schoolId}/courses?${params.toString()}`);
+  return response.data || response || [];
 };
 
 // --------------------
 // DASHBOARD
 // --------------------
-export const fetchDashboard = (schoolId) => {
+export const fetchDashboard = async (schoolId) => {
   const url = schoolId ? `${API_URL}/schools/${schoolId}/dashboard` : `${API_URL}/schools/dashboard`;
-  return fetchWithAuth(url) || {};
+  const response = await fetchWithAuth(url);
+  return response.data || response || {};
 };
 
 // --------------------
@@ -87,9 +95,18 @@ export const apiAssignUser = (schoolId, role, payload) =>
 // --------------------
 // EDUCATORS / STUDENTS
 // --------------------
-export const fetchEducators = async () => (await fetchWithAuth(`${API_URL}/users?role=educator`)) || [];
-export const fetchManagerEducators = async () => (await fetchWithAuth(`${API_URL}/manager/educators`)) || [];
-export const fetchOwnerStudents = async () => (await fetchWithAuth(`${API_URL}/manager/students`)) || [];
+export const fetchEducators = async () => {
+  const response = await fetchWithAuth(`${API_URL}/users?role=educator`);
+  return response.data || response || [];
+};
+export const fetchManagerEducators = async () => {
+  const response = await fetchWithAuth(`${API_URL}/manager/educators`);
+  return response.data || response || [];
+};
+export const fetchOwnerStudents = async () => {
+  const response = await fetchWithAuth(`${API_URL}/manager/students`);
+  return response.data || response || [];
+};
 
 // --------------------
 // STUDENT CRUD
@@ -101,7 +118,10 @@ export const updateStudent = (id, updates) =>
   fetchWithAuth(`${API_URL}/users/${id}`, { method: "PUT", body: JSON.stringify(updates) });
 export const deleteUser = (id) =>
   fetchWithAuth(`${API_URL}/users/${id}`, { method: "DELETE" });
-export const fetchOwnerUsers = async () => (await fetchWithAuth(`${API_URL}/manager/users`)) || [];
+export const fetchOwnerUsers = async () => {
+  const response = await fetchWithAuth(`${API_URL}/manager/users`);
+  return response.data || response || [];
+};
 export const updateUser = (id, updates) =>
   fetchWithAuth(`${API_URL}/users/${id}`, { method: "PUT", body: JSON.stringify(updates) });
 
@@ -113,7 +133,8 @@ export const fetchCourses = async ({ school_id, educator_id, search, page = 1, p
   if (school_id) params.append("school_id", school_id);
   if (educator_id) params.append("educator_id", educator_id);
   if (search) params.append("search", search);
-  return fetchWithAuth(`${API_URL}/courses?${params.toString()}`) || [];
+  const response = await fetchWithAuth(`${API_URL}/courses?${params.toString()}`);
+  return response.data || response || [];
 };
 
 export const createCourse = (courseData) =>
@@ -126,11 +147,15 @@ export const deleteCourse = (course_id) =>
 // --------------------
 // ENROLLMENTS
 // --------------------
-export const fetchEnrollments = async () =>
-  (await fetchWithAuth(`${API_URL}/enrollments`)) || [];
+export const fetchEnrollments = async () => {
+  const response = await fetchWithAuth(`${API_URL}/enrollments`);
+  return response.data || response || [];
+};
 
-export const fetchSchoolEnrollments = async (schoolId) =>
-  (await fetchWithAuth(`${API_URL}/schools/${schoolId}/enrollments`)) || [];
+export const fetchSchoolEnrollments = async (schoolId) => {
+  const response = await fetchWithAuth(`${API_URL}/schools/${schoolId}/enrollments`);
+  return response.data || response || [];
+};
 
 export const createEnrollment = (payload) =>
   fetchWithAuth(`${API_URL}/enrollments`, {
@@ -140,6 +165,24 @@ export const createEnrollment = (payload) =>
 
 export const deleteEnrollment = (enrollmentId) =>
   fetchWithAuth(`${API_URL}/enrollments/${enrollmentId}`, { method: "DELETE" });
+
+// --------------------
+// NOTIFICATIONS
+// --------------------
+export const fetchNotifications = async (unreadOnly = false) => {
+  const params = unreadOnly ? '?unread_only=true' : '';
+  const response = await fetchWithAuth(`${API_URL}/notifications${params}`);
+  return response.data || response || { notifications: [], unread_count: 0 };
+};
+
+export const markNotificationAsRead = (notificationId) =>
+  fetchWithAuth(`${API_URL}/notifications/${notificationId}`, { method: "PATCH" });
+
+export const deleteNotification = (notificationId) =>
+  fetchWithAuth(`${API_URL}/notifications/${notificationId}`, { method: "DELETE" });
+
+export const markAllNotificationsAsRead = () =>
+  fetchWithAuth(`${API_URL}/notifications/mark-all-read`, { method: "POST" });
 
 // --------------------
 // EXPORT ALL SERVICES

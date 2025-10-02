@@ -44,7 +44,6 @@ export default function StudentProfile() {
         const userFromEnroll = enrItems[0]?.user;
 
         // 2) Fetch attendance for this student
-        console.log('📊 Fetching attendance for student:', id);
         const attRes = await fetch(`${API_URL}/attendance?user_id=${encodeURIComponent(id)}&per_page=1000`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -52,12 +51,10 @@ export default function StudentProfile() {
           },
         });
         const attBody = await attRes.json();
-        console.log('📊 Attendance response:', attBody);
         
         if (attRes.ok && attBody.success) {
           // Try different response structures
           const attendanceRecords = attBody?.data?.items || attBody?.data?.attendance || attBody?.items || attBody?.attendance || [];
-          console.log('📊 Attendance records found:', attendanceRecords.length);
           setAttendance(attendanceRecords);
         } else {
           console.warn('⚠️ Failed to fetch attendance:', attBody.message);

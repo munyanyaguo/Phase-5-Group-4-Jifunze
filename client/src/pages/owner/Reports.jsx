@@ -1,5 +1,6 @@
 // src/pages/owner/Reports.jsx
 import React, { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { BarChart3, FileText, Activity } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
 import { fetchDashboard, fetchSchoolStats } from "../../api";
@@ -16,13 +17,21 @@ export default function Reports() {
     try {
       setLoading(true);
       const dash = await fetchDashboard();
-      const list = dash?.dashboard?.schools || [];
+      
+      // Handle both wrapped and unwrapped responses
+      const dashData = dash?.dashboard || dash;
+      
+      const list = dashData?.schools || [];
+      
       setSchools(list);
       if (list.length > 0) {
         setSelectedSchool(list[0]);
+      } else {
+        console.warn("No schools found in dashboard");
       }
     } catch (err) {
       console.error("Failed to fetch schools:", err);
+      alert("Failed to load schools: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -30,13 +39,26 @@ export default function Reports() {
 
   // Fetch stats for a specific school
   const loadSchoolStats = async (schoolId) => {
+    if (!schoolId) {
+      return;
+    }
+    
     try {
       setLoading(true);
-      const stats = await fetchSchoolStats(schoolId);
-      setAttendance(stats?.attendance || 0);
-      setCourseStats(stats?.courses || []);
+      const response = await fetchSchoolStats(schoolId);
+      
+      // The backend returns: { school, attendance, courses }
+      // Our API wrapper may return it directly or wrapped
+      const statsData = response?.stats || response;
+      
+      const attendanceValue = statsData?.attendance || 0;
+      const coursesValue = statsData?.courses || [];
+      
+      setAttendance(attendanceValue);
+      setCourseStats(coursesValue);
     } catch (err) {
       console.error("Failed to fetch stats:", err);
+      alert("Failed to load stats: " + err.message);
     } finally {
       setLoading(false);
     }

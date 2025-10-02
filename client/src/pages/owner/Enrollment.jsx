@@ -1,5 +1,6 @@
 // src/pages/manager/ManagerEnrollments.jsx
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from "framer-motion";
 import {
   fetchSchoolCourses,
   fetchSchoolEnrollments,
@@ -20,14 +21,14 @@ export default function ManagerEnrollments() {
 
   const [selectedStudent, setSelectedStudent] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
-
   // --------------------
   // Load manager's school
   // --------------------
   const loadSchool = async () => {
     try {
-      const dash = await fetchDashboard();
-      const list = dash?.dashboard?.schools || [];
+      const res = await fetchDashboard();
+      const data = await res.json();
+      const list = data?.dashboard?.schools || [];
       setSchools(list);
       if (list.length > 0) setSchoolId(list[0].id);
       else alert("No school found for this manager.");
@@ -49,9 +50,15 @@ export default function ManagerEnrollments() {
         fetchOwnerStudents(),
         fetchSchoolCourses(id),
       ]);
-      setEnrollments(enrs || []);
-      setStudents((studs && studs.students) || []);
-      setCourses((crs && crs.courses) || []);
+      
+      // Handle both wrapped and unwrapped responses
+      const enrollmentsData = Array.isArray(enrs) ? enrs : (enrs?.enrollments || []);
+      const studentsData = Array.isArray(studs) ? studs : (studs?.students || []);
+      const coursesData = Array.isArray(crs) ? crs : (crs?.courses || []);
+      
+      setEnrollments(enrollmentsData);
+      setStudents(studentsData);
+      setCourses(coursesData);
     } catch (err) {
       console.error("Failed to load enrollment data:", err.message);
       alert("Failed to load enrollment data.");
@@ -157,15 +164,14 @@ export default function ManagerEnrollments() {
           onChange={(e) => setSelectedStudent(e.target.value)}
         >
           <option value="">-- Select Student --</option>
-          {students
-            .filter((s) =>
-              schoolId ? String(s.school_id) === String(schoolId) : true
-            )
-            .map((s) => (
+          {students.map((s) => {
+            console.log("Student:", s, "School ID:", s.school_id, "Selected School:", schoolId);
+            return (
               <option key={s.public_id || s.id} value={s.public_id || s.id}>
-                {(s.full_name || s.username) + ` (${s.email})`}
+                {(s.name || s.full_name || s.username || "Unknown") + ` (${s.email}) - ${s.school || 'No School'}`}
               </option>
-            ))}
+            );
+          })}
         </select>
 
         <select

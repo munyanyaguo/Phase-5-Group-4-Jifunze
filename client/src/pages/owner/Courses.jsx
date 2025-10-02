@@ -1,5 +1,6 @@
 // src/pages/manager/ManagerCourses.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from "framer-motion";
 import {
   fetchSchools,
   fetchSchoolCourses,
@@ -31,9 +32,11 @@ export default function ManagerCourses() {
   const loadManagerSchools = async () => {
     try {
       const res = await fetchSchools();
-      setSchools(res.schools || []);
-      if (res.schools?.length) {
-        setSchoolId(res.schools[0].id);
+      // Handle both wrapped and unwrapped responses
+      const schoolsList = Array.isArray(res) ? res : (res.schools || []);
+      setSchools(schoolsList);
+      if (schoolsList.length) {
+        setSchoolId(schoolsList[0].id);
       }
     } catch (err) {
       console.error("Failed to load manager schools:", err.message);
@@ -44,33 +47,37 @@ export default function ManagerCourses() {
   // --------------------
   // Load courses
   // --------------------
-  const loadCourses = async () => {
+  const loadCourses = useCallback(async () => {
     if (!schoolId) return;
     setLoading(true);
     try {
       const data = await fetchSchoolCourses(schoolId);
-      setCourses(data.courses || []);
+      // Handle both wrapped and unwrapped responses
+      const coursesList = Array.isArray(data) ? data : (data.courses || []);
+      setCourses(coursesList);
     } catch (err) {
       console.error("Failed to load courses:", err.message);
       alert("Failed to load courses.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [schoolId]);
 
   // --------------------
   // Load educators
   // --------------------
-  const loadEducators = async () => {
+  const loadEducators = useCallback(async () => {
     if (!schoolId) return;
     try {
       const data = await fetchManagerEducators();
-      setEducators(data.educators || []);
+      // Handle both wrapped and unwrapped responses
+      const educatorsList = Array.isArray(data) ? data : (data.educators || []);
+      setEducators(educatorsList);
     } catch (err) {
       console.error("Failed to load educators:", err.message);
       alert("Failed to load educators.");
     }
-  };
+  }, [schoolId]);
 
   // --------------------
   // Effects
@@ -84,7 +91,7 @@ export default function ManagerCourses() {
       loadCourses();
       loadEducators();
     }
-  }, [schoolId]);
+  }, [schoolId, loadCourses, loadEducators]);
 
   // --------------------
   // Handle form submit

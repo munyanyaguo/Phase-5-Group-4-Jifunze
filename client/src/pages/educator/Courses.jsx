@@ -71,6 +71,7 @@ export default function Courses() {
     };
     
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode, location.pathname]); // Re-fetch when navigating back to this page
 
   // Memoize filtered and sorted courses to prevent unnecessary recalculations

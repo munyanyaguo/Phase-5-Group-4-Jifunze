@@ -25,6 +25,8 @@ const Users = lazy(() => import("./pages/owner/Users"));
 const ManagerCourses = lazy(() => import("./pages/owner/Courses"));
 const Enrollments = lazy(() => import("./pages/owner/Enrollment"));
 const OwnerProfile = lazy(() => import("./pages/owner/Profile"));
+const OwnerSettings = lazy(() => import("./pages/owner/Settings"));
+const OwnerChangePassword = lazy(() => import("./pages/owner/ChangePassword"));
 
 // Educator pages - Lazy loaded with preloading hints
 const EducatorDashboard = lazy(() => import(/* webpackPrefetch: true */ "./pages/educator/Dashboard"));
@@ -45,6 +47,9 @@ const StudentResources = lazy(() => import("./pages/Student/StudentResources"));
 const StudentEnrollments = lazy(() => import("./pages/Student/StudentEnrollments"));
 const StudentAttendance = lazy(() => import("./pages/Student/StudentAttendance"));
 const StudentMessages = lazy(() => import("./pages/Student/StudentMessages"));
+const StudentOwnProfile = lazy(() => import("./pages/Student/StudentProfile"));
+const StudentSettings = lazy(() => import("./pages/Student/StudentSettings"));
+const StudentChangePassword = lazy(() => import("./pages/Student/StudentChangePassword"));
 
 // Utils
 import { isAuthenticated, getRole } from "./services/authServices";
@@ -105,6 +110,8 @@ export default function App() {
           <Route path="courses" element={<ManagerCourses />} />
           <Route path="enrollments" element={<Enrollments />} />
           <Route path="profile" element={<OwnerProfile />} />
+          <Route path="settings" element={<OwnerSettings />} />
+          <Route path="change-password" element={<OwnerChangePassword />} />
        
         </Route>
 
@@ -153,6 +160,9 @@ export default function App() {
           <Route path="enrollments" element={<StudentEnrollments />} />
           <Route path="attendance" element={<StudentAttendance />} />
           <Route path="messages" element={<StudentMessages />} />
+          <Route path="profile" element={<StudentOwnProfile />} />
+          <Route path="settings" element={<StudentSettings />} />
+          <Route path="change-password" element={<StudentChangePassword />} />
         </Route>
 
           {/* Catch-all redirect */}

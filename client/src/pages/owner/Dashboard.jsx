@@ -1,6 +1,7 @@
 // src/pages/Dashboard.jsx
 import React, { useEffect, useState } from "react";
-import { Users, BookOpen, School, TrendingUp, DollarSign } from "lucide-react";
+import { motion } from "framer-motion";
+import { Card, CardContent } from "../../components/ui/card";
 import { fetchDashboard } from "../../api";
 
 export default function Dashboard() {
