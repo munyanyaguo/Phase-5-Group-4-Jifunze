@@ -1,10 +1,13 @@
 // src/pages/Students.jsx
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
 import UserForm from "../../components/owner/UserForm";
 import { UserPlus, Trash2, Eye, X } from "lucide-react";
 import { fetchOwnerStudents, createStudent, deleteUser } from "../../api";
 
 export default function Students() {
+  const location = useLocation();
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -25,7 +28,7 @@ export default function Students() {
 
   useEffect(() => {
     loadStudents();
-  }, []);
+  }, [location.pathname]); // Re-fetch when navigating back to this page
 
   // Add student
   const handleAddStudent = async (data) => {

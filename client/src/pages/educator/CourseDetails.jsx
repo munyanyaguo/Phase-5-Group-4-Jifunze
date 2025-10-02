@@ -1,6 +1,7 @@
 // src/pages/educator/CourseDetails.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { 
   ArrowLeft, 
   BookOpen, 
@@ -30,6 +31,17 @@ export default function CourseDetails() {
   const [enrollments, setEnrollments] = useState([]);
   const [showStudentsModal, setShowStudentsModal] = useState(false);
   const [attendanceStats, setAttendanceStats] = useState(null);
+  
+  useEffect(() => {
+    // Reset state when ID changes
+    setLoading(true);
+    setError("");
+    setCourse(null);
+    setResources([]);
+    setEnrollments([]);
+    setAttendanceStats(null);
+  }, [id]);
+  
   useEffect(() => {
     const load = async () => {
       try {

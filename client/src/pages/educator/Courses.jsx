@@ -1,12 +1,14 @@
 // src/pages/educator/Courses.jsx
 import React, { useEffect, useState, useMemo } from "react";
 import { BookOpen, Users, AlertCircle, Calendar, Search, Filter } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
 import { fetchEducatorCourses } from "../../services/courseService";
 import { CoursesSkeleton } from "../../components/common/SkeletonLoader";
 
 export default function Courses() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [myCourses, setMyCourses] = useState([]);
   const [allCourses, setAllCourses] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -49,7 +51,10 @@ export default function Courses() {
               headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
             });
             const body = await r.json();
-            const total = (r.ok && body.success && body?.data?.meta?.total) ? body.data.meta.total : 0;
+            // Check multiple possible response structures
+            const total = (r.ok && body.success) 
+              ? (body?.data?.total || body?.data?.meta?.total || 0)
+              : 0;
             return [c.id, total];
           } catch {
             return [c.id, 0];
@@ -66,7 +71,7 @@ export default function Courses() {
     };
     
     load();
-  }, [viewMode]);
+  }, [viewMode, location.pathname]); // Re-fetch when navigating back to this page
 
   // Memoize filtered and sorted courses to prevent unnecessary recalculations
   const filteredCourses = useMemo(() => {
@@ -76,7 +81,10 @@ export default function Courses() {
         course.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         course.description?.toLowerCase().includes(searchTerm.toLowerCase())
       )
-      .sort((a, b) => a.title?.localeCompare(b.title));
+      .sort((a, b) => {
+        // Natural sort to handle numbers correctly (Course 2 before Course 10)
+        return a.title?.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' }) || 0;
+      });
   }, [viewMode, myCourses, allCourses, searchTerm]);
 
   if (initialLoading) {
@@ -216,7 +224,7 @@ export default function Courses() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
-                className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1 cursor-pointer"
+                className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1 cursor-pointer flex flex-col h-full"
                 onClick={() => navigate(`/educator/courses/${course.id}`)}
               >
                 {/* Card Header */}
@@ -229,8 +237,8 @@ export default function Courses() {
                   )}
                 </div>
 
-                {/* Card Body */}
-                <div className="p-6">
+                {/* Card Body - flex-grow pushes button to bottom */}
+                <div className="p-6 flex flex-col flex-grow">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2 text-gray-600">
                       <div className="p-2 bg-slate-100 rounded-lg">
@@ -248,8 +256,11 @@ export default function Courses() {
                     )}
                   </div>
 
+                  {/* Spacer to push button to bottom */}
+                  <div className="flex-grow"></div>
+
                   <button
-                    className="w-full px-4 py-3 rounded-xl bg-slate-600 hover:bg-slate-700 text-white font-semibold hover:shadow-md transition-all duration-200"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-600 hover:bg-slate-700 text-white font-semibold hover:shadow-md transition-all duration-200 mt-auto"
                     onClick={(e) => {
                       e.stopPropagation();
                       navigate(`/educator/courses/${course.id}`);

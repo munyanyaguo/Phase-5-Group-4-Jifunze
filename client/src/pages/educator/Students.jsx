@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { User, Mail, Search, Users, BookOpen, Calendar, ArrowRight, Filter } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
 import { fetchEducatorCourses } from "../../services/courseService";
 import { StudentsSkeleton } from "../../components/common/SkeletonLoader";
 
@@ -8,6 +9,7 @@ const API_URL = "http://127.0.0.1:5000/api";
 
 export default function Students() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [students, setStudents] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState("");
@@ -72,7 +74,7 @@ export default function Students() {
     };
 
     loadStudents();
-  }, []);
+  }, [location.pathname]); // Re-fetch when navigating back to this page
 
   const filteredStudents = useMemo(() => {
     const list = Array.isArray(students) ? students : [];

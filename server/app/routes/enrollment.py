@@ -21,9 +21,20 @@ class EnrollmentListResource(Resource):
         - Admin: can list all, or filter by school/course if provided
         - Manager: can list only within their own school; supports
           /schools/<school_id>/enrollments and /courses/<course_id>/enrollments
+        - Educator: can see enrollments for their courses
         """
         claims = get_jwt()
         role = claims.get("role")
+        
+        # Get query parameters (for ?course_id=X requests)
+        query_course_id = request.args.get('course_id', type=int)
+        query_school_id = request.args.get('school_id', type=int)
+        
+        # Use query params if path params not provided
+        if course_id is None:
+            course_id = query_course_id
+        if school_id is None:
+            school_id = query_school_id
 
         # Base query
         query = Enrollment.query
@@ -40,6 +51,37 @@ class EnrollmentListResource(Resource):
                 )
             results = query.all()
             return enrollments_schema.dump(results), 200
+
+        if role == "educator":
+            # Educators can see enrollments for their courses
+            educator_public_id = get_jwt_identity()
+            educator = User.query.filter_by(public_id=educator_public_id).first()
+            if not educator:
+                return error_response("Educator not found", 404)
+            
+            # Join with Course to filter by educator
+            query = query.join(Course, Enrollment.course_id == Course.id)
+            query = query.filter(Course.educator_id == educator.id)
+            
+            # Optional: filter by specific course
+            if course_id is not None:
+                query = query.filter(Enrollment.course_id == course_id)
+            
+            # Handle pagination
+            page = request.args.get('page', 1, type=int)
+            per_page = request.args.get('per_page', 10, type=int)
+            
+            paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+            return {
+                "success": True,
+                "data": {
+                    "enrollments": enrollments_schema.dump(paginated.items),
+                    "total": paginated.total,
+                    "page": page,
+                    "per_page": per_page,
+                    "pages": paginated.pages
+                }
+            }, 200
 
         if role == "manager":
             # Scope to schools owned by this manager OR the manager's assigned school
@@ -154,7 +196,6 @@ class EnrollmentListResource(Resource):
         # Create enrollment
         enrollment = Enrollment(
             user_public_id=user.public_id,
-            user_id=user.id,
             course_id=course.id,
             date_enrolled=datetime.utcnow()
         )

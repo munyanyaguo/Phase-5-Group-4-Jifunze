@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
 import { User, Mail, ArrowLeft, BarChart3, Calendar, BookOpen, CheckCircle, XCircle, Clock, TrendingUp, Award, ArrowRight } from "lucide-react";
 
 const API_URL = "http://127.0.0.1:5000/api";
@@ -7,6 +8,7 @@ const API_URL = "http://127.0.0.1:5000/api";
 export default function StudentProfile() {
   const { id } = useParams(); // student's public_id
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [student, setStudent] = useState(null);
   const [enrollments, setEnrollments] = useState([]);
@@ -81,7 +83,7 @@ export default function StudentProfile() {
     };
 
     load();
-  }, [id]);
+  }, [id, location.pathname]); // Re-fetch when navigating back to this page
 
   const attendanceStats = useMemo(() => {
     const stats = { present: 0, absent: 0, late: 0, total: 0 };
