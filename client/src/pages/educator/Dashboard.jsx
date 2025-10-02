@@ -7,6 +7,8 @@ import { fetchEducatorCourses } from "../../services/courseService";
 import { DashboardSkeleton } from "../../components/common/SkeletonLoader";
 import { cache } from '../../utils/cache';
 import { API_URL as CONFIG_URL } from '../../config';
+import EducatorMessages from './Messages';
+
 const API_URL = `${CONFIG_URL}/api`;
 
 export default function EducatorDashboard() {
