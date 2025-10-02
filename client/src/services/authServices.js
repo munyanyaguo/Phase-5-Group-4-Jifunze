@@ -51,12 +51,8 @@ export async function login(email, password) {
   const result = await res.json();
   if (!res.ok) throw new Error(result.message || "Login failed");
 
-  // Debug: log the login response structure
-  console.log("Login response:", result);
-
   const data = result.data;
   if (data && data.user) {
-    console.log('Login successful:', data.user.email);
   } else {
     console.warn('Login response missing user data');
   }

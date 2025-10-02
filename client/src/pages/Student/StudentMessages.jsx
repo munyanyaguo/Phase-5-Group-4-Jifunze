@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { API_URL } from "../../config";
 import { FaPaperPlane, FaComments } from "react-icons/fa";
 
@@ -29,8 +29,8 @@ const StudentMessages = ({ courseId }) => {
   useEffect(scrollToBottom, [messages]);
 
   // Fetch enrolled courses
-  const fetchEnrolledCourses = async () => {
-    if (!currentUserId) return console.log("Waiting for user authentication...");
+  const fetchEnrolledCourses = useCallback(async () => {
+    if (!currentUserId) return;
 
     setCoursesLoading(true);
     const token = localStorage.getItem("token");
@@ -54,10 +54,10 @@ const StudentMessages = ({ courseId }) => {
     } finally {
       setCoursesLoading(false);
     }
-  };
+  }, [currentUserId]);
 
   // Fetch messages
-  const fetchMessages = async (pageNumber = 1) => {
+  const fetchMessages = useCallback(async (pageNumber = 1) => {
     if (!effectiveCourseId) return;
 
     const token = localStorage.getItem("token");
@@ -89,16 +89,16 @@ const StudentMessages = ({ courseId }) => {
       setLoading(false);
       setLoadingMore(false);
     }
-  };
+  }, [effectiveCourseId, PER_PAGE]);
 
   // Initial fetches
   useEffect(() => {
     if (!courseId) fetchEnrolledCourses();
-  }, [courseId, currentUserId]);
+  }, [courseId, currentUserId, fetchEnrolledCourses]);
 
   useEffect(() => {
     if (effectiveCourseId) fetchMessages(1);
-  }, [effectiveCourseId]);
+  }, [effectiveCourseId, fetchMessages]);
 
   // Send new message
   const handleSendMessage = async e => {
@@ -143,28 +143,15 @@ const StudentMessages = ({ courseId }) => {
       }
     }
 
-    console.log("All validations passed, sending message to course:", effectiveCourseId);
-
     setSending(true);
     setError("");
     const token = localStorage.getItem("token");
-    
-    // Debug: decode token to see claims
-    try {
-      const payload = token.split('.')[1];
-      const decoded = JSON.parse(atob(payload));
-      console.log("🔑 Token claims:", decoded);
-    } catch (e) {
-      console.error("Failed to decode token:", e);
-    }
 
     try {
       const requestData = {
         course_id: parseInt(effectiveCourseId),
         content: newMessage.trim(),
       };
-
-      console.log("📤 Sending message:", requestData);
 
       const res = await fetch(`${API_URL}/api/messages`, {
         method: "POST",

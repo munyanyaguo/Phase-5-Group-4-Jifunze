@@ -17,19 +17,15 @@ export default function Reports() {
     try {
       setLoading(true);
       const dash = await fetchDashboard();
-      console.log("Dashboard response:", dash);
       
       // Handle both wrapped and unwrapped responses
       const dashData = dash?.dashboard || dash;
-      console.log("Dashboard data:", dashData);
       
       const list = dashData?.schools || [];
-      console.log("Schools list:", list);
       
       setSchools(list);
       if (list.length > 0) {
         setSelectedSchool(list[0]);
-        console.log("Selected school:", list[0]);
       } else {
         console.warn("No schools found in dashboard");
       }
@@ -44,29 +40,22 @@ export default function Reports() {
   // Fetch stats for a specific school
   const loadSchoolStats = async (schoolId) => {
     if (!schoolId) {
-      console.warn("No school ID provided for stats");
       return;
     }
     
     try {
       setLoading(true);
-      console.log("Fetching stats for school ID:", schoolId);
       const response = await fetchSchoolStats(schoolId);
-      console.log("Stats response:", response);
       
       // The backend returns: { school, attendance, courses }
       // Our API wrapper may return it directly or wrapped
       const statsData = response?.stats || response;
-      console.log("Stats data:", statsData);
       
       const attendanceValue = statsData?.attendance || 0;
       const coursesValue = statsData?.courses || [];
       
       setAttendance(attendanceValue);
       setCourseStats(coursesValue);
-      
-      console.log("Set attendance:", attendanceValue);
-      console.log("Set course stats:", coursesValue);
     } catch (err) {
       console.error("Failed to fetch stats:", err);
       alert("Failed to load stats: " + err.message);

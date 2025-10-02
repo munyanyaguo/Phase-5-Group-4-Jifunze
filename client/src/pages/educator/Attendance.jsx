@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 // src/pages/educator/Attendance.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Calendar, Users, CheckCircle, XCircle, Save, History, Eye, Filter, UserCheck, BookOpen, TrendingUp } from "lucide-react";
 import { AttendanceSkeleton } from "../../components/common/SkeletonLoader";
 
@@ -85,7 +85,7 @@ export default function Attendance() {
   // Fetch courses on component mount
   useEffect(() => {
     fetchCourses();
-  }, []);
+  }, [fetchCourses]);
 
   // Fetch students when course is selected
   useEffect(() => {
@@ -93,24 +93,23 @@ export default function Attendance() {
       fetchStudents();
       fetchExistingAttendance();
     }
-  }, [selectedCourse, selectedDate]);
+  }, [selectedCourse, selectedDate, fetchStudents, fetchExistingAttendance]);
   
   // Fetch history when filters or view changes
   useEffect(() => {
     if (showHistory) {
-      console.log('Fetching history - View:', historyView, 'Filters:', historyFilter);
       fetchAttendanceHistory();
     }
-  }, [historyView, historyFilter, showHistory]);
+  }, [historyView, historyFilter, showHistory, fetchAttendanceHistory]);
   
   // Fetch all courses and students for filters on mount
   useEffect(() => {
     if (showHistory && courses.length === 0) {
       fetchCourses();
     }
-  }, [showHistory]);
+  }, [showHistory, courses.length, fetchCourses]);
 
-  const fetchCourses = async () => {
+  const fetchCourses = useCallback(async () => {
     try {
       const token = getToken();
       if (!token) return;
@@ -167,9 +166,9 @@ export default function Attendance() {
     } finally {
       setInitialLoading(false);
     }
-  };
+  }, []);
 
-  const fetchStudents = async () => {
+  const fetchStudents = useCallback(async () => {
     try {
       const token = getToken();
       if (!token) return;
@@ -205,9 +204,9 @@ export default function Attendance() {
       
       setError('Failed to fetch students: ' + err.message);
     }
-  };
+  }, [selectedCourse]);
 
-  const fetchExistingAttendance = async () => {
+  const fetchExistingAttendance = useCallback(async () => {
   if (!selectedCourse || !selectedDate) return;
 
   try {
@@ -239,9 +238,9 @@ export default function Attendance() {
   } catch (error) {
     console.error('Failed to fetch existing attendance:', error);
   }
-};
+}, [selectedCourse, selectedDate]);
 
-  const fetchAttendanceHistory = async () => {
+  const fetchAttendanceHistory = useCallback(async () => {
     try {
       setHistoryLoading(true);
       setError(''); // Clear any previous errors
@@ -256,8 +255,6 @@ export default function Attendance() {
       if (historyFilter.course) queryParams += `&course_id=${historyFilter.course}`;
       if (historyFilter.student) queryParams += `&user_id=${historyFilter.student}`;
       if (historyFilter.status) queryParams += `&status=${historyFilter.status}`;
-      
-      console.log('Fetching attendance history:', `${BASE_URL}/attendance?${queryParams}`);
       
       const response = await fetch(
         `${BASE_URL}/attendance?${queryParams}`,
@@ -276,13 +273,10 @@ export default function Attendance() {
       }
 
       const data = await response.json();
-      console.log('Attendance history response:', data);
       
       if (data.success) {
         // Handle different possible response structures
         let records = data.data?.items || data.data?.attendance || data.items || [];
-        console.log('Records found:', records.length);
-        console.log('Sample record with user data:', records[0]);
         
         // Ensure each record has user data (fallback if API doesn't provide it)
         records = records.map(record => ({
@@ -378,7 +372,7 @@ export default function Attendance() {
     } finally {
       setHistoryLoading(false);
     }
-  };
+  }, [historyView, historyFilter]);
 
   const toggleAttendance = (userId) => {
     setAttendanceData(prev => {
@@ -419,7 +413,6 @@ export default function Attendance() {
 
       if (existingId) {
         // Update existing record
-        console.log(`✏️ Updating attendance ${existingId} for ${student.name} to ${status}`);
         const response = await fetch(`${BASE_URL}/attendance/${existingId}`, {
           method: 'PATCH',
           headers: {
@@ -436,11 +429,9 @@ export default function Attendance() {
         }
         
         const result = await response.json();
-        console.log(`✅ Updated ${student.name}`);
         return { ...result, student: student.name };
       } else {
         // Create new record
-        console.log(`➕ Creating new attendance for ${student.name} as ${status}`);
         const response = await fetch(`${BASE_URL}/attendance`, {
           method: 'POST',
           headers: {
@@ -456,7 +447,6 @@ export default function Attendance() {
           
           // If it's a duplicate error (409), try to find and update instead
           if (response.status === 409) {
-            console.log(`🔄 Duplicate detected, attempting to find and update for ${student.name}`);
             // Fetch existing attendance for this combination
             try {
               const findRes = await fetch(
@@ -472,7 +462,6 @@ export default function Attendance() {
               const existingRecord = findData?.data?.items?.[0] || findData?.data?.attendance?.[0];
               
               if (existingRecord && existingRecord.id) {
-                console.log(`🔍 Found existing record ${existingRecord.id}, updating...`);
                 const updateRes = await fetch(`${BASE_URL}/attendance/${existingRecord.id}`, {
                   method: 'PATCH',
                   headers: {
@@ -484,7 +473,6 @@ export default function Attendance() {
                 
                 if (updateRes.ok) {
                   const updateResult = await updateRes.json();
-                  console.log(`✅ Successfully updated ${student.name} via fallback`);
                   return { ...updateResult, student: student.name };
                 }
               }
@@ -497,7 +485,6 @@ export default function Attendance() {
         }
         
         const result = await response.json();
-        console.log(`✅ Created ${student.name}`);
         return { ...result, student: student.name };
       }
     });

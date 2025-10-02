@@ -28,7 +28,6 @@ export default function EducatorDashboard() {
       // Check cache first
       const cachedStats = cache.get('dashboard_stats');
       if (cachedStats) {
-        console.log('📊 Using cached stats');
         setStats(cachedStats);
         setInitialLoading(false);
         return;
@@ -47,7 +46,6 @@ export default function EducatorDashboard() {
           });
           if (allEnrollmentsRes.ok) {
             const allEnrollmentsBody = await allEnrollmentsRes.json();
-            console.log('📊 Enrollments response:', allEnrollmentsBody);
             
             // Backend now filters enrollments to educator's courses automatically
             const allEnrollments = allEnrollmentsBody?.data?.enrollments || allEnrollmentsBody?.data?.items || [];
@@ -60,29 +58,23 @@ export default function EducatorDashboard() {
               }
             });
             studentsTotal = uniqueStudents.size;
-            console.log('👥 Total unique students:', studentsTotal);
           }
         } catch (error) {
           console.error('Failed to fetch enrollments:', error);
         }
 
         // 3) Count resources across educator's courses
-        console.log('📚 Fetching all resources...');
         let resourcesCount = 0;
         try {
           const rr = await fetch(`${API_URL}/resources?page=1&per_page=1000`, {
             headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
           });
           const rb = await rr.json();
-          console.log('📚 All resources response:', rb);
           
           let allResources = [];
           if (rr.ok && rb.success) {
             allResources = rb?.data?.resources || rb?.data?.items || rb?.resources || [];
           }
-          
-          console.log('📚 All resources fetched:', allResources.length);
-          console.log('📚 Educator course IDs:', courseIds);
           
           // Filter resources by educator's courses
           const educatorResources = allResources.filter(resource => {
@@ -96,7 +88,6 @@ export default function EducatorDashboard() {
         }
 
         // 4) Count unread messages across all courses (optimized - parallel with limit)
-        console.log('💬 Fetching messages for courses...');
         let totalUnreadMessages = 0;
         try {
           // Limit to first 5 courses to reduce load time
@@ -130,7 +121,6 @@ export default function EducatorDashboard() {
           
           const unreadCounts = await Promise.all(messagePromises);
           totalUnreadMessages = unreadCounts.reduce((sum, count) => sum + count, 0);
-          console.log('💬 Total unread messages:', totalUnreadMessages);
         } catch (err) {
           console.error('Failed to count unread messages:', err);
         }
@@ -158,13 +148,12 @@ export default function EducatorDashboard() {
     
     // Listen for new messages and refresh stats
     const handleNewMessage = () => {
-      console.log('🔔 New message received, refreshing stats...');
       loadStats();
     };
     
     window.addEventListener('edu:new-message', handleNewMessage);
     return () => window.removeEventListener('edu:new-message', handleNewMessage);
-  }, []);
+  }, [loadStats]);
 
   useEffect(() => {
     const loadProfile = async () => {

@@ -1,5 +1,5 @@
 // src/pages/educator/Resources.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Upload, 
   Search, 
@@ -70,14 +70,14 @@ export default function Resources() {
   useEffect(() => {
     loadResources();
     loadCourses();
-  }, [pagination.page]);
+  }, [pagination.page, loadResources]);
 
   useEffect(() => {
     // Reset to page 1 when filters change
     setPagination(prev => ({ ...prev, page: 1 }));
   }, [selectedCourse, selectedType, searchTerm]);
 
-  const loadResources = async () => {
+  const loadResources = useCallback(async () => {
     try {
       const result = await fetchResources(pagination.page, pagination.per_page);
       const list = Array.isArray(result.data) ? result.data : [];
@@ -93,7 +93,7 @@ export default function Resources() {
     } finally {
       setInitialLoading(false);
     }
-  };
+  }, [pagination.page, pagination.per_page]);
 
   const loadCourses = async () => {
     try {

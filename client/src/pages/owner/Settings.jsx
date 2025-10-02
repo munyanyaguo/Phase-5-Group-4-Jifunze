@@ -4,7 +4,6 @@ import { Settings, Save, User, Mail } from "lucide-react";
 import * as AuthService from "../../services/authServices";
 
 export default function OwnerSettings() {
-  const [user, setUser] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -19,7 +18,6 @@ export default function OwnerSettings() {
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
           const userData = JSON.parse(storedUser);
-          setUser(userData);
           setFormData({
             name: userData.name || "",
             email: userData.email || "",
@@ -29,7 +27,6 @@ export default function OwnerSettings() {
         const freshUser = await AuthService.getCurrentUser();
         if (freshUser) {
           const userData = freshUser.data?.profile || freshUser.data?.user || freshUser.profile || freshUser.user || freshUser;
-          setUser(userData);
           setFormData({
             name: userData.name || "",
             email: userData.email || "",
@@ -57,9 +54,8 @@ export default function OwnerSettings() {
     try {
       const updatedUser = await AuthService.updateCurrentUser(formData);
       
-      // Update local state and localStorage
+      // Update localStorage
       const userData = updatedUser.profile || updatedUser.user || updatedUser;
-      setUser(userData);
       localStorage.setItem('user', JSON.stringify(userData));
       
       setMessage({ type: "success", text: "Profile updated successfully!" });

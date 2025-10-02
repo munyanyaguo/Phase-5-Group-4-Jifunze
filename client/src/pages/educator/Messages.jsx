@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { Send, MessageSquare, BookOpen, Inbox, User, Clock, CheckCircle2, ChevronRight, Check, CheckCheck, Info, X, Users, Calendar, FileText } from "lucide-react";
 import { fetchEducatorCourses } from "../../services/courseService";
 import { fetchMessagesByCourse, sendMessage } from "../../services/messageService";
@@ -23,7 +23,7 @@ export default function EducatorMessages() {
   const STORAGE_KEY = "educator_messages_course_id";
 
   // Function to update unread counts and last message time for all courses
-  const updateUnreadCounts = async () => {
+  const updateUnreadCounts = useCallback(async () => {
     try {
       const counts = {};
       const lastMessageTimes = {};
@@ -76,7 +76,7 @@ export default function EducatorMessages() {
     } catch (err) {
       console.error('Failed to update unread counts:', err);
     }
-  };
+  }, [courses]);
 
   useEffect(() => {
     const load = async () => {
@@ -90,7 +90,6 @@ export default function EducatorMessages() {
             const payload = token.split('.')[1];
             const decoded = JSON.parse(atob(payload));
             setCurrentUserId(decoded.sub); // 'sub' contains user_public_id
-            console.log('Current educator ID:', decoded.sub);
           } catch (error) {
             console.error('Failed to decode token:', error);
           }
@@ -118,7 +117,7 @@ export default function EducatorMessages() {
     if (courses.length > 0) {
       updateUnreadCounts();
     }
-  }, [courses]);
+  }, [courses, updateUnreadCounts]);
 
   useEffect(() => {
     const loadMessages = async () => {
@@ -137,7 +136,6 @@ export default function EducatorMessages() {
           status: msg.status || 'sent'
         }));
         
-        console.log('📥 Loaded messages (sorted oldest→newest):', markedMessages.length);
         setMessages(markedMessages);
         lastMessageCountRef.current = markedMessages.length;
         
@@ -154,7 +152,7 @@ export default function EducatorMessages() {
       }
     };
     loadMessages();
-  }, [selectedCourseId, currentUserId]);
+  }, [selectedCourseId, currentUserId, updateUnreadCounts]);
 
   // Poll for new incoming messages for the selected course
   useEffect(() => {
@@ -198,7 +196,6 @@ export default function EducatorMessages() {
               
               const updated = [...prev, ...markedNew];
               lastMessageCountRef.current = updated.length;
-              console.log('📨 New messages appended to bottom:', markedNew.length);
               return updated;
             }
             return prev;
@@ -209,7 +206,7 @@ export default function EducatorMessages() {
       }
     }, 8000);
     return () => clearInterval(interval);
-  }, [selectedCourseId, courses]);
+  }, [selectedCourseId, courses, currentUserId]);
 
   useEffect(() => {
     // Auto-scroll to bottom on new messages (smooth scroll)
@@ -239,7 +236,6 @@ export default function EducatorMessages() {
       };
       setMessages((prev) => {
         const updated = [...prev, optimistic];
-        console.log('✉️ Optimistic message added to bottom:', optimistic.id);
         return updated;
       });
       setNewMessage("");
@@ -253,7 +249,6 @@ export default function EducatorMessages() {
         const savedWithFlag = { ...saved, isOwnMessage: true, status: 'sent' };
         const updated = [...withoutTemp, savedWithFlag];
         lastMessageCountRef.current = updated.length;
-        console.log('✅ Message saved, replaced temp with:', saved.id);
         return updated;
       });
     } catch (e) {
@@ -283,21 +278,18 @@ export default function EducatorMessages() {
         headers: { Authorization: `Bearer ${token}` }
       });
       const courseData = await courseRes.json();
-      console.log('📚 Course data:', courseData);
       
       // Fetch enrollments with user data
       const enrollRes = await fetch(`http://127.0.0.1:5000/api/enrollments?course_id=${courseId}&page=1&per_page=100`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const enrollData = await enrollRes.json();
-      console.log('👥 Enrollment data:', enrollData);
       
       const course = courseData?.data?.course || courseData?.data || courseData?.course || {};
       let enrollments = enrollData?.data?.items || enrollData?.data?.enrollments || enrollData?.items || [];
       
       // If enrollments don't have user data, fetch it
       if (enrollments.length > 0 && !enrollments[0].user) {
-        console.log('⚠️ Enrollments missing user data, fetching users...');
         const enrichedEnrollments = await Promise.all(
           enrollments.map(async (enrollment) => {
             try {
@@ -329,8 +321,6 @@ export default function EducatorMessages() {
         );
         enrollments = enrichedEnrollments;
       }
-      
-      console.log('✅ Final enrollments with users:', enrollments);
       
       setCourseDetails({
         ...course,

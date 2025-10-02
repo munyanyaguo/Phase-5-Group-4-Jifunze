@@ -21,16 +21,14 @@ export default function ManagerEnrollments() {
 
   const [selectedStudent, setSelectedStudent] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
-
   // --------------------
   // Load manager's school
   // --------------------
   const loadSchool = async () => {
     try {
-      const dash = await fetchDashboard();
-      // Handle both wrapped and unwrapped responses
-      const dashData = dash?.dashboard || dash;
-      const list = dashData?.schools || [];
+      const res = await fetchDashboard();
+      const data = await res.json();
+      const list = data?.dashboard?.schools || [];
       setSchools(list);
       if (list.length > 0) setSchoolId(list[0].id);
       else alert("No school found for this manager.");
