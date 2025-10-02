@@ -6,12 +6,15 @@ from .auth import RegisterResource, LoginResource, LogoutResource, ResetPassword
 from .users import (UserResource, UserListResource, 
     UserProfileResource, UsersBySchoolResource, UserDashboardResource)
 from .schools import (SchoolResource, SchoolListResource, SchoolStatsResource,
-    SchoolUsersResource, SchoolCoursesResource, SchoolDashboardResource)
+    SchoolUsersResource, SchoolCoursesResource, SchoolDashboardResource,
+    EducatorsByManagerResource, ManagerStudentsResource, ManagerUsersResource)
 from .messages import MessageListResource, MessageResource
 from .resources import ResourceListApi, ResourceDetailApi
 from .enrollment import EnrollmentListResource, EnrollmentResource
 from .resources import CourseResourcesApi
 from .resources import StudentResourcesApi
+from .notifications import (NotificationListResource, NotificationResource, 
+    NotificationMarkAllReadResource)
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 api = Api(api_bp)
 
@@ -48,9 +51,22 @@ api.add_resource(SchoolUsersResource, "/schools/<int:school_id>/users")
 api.add_resource(SchoolCoursesResource, "/schools/<int:school_id>/courses")
 api.add_resource(SchoolDashboardResource, "/schools/dashboard", "/schools/<int:school_id>/dashboard")
 
+# -------------------
+# Manager-specific endpoints
+# -------------------
+api.add_resource(EducatorsByManagerResource, "/manager/educators")
+api.add_resource(ManagerStudentsResource, "/manager/students")
+api.add_resource(ManagerUsersResource, "/manager/users")
+
 # Message endpoints
 api.add_resource(MessageListResource, "/messages")
 api.add_resource(MessageResource, "/messages/<int:message_id>")
+
+# Notification endpoints
+api.add_resource(NotificationListResource, "/notifications")
+api.add_resource(NotificationResource, "/notifications/<int:notification_id>")
+api.add_resource(NotificationMarkAllReadResource, "/notifications/mark-all-read")
+
 # Resource endpoints
 api.add_resource(ResourceListApi, "/resources")
 api.add_resource(ResourceDetailApi, "/resources/<int:resource_id>")

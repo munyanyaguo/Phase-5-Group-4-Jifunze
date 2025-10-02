@@ -1,5 +1,6 @@
 // src/pages/Educators.jsx
 import React, { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { UserPlus, Trash2, School } from "lucide-react";
 import UserForm from "../../components/owner/UserForm";
 import { fetchManagerEducators, fetchSchoolCourses } from "../../api";
@@ -14,7 +15,8 @@ export default function Educators() {
       try {
         setLoading(true);
         const data = await fetchManagerEducators();
-        const list = Array.isArray(data.educators) ? data.educators : [];
+        // Handle both wrapped and unwrapped responses
+        const list = Array.isArray(data) ? data : (data.educators || []);
 
         // Fetch courses for each educator
         const educatorsWithCourses = await Promise.all(
@@ -24,9 +26,9 @@ export default function Educators() {
               const allCourses = await fetchSchoolCourses(edu.school.id, {
                 educator_id: edu.id,
               });
-              courses = Array.isArray(allCourses)
-                ? allCourses.map((c) => ({ id: c.id, name: c.title }))
-                : [];
+              // Handle both wrapped and unwrapped responses
+              const coursesList = Array.isArray(allCourses) ? allCourses : (allCourses.courses || []);
+              courses = coursesList.map((c) => ({ id: c.id, name: c.title }));
             }
             return { ...edu, courses };
           })

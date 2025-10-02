@@ -1,5 +1,6 @@
 // src/pages/manager/Users.jsx
 import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { User, Shield, School, Eye, Trash2 } from "lucide-react";
 import { fetchOwnerUsers, deleteUser } from "../../api";
 

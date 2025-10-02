@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as AuthService from "../../services/authServices";
+import { fetchNotifications, markNotificationAsRead } from "../../api";
 import { Bell, User, Settings, Lock, LogOut, ChevronDown, X, MessageSquare } from "lucide-react";
 
 export default function Navbar() {
@@ -21,16 +22,29 @@ export default function Navbar() {
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
         try {
-          setUser(JSON.parse(storedUser));
+          const userData = JSON.parse(storedUser);
+          console.log('Loaded user from localStorage:', userData);
+          setUser(userData);
         } catch (e) {
           console.error('Failed to parse stored user:', e);
         }
+      } else {
+        console.warn('No user found in localStorage');
       }
       
-      // Then fetch fresh data from API
-      const freshUser = await AuthService.getCurrentUser();
-      if (freshUser) {
-        setUser(freshUser.profile || freshUser.user || freshUser);
+      // Then try to fetch fresh data from API
+      try {
+        const freshUser = await AuthService.getCurrentUser();
+        console.log('Fresh user from API:', freshUser);
+        if (freshUser) {
+          const userData = freshUser.data?.profile || freshUser.data?.user || freshUser.profile || freshUser.user || freshUser;
+          setUser(userData);
+          // Update localStorage with fresh data
+          localStorage.setItem('user', JSON.stringify(userData));
+        }
+      } catch (err) {
+        console.error('Failed to fetch fresh user data:', err);
+        // Keep using localStorage data if API fails
       }
     };
     loadUser();
@@ -55,7 +69,31 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Listen for new message notifications from messages page
+  // Fetch notifications from backend
+  useEffect(() => {
+    const loadNotifications = async () => {
+      try {
+        const data = await fetchNotifications();
+        const notifs = data.notifications || [];
+        setNotifications(notifs.map(n => ({
+          id: n.id,
+          text: n.title,
+          message: n.message,
+          at: n.created_at,
+          is_read: n.is_read
+        })));
+      } catch (err) {
+        console.error('Failed to load notifications:', err);
+      }
+    };
+    loadNotifications();
+    
+    // Poll for new notifications every 30 seconds
+    const interval = setInterval(loadNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Listen for new message notifications from messages page (for toast)
   useEffect(() => {
     const onNew = (e) => {
       const { courseId, courseTitle, message } = e.detail || {};
@@ -67,10 +105,7 @@ export default function Navbar() {
         at: message?.timestamp || new Date().toISOString(),
       };
       
-      // Add to persistent notifications
-      setNotifications((prev) => [notification, ...prev].slice(0, 10));
-      
-      // Add to toast notifications
+      // Add to toast notifications only
       const toastId = `toast-${Date.now()}`;
       setToastNotifications((prev) => [...prev, { ...notification, toastId }]);
       
@@ -106,6 +141,21 @@ export default function Navbar() {
     }
   };
 
+  // Handle notification click
+  const handleNotificationClick = async (notif) => {
+    if (!notif.is_read) {
+      try {
+        await markNotificationAsRead(notif.id);
+        // Update local state
+        setNotifications(prev => 
+          prev.map(n => n.id === notif.id ? { ...n, is_read: true } : n)
+        );
+      } catch (err) {
+        console.error('Failed to mark notification as read:', err);
+      }
+    }
+  };
+
   return (
     <header className="bg-white shadow px-6 py-3 flex justify-between items-center">
       <div>
@@ -125,17 +175,29 @@ export default function Navbar() {
             </span>
           )}
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-72 bg-white shadow-lg rounded-lg p-4 z-50">
-              <h3 className="font-semibold mb-2">Notifications</h3>
+            <div className="absolute right-0 mt-2 w-80 bg-white shadow-xl rounded-xl p-4 z-50 border border-gray-100">
+              <h3 className="font-semibold mb-3 text-gray-800">Notifications</h3>
               {notifications.length === 0 ? (
-                <div className="text-sm text-gray-500">No notifications</div>
+                <div className="text-sm text-gray-500 py-4 text-center">No notifications</div>
               ) : (
-                <ul className="text-sm text-gray-700 space-y-2 max-h-64 overflow-auto">
+                <ul className="text-sm text-gray-700 space-y-3 max-h-80 overflow-auto">
                   {notifications.map((n) => (
-                    <li key={n.id} className="flex justify-between items-start">
-                      <div>
-                        <div>{n.text}</div>
-                        <div className="text-xs text-gray-400">{new Date(n.at).toLocaleString()}</div>
+                    <li 
+                      key={n.id} 
+                      className={`p-3 hover:bg-gray-50 rounded-lg transition cursor-pointer ${!n.is_read ? 'bg-blue-50' : ''}`}
+                      onClick={() => handleNotificationClick(n)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="font-medium text-gray-800">{n.text}</div>
+                        {!n.is_read && (
+                          <span className="w-2 h-2 bg-blue-600 rounded-full mt-1 ml-2"></span>
+                        )}
+                      </div>
+                      {n.message && (
+                        <div className="text-xs text-gray-600 mt-1">{n.message}</div>
+                      )}
+                      <div className="text-xs text-gray-400 mt-1">
+                        {new Date(n.at).toLocaleString()}
                       </div>
                     </li>
                   ))}

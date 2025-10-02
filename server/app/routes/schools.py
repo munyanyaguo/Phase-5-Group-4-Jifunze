@@ -530,54 +530,63 @@ class SchoolAssignUserResource(Resource):
 class EducatorsByManagerResource(Resource):
     @jwt_required()
     def get(self):
-        current_user_public_id = get_jwt_identity()
-        user = User.query.filter_by(public_id=current_user_public_id).first()
-        if not user or user.role != "manager":
-            return error_response("Only managers can view their educators", status_code=403)
+        try:
+            current_user_public_id = get_jwt_identity()
+            user = User.query.filter_by(public_id=current_user_public_id).first()
+            if not user or user.role != "manager":
+                return error_response("Only managers can view their educators", status_code=403)
 
-        # Get all schools owned by this manager
-        schools = School.query.filter_by(owner_id=user.id).all()
-        educators = []
+            # Get all schools owned by this manager
+            schools = School.query.filter_by(owner_id=user.id).all()
+            educators = []
 
-        for school in schools:
-            for u in school.users:  # assuming School has a 'users' backref
-                if u.role == "educator":
-                    educators.append({
-                        "id": u.id,
-                        "name": u.name,
-                        "email": u.email,
-                        "school": school.name,
-                        "courses": [c.title for c in u.courses]  # assuming educator has courses
-                    })
+            for school in schools:
+                for u in school.users:
+                    if u.role == "educator":
+                        educators.append({
+                            "id": u.id,
+                            "name": u.name,
+                            "email": u.email,
+                            "school": {"id": school.id, "name": school.name},
+                            "courses": [c.title for c in u.courses] if u.courses else []
+                        })
 
-        return success_response("Educators retrieved successfully", {"educators": educators})
+            return success_response("Educators retrieved successfully", {"educators": educators})
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return error_response("Failed to fetch educators", {"error": str(e)}, status_code=500)
     
 class ManagerStudentsResource(Resource):
     @jwt_required()
     def get(self):
-        current_user_public_id = get_jwt_identity()
-        user = User.query.filter_by(public_id=current_user_public_id).first()
-        if not user or user.role != "manager":
-            return error_response("Only managers can view their students", status_code=403)
+        try:
+            current_user_public_id = get_jwt_identity()
+            user = User.query.filter_by(public_id=current_user_public_id).first()
+            if not user or user.role != "manager":
+                return error_response("Only managers can view their students", status_code=403)
 
-        # Get all schools owned by this manager
-        schools = School.query.filter_by(owner_id=user.id).all()
-        students = []
+            # Get all schools owned by this manager
+            schools = School.query.filter_by(owner_id=user.id).all()
+            students = []
 
-        for school in schools:
-            for u in school.users:  # assuming School has a 'users' backref
-                if u.role == "student":
-                    students.append({
-                        "id": u.id,
-                        "public_id": u.public_id,
-                        "name": u.name,
-                        "email": u.email,
-                        "school": school.name,
-                        "school_id": school.id,
-                        "courses": [c.title for c in u.courses]  # if students have courses
-                    })
+            for school in schools:
+                for u in school.users:
+                    if u.role == "student":
+                        students.append({
+                            "id": u.id,
+                            "public_id": u.public_id,
+                            "name": u.name,
+                            "email": u.email,
+                            "school": school.name,
+                            "school_id": school.id
+                        })
 
-        return success_response("Students retrieved successfully", {"students": students})
+            return success_response("Students retrieved successfully", {"students": students})
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return error_response("Failed to fetch students", {"error": str(e)}, status_code=500)
     
 class UserListResource(Resource):
     @jwt_required()
@@ -635,15 +644,20 @@ class UserResource(Resource):
 class ManagerUsersResource(Resource):
     @jwt_required()
     def get(self):
-        """Get all users under manager’s schools"""
-        current_public_id = get_jwt_identity()
-        manager = User.query.filter_by(public_id=current_public_id).first()
-        if not manager or manager.role != "manager":
-            return error_response("Only managers can view this", 403)
+        """Get all users under manager's schools"""
+        try:
+            current_public_id = get_jwt_identity()
+            manager = User.query.filter_by(public_id=current_public_id).first()
+            if not manager or manager.role != "manager":
+                return error_response("Only managers can view this", 403)
 
-        schools = School.query.filter_by(owner_id=manager.id).all()
-        user_list = []
-        for school in schools:
-            user_list.extend(school.users)
+            schools = School.query.filter_by(owner_id=manager.id).all()
+            user_list = []
+            for school in schools:
+                user_list.extend(school.users)
 
-        return success_response("Users retrieved successfully", {"users": users_schema.dump(user_list)})    
+            return success_response("Users retrieved successfully", {"users": users_schema.dump(user_list)})
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return error_response("Failed to fetch users", {"error": str(e)}, status_code=500)

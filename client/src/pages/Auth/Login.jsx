@@ -34,7 +34,7 @@ const Login = () => {
         throw new Error(data.message || "Login failed");
       }
 
-      // Save tokens + role + user_id
+      // Save tokens + role + user_id + user data
       if (data.data?.access_token) {
         localStorage.setItem("token", data.data.access_token);
       }
@@ -45,6 +45,11 @@ const Login = () => {
       localStorage.setItem("role", role);
       if (data.data?.user?.id) {
         localStorage.setItem("user_id", data.data.user.id);
+      }
+      
+      // Save full user object for navbar display
+      if (data.data?.user) {
+        localStorage.setItem("user", JSON.stringify(data.data.user));
       }
 
       // Redirect
@@ -59,7 +64,10 @@ const Login = () => {
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
       {/* Left side (hero with bg image/gradient) */}
-      <div className="hidden md:flex w-1/2 relative bg-gradient-to-br from-blue-600 to-indigo-700 text-white items-center justify-center p-12 bg-cover bg-center bg-[url('/hero2.jpg')]">
+      <div 
+        className="hidden md:flex w-1/2 relative bg-gradient-to-br from-blue-600 to-indigo-700 text-white items-center justify-center p-12 bg-cover bg-center"
+        style={{ backgroundImage: "url('/hero2.jpg')" }}
+      >
         <div className="absolute inset-0 bg-black bg-opacity-50"></div>
         <div className="relative text-center space-y-6 max-w-md z-10">
           <h1 className="text-4xl font-bold drop-shadow-lg">Welcome Back ✨</h1>
