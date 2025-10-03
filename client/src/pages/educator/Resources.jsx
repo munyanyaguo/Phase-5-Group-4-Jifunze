@@ -78,7 +78,7 @@ export default function Resources() {
     setPagination(prev => ({ ...prev, page: 1 }));
   }, [selectedCourse, selectedType, searchTerm]);
 
-  async function loadResources() {
+  const loadResources = useCallback(async () => {
     try {
       console.log('📚 Loading resources - page:', pagination.page, 'per_page:', pagination.per_page);
       const result = await fetchResources(pagination.page, pagination.per_page);
@@ -97,7 +97,7 @@ export default function Resources() {
     } finally {
       setInitialLoading(false);
     }
-  } 
+  }, [pagination.page, pagination.per_page]); 
 
   const loadCourses = async () => {
     try {
@@ -114,33 +114,10 @@ export default function Resources() {
   useEffect(() => {
     loadResources();
     loadCourses();
-  }, [pagination.page, loadResources]);
-
-  useEffect(() => {
-    // Reset to page 1 when filters change
-    setPagination(prev => ({ ...prev, page: 1 }));
-  }, [selectedCourse, selectedType, searchTerm]);
-
-  async function loadResources() {
-    try {
-      const result = await fetchResources(pagination.page, pagination.per_page);
-      const list = Array.isArray(result.data) ? result.data : [];
-      setResources(list);
-      setPagination(prev => ({
-        ...prev,
-        total: result.total || 0,
-        pages: result.pages || 0
-      }));
-    } catch (error) {
-      console.error('Error loading resources:', error);
-      alert('Failed to load resources');
-    } finally {
-      setInitialLoading(false);
-    }
-  } 
+  }, [loadResources]);
 
   // Handle resource upload
-  const handleUpload = async (data) => {
+  const handleUpload = useCallback(async (data) => {
     try {
       setUploadLoading(true);
       await createResource(data);
@@ -153,7 +130,7 @@ export default function Resources() {
     } finally {
       setUploadLoading(false);
     }
-  };
+  }, [loadResources]);
 
   // Handle resource delete
   const handleDelete = async (resourceId, title) => {
