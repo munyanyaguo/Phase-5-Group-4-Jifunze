@@ -3,11 +3,14 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "../../components/ui/card";
 import { fetchDashboard } from "../../api";
+import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
+
   useEffect(() => {
     const loadDashboard = async () => {
       try {
@@ -109,12 +112,28 @@ export default function Dashboard() {
         </Card>
       </motion.div>
 
-      {/* Schools Table */}
+      {/* Schools Table / Empty State */}
       <div>
         <h2 className="text-xl font-semibold mb-4">🏫 Schools Overview</h2>
         <div className="overflow-x-auto bg-white rounded-2xl shadow">
           {schools.length === 0 ? (
-            <p className="p-4 text-gray-500">No schools available.</p>
+            <div className="p-8 text-center space-y-4">
+              <div className="text-6xl">👋</div>
+              <h3 className="text-xl font-semibold text-gray-800">
+                Welcome, Manager!
+              </h3>
+              <p className="text-gray-600 max-w-md mx-auto">
+                You haven’t added any schools yet. Get started by creating your
+                first school and start managing educators, students, and courses
+                with ease.
+              </p>
+              <button
+                onClick={() => navigate("/schools")}
+                className="mt-4 px-6 py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition"
+              >
+                ➕ Create Your First School
+              </button>
+            </div>
           ) : (
             <table className="min-w-full text-left">
               <thead className="bg-gray-100">
@@ -122,7 +141,6 @@ export default function Dashboard() {
                   <th className="p-3">School</th>
                   <th className="p-3 text-right">👩‍🎓 Students</th>
                   <th className="p-3 text-right">👨‍🏫 Educators</th>
-                
                   <th className="p-3 text-right">📘 Courses</th>
                   <th className="p-3 text-right">🆕 New Users (7d)</th>
                 </tr>
@@ -139,8 +157,9 @@ export default function Dashboard() {
                     <td className="p-3 font-medium">{school.name}</td>
                     <td className="p-3 text-right">{school.students ?? 0}</td>
                     <td className="p-3 text-right">{school.educators ?? 0}</td>
-               
-                    <td className="p-3 text-right">{school.total_courses ?? 0}</td>
+                    <td className="p-3 text-right">
+                      {school.total_courses ?? 0}
+                    </td>
                     <td className="p-3 text-right">
                       {school.new_users_this_week ?? 0}
                     </td>
