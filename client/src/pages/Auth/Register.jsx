@@ -86,6 +86,10 @@ const Register = () => {
       </div>
 
       {/* Right side (registration form) */}
+
+
+
+      {/* RIGHT SIDE - Form */}
       <div className="flex w-full md:w-1/2 items-center justify-center p-8 bg-gray-50 bg-gradient-to-br from-purple-600 to-indigo-600">
         <div className="bg-white rounded-2xl shadow-xl p-10 w-full max-w-md transform transition-all hover:scale-[1.01]">
           <h2 className="text-3xl font-bold text-center text-gray-800 mb-2">

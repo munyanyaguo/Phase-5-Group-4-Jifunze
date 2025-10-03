@@ -67,7 +67,18 @@ export default function Resources() {
     pages: 0
   });
 
-  const loadResources = useCallback(async () => {
+  // Load initial data
+  useEffect(() => {
+    loadResources();
+    loadCourses();
+  }, [pagination.page, loadResources]);
+
+  useEffect(() => {
+    // Reset to page 1 when filters change
+    setPagination(prev => ({ ...prev, page: 1 }));
+  }, [selectedCourse, selectedType, searchTerm]);
+
+  async function loadResources() {
     try {
       console.log('📚 Loading resources - page:', pagination.page, 'per_page:', pagination.per_page);
       const result = await fetchResources(pagination.page, pagination.per_page);
@@ -86,7 +97,7 @@ export default function Resources() {
     } finally {
       setInitialLoading(false);
     }
-  }, [pagination.page, pagination.per_page]);
+  } 
 
   const loadCourses = async () => {
     try {
