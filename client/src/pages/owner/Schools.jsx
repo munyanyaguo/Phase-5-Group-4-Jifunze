@@ -12,7 +12,7 @@ import SchoolForm from "../../components/owner/SchoolForm";
 export default function SchoolsPage() {
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [showModal, setShowModal] = useState(false);
+  const [editingSchool, setEditingSchool] = useState(null); // null = create
 
   // Load all schools
   const loadSchools = async () => {
@@ -36,17 +36,18 @@ export default function SchoolsPage() {
     try {
       await createSchool(schoolData);
       loadSchools();
-      setShowModal(false); // close modal after create
+      setEditingSchool(null); // close modal after create
     } catch (err) {
       alert(err.message);
     }
   };
 
   // Update existing school
-  const handleUpdate = async (id, updatedData) => {
+  const handleUpdate = async (schoolData) => {
     try {
-      await updateSchool(id, updatedData);
+      await updateSchool(editingSchool.id, schoolData);
       loadSchools();
+      setEditingSchool(null); // close modal after update
     } catch (err) {
       alert(err.message);
     }
@@ -69,7 +70,7 @@ export default function SchoolsPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-800">My Schools</h1>
         <button
-          onClick={() => setShowModal(true)}
+          onClick={() => setEditingSchool({})} // empty object = create
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
         >
           Create School
@@ -86,7 +87,7 @@ export default function SchoolsPage() {
               key={school.id}
               school={school}
               onDelete={handleDelete}
-              onUpdate={handleUpdate}
+              onUpdate={() => setEditingSchool(school)} // open modal with school data
               onAssignSuccess={loadSchools}
             />
           ))}
@@ -96,19 +97,26 @@ export default function SchoolsPage() {
       )}
 
       {/* Modal */}
-      {showModal && (
+      {editingSchool !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 relative">
             {/* Close button */}
             <button
-              onClick={() => setShowModal(false)}
+              onClick={() => setEditingSchool(null)}
               className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
             >
               ✕
             </button>
 
-            <h2 className="text-xl font-semibold mb-4">Create New School</h2>
-            <SchoolForm onCreate={handleCreate} onCancel={() => setShowModal(false)} />
+            <h2 className="text-xl font-semibold mb-4">
+              {editingSchool.id ? "Edit School" : "Create New School"}
+            </h2>
+
+            <SchoolForm
+              initialData={editingSchool}
+              onCreate={editingSchool.id ? handleUpdate : handleCreate}
+              onCancel={() => setEditingSchool(null)}
+            />
           </div>
         </div>
       )}
