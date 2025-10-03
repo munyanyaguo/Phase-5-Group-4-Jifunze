@@ -3,14 +3,29 @@ name: Backend CI
 on:
   pull_request:
     branches: [ develop, main ]
-    paths: [ 'server/' ]
+    paths: [ 'server/**' ]
   push:
     branches: [ develop, main ]
-    paths: [ 'server/' ]
+    paths: [ 'server/**' ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_jifunze_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     defaults:
       run:
@@ -49,7 +64,26 @@ jobs:
 
       - name: Test with pytest
         env:
-          SECRET_KEY: test-secret-key     # dummy key for testing
+          SECRET_KEY: test-secret-key
+          JWT_SECRET_KEY: test-jwt-secret-key
           FLASK_ENV: testing
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_jifunze_db
         run: |
-          pipenv run pytest tests/ -v
+          pipenv run pytest tests/ -v --cov=app --cov-report=term-missing --cov-report=xml --cov-report=html
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          file: ./server/coverage.xml
+          flags: backend
+          name: backend-coverage
+          fail_ci_if_error: false
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          echo "📊 Coverage Report Generated"
+          if [ -f coverage.xml ]; then
+            echo "✅ Coverage file created successfully"
+          fi
