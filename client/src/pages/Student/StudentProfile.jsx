@@ -44,8 +44,7 @@ export default function StudentProfile() {
       setError("");
       setSuccess("");
 
-      const updatedUser = await AuthService.updateCurrentUser(formData);
-      const userData = updatedUser.profile || updatedUser.user || updatedUser;
+      await AuthService.updateCurrentUser(formData);
       
       setUser({ ...user, ...formData });
       setSuccess("Profile updated successfully!");

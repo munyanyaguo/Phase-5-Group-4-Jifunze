@@ -53,8 +53,7 @@ export default function Profile() {
       setSuccess("");
 
       // Use the AuthService for consistency
-      const updatedUser = await AuthService.updateCurrentUser(formData);
-      const userData = updatedUser.profile || updatedUser.user || updatedUser;
+      await AuthService.updateCurrentUser(formData);
       
       setProfile({ ...profile, ...formData });
       setSuccess("Profile updated successfully!");
