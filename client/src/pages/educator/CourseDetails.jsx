@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Users, FileText, Calendar, User, Mail, CheckCircle, XCircle, Clock } from "lucide-react";
+import { ArrowLeft, Users, FileText, Calendar, User, Mail, CheckCircle, XCircle, Clock, BookOpen, School, ClipboardList, TrendingUp, X } from "lucide-react";
 import { fetchCourse } from "../../services/courseService";
 import { fetchCourseResources } from "../../services/resourceService";
 import { API_URL as CONFIG_URL } from '../../config';
@@ -21,13 +21,19 @@ export default function CourseDetails() {
   const [attendanceStats, setAttendanceStats] = useState(null);
   
   useEffect(() => {
-    // Reset state when ID changes
-    setLoading(true);
-    setError("");
-    setCourse(null);
-    setResources([]);
-    setEnrollments([]);
-    setAttendanceStats(null);
+    if (!id) {
+      setError("No course ID provided");
+      setLoading(false);
+      return;
+    }
+  
+  // Reset state when ID changes
+  setLoading(true);
+  setError("");
+  setCourse(null);
+  setResources([]);
+  setEnrollments([]);
+  setAttendanceStats(null);
   }, [id]);
   
   useEffect(() => {
@@ -38,7 +44,10 @@ export default function CourseDetails() {
         
         // Fetch course details
         const c = await fetchCourse(id);
-        setCourse(c || {});
+        if (!c) {
+          throw new Error("Course not found");
+        }
+        setCourse(c);
 
         // Fetch course resources using YOUR existing resourceService
         try {
@@ -95,6 +104,25 @@ export default function CourseDetails() {
     };
     load();
   }, [id]);
+
+  // Early return if no course data and not loading
+  if (!loading && !course && !error) {
+    return (
+      <div className="p-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-blue-600 hover:text-blue-800 mb-4"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Back
+        </button>
+        <div className="p-4 rounded-lg bg-yellow-50 text-yellow-700 border border-yellow-200">
+          <p className="font-semibold">Course not found</p>
+          <p className="text-sm mt-1">The requested course could not be loaded.</p>
+        </div>
+      </div>
+    );
+  }
 
   // Loading state
   if (loading) {

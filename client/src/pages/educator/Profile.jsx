@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { User, Mail, School, Calendar, Edit2, Save, X } from "lucide-react";
 import { API_URL as CONFIG_URL } from '../../config';
+import * as AuthService from "../../services/authServices";
 
 const API_URL = `${CONFIG_URL}/api`;
 
@@ -51,30 +52,19 @@ export default function Profile() {
       setError("");
       setSuccess("");
 
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_URL}/users/me`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setProfile({ ...profile, ...formData });
-        setSuccess("Profile updated successfully!");
-        setEditing(false);
-        
-        const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
-        localStorage.setItem("user", JSON.stringify({ ...storedUser, ...formData }));
-      } else {
-        setError(data.message || "Failed to update profile");
-      }
+      // Use the AuthService for consistency
+      await AuthService.updateCurrentUser(formData);
+      
+      setProfile({ ...profile, ...formData });
+      setSuccess("Profile updated successfully!");
+      setEditing(false);
+      
+      // Update localStorage
+      const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+      localStorage.setItem("user", JSON.stringify({ ...storedUser, ...formData }));
     } catch (error) {
       console.error('Update profile error:', error);
-      setError("Network error. Please try again later.");
+      setError(error.message || "Failed to update profile");
     } finally {
       setSaving(false);
     }

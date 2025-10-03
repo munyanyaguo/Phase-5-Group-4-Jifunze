@@ -54,7 +54,7 @@ const Register = () => {
       }
 
       // Redirect to their dashboard
-      navigate(`/${role}/dashboard`);
+      navigate(`/login`);
     } catch (err) {
       setError(err.message || "Something went wrong during registration.");
     } finally {

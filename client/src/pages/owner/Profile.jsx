@@ -1,11 +1,16 @@
 // src/pages/owner/Profile.jsx
 import React, { useEffect, useState } from "react";
-import { User, Mail, School, Calendar, BookOpen } from "lucide-react";
+import { User, Mail, School, Calendar, BookOpen, Edit2, Save, X } from "lucide-react";
 import * as AuthService from "../../services/authServices";
 
 export default function OwnerProfile() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [formData, setFormData] = useState({ name: "", email: "" });
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -19,6 +24,7 @@ export default function OwnerProfile() {
         if (freshUser) {
           const userData = freshUser.data?.profile || freshUser.data?.user || freshUser.profile || freshUser.user || freshUser;
           setUser(userData);
+          setFormData({ name: userData.name || "", email: userData.email || "" });
           localStorage.setItem('user', JSON.stringify(userData));
         }
       } catch (err) {
@@ -29,6 +35,29 @@ export default function OwnerProfile() {
     };
     loadUser();
   }, []);
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      setError("");
+      setSuccess("");
+
+      await AuthService.updateCurrentUser(formData);
+      
+      setUser({ ...user, ...formData });
+      setSuccess("Profile updated successfully!");
+      setEditing(false);
+      
+      // Update localStorage
+      const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+      localStorage.setItem("user", JSON.stringify({ ...storedUser, ...formData }));
+    } catch (error) {
+      console.error('Update profile error:', error);
+      setError(error.message || "Failed to update profile");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -70,6 +99,54 @@ export default function OwnerProfile() {
 
         {/* Profile Details */}
         <div className="p-8 space-y-6">
+          {/* Alerts */}
+          {error && (
+            <div className="mb-6 bg-red-50 border-l-4 border-red-500 text-red-700 px-6 py-4 rounded-xl shadow-sm">
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="mb-6 bg-green-50 border-l-4 border-green-500 text-green-700 px-6 py-4 rounded-xl shadow-sm">
+              {success}
+            </div>
+          )}
+
+          {/* Edit Button */}
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-bold text-gray-800">Personal Information</h3>
+            {!editing ? (
+              <button
+                onClick={() => setEditing(true)}
+                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg transition-all flex items-center gap-2"
+              >
+                <Edit2 className="w-4 h-4" />
+                Edit Profile
+              </button>
+            ) : (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl font-medium hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  {saving ? "Saving..." : "Save"}
+                </button>
+                <button
+                  onClick={() => {
+                    setEditing(false);
+                    setFormData({ name: user?.name || "", email: user?.email || "" });
+                    setError("");
+                  }}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-300 transition-all flex items-center gap-2"
+                >
+                  <X className="w-4 h-4" />
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
           <div className="grid md:grid-cols-2 gap-6">
             {/* Name */}
             <div className="flex items-start gap-3">
@@ -78,7 +155,17 @@ export default function OwnerProfile() {
               </div>
               <div>
                 <p className="text-sm text-gray-500">Full Name</p>
-                <p className="font-semibold text-gray-800">{user.name || 'N/A'}</p>
+                {editing ? (
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-semibold"
+                    placeholder="Enter your name"
+                  />
+                ) : (
+                  <p className="font-semibold text-gray-800">{user.name || 'N/A'}</p>
+                )}
               </div>
             </div>
 
@@ -89,7 +176,17 @@ export default function OwnerProfile() {
               </div>
               <div>
                 <p className="text-sm text-gray-500">Email Address</p>
-                <p className="font-semibold text-gray-800">{user.email || 'N/A'}</p>
+                {editing ? (
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent font-semibold"
+                    placeholder="Enter your email"
+                  />
+                ) : (
+                  <p className="font-semibold text-gray-800">{user.email || 'N/A'}</p>
+                )}
               </div>
             </div>
 
