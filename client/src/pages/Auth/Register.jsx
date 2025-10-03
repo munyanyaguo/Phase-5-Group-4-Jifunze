@@ -1,155 +1,179 @@
+// src/pages/auth/Register.jsx
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
-export default function Register() {
+const Register = () => {
   const navigate = useNavigate();
-  const [form, setForm] = useState({
+  const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     role: "student",
   });
 
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: Add API call for registration
-    navigate("/login");
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("http://127.0.0.1:5000/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Registration failed");
+      }
+
+      // Save tokens + role + user data immediately after signup
+      if (data.data?.access_token) {
+        localStorage.setItem("token", data.data.access_token);
+      }
+
+      let role = data.data?.user?.role || "user";
+      if (role === "manager") role = "owner"; // normalize
+
+      localStorage.setItem("role", role);
+      if (data.data?.user?.id) {
+        localStorage.setItem("user_id", data.data.user.id);
+      }
+
+      if (data.data?.user) {
+        localStorage.setItem("user", JSON.stringify(data.data.user));
+      }
+
+      // Redirect to their dashboard
+      navigate(`/${role}/dashboard`);
+    } catch (err) {
+      setError(err.message || "Something went wrong during registration.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
-      {/* LEFT SIDE - Illustration + Tagline */}
-      <div className="hidden md:flex w-1/2 relative bg-gradient-to-br from-purple-600 to-indigo-600 text-white items-center justify-center p-12 bg-cover bg-center bg-[url('/hero1.jpg')]">
-  {/* Overlay for text visibility */}
-  <div className="absolute inset-0 bg-black bg-opacity-50"></div>
+      {/* Left side (hero section) */}
+      <div
+        className="hidden md:flex w-1/2 relative bg-gradient-to-br from-purple-600 to-indigo-700 text-white items-center justify-center p-12 bg-cover bg-center"
+        style={{ backgroundImage: "url('/hero1.jpg')" }}
+      >
+        <div className="absolute inset-0 bg-black bg-opacity-50"></div>
+        <div className="relative text-center space-y-6 max-w-md z-10">
+          <h1 className="text-4xl font-bold drop-shadow-lg">Join Jifunze 🚀</h1>
+          <p className="text-lg text-purple-100 leading-relaxed font-medium">
+            Create an account and start your journey of growth, collaboration,
+            and learning.
+          </p>
+          <ul className="text-left space-y-3 text-purple-100 text-md font-medium">
+            <li>👩‍🎓 Access curated courses and resources</li>
+            <li>🤝 Connect with mentors and peers</li>
+            <li>📈 Track your progress and achievements</li>
+            <li>🌟 Unlock opportunities for growth</li>
+          </ul>
+        </div>
+      </div>
 
-  {/* Content */}
-  <div className="relative text-center space-y-6 max-w-md z-10">
-    <h1 className="text-4xl font-bold drop-shadow-lg">Join Jifunze 🚀</h1>
-
-    {/* Expanded Paragraph with features */}
-    <p className="text-lg text-purple-100 leading-relaxed font-semibold">
-      🚀 With <span className="font-bold">Jifunze</span>, you can:
-    </p>
-
-    <ul className="text-left space-y-3 text-purple-100 text-md font-medium">
-      <li>👩‍🎓 Explore curated courses and learning paths</li>
-      <li>👨‍🏫 Share and access valuable resources</li>
-      <li>🤝 Connect with mentors, peers, and leaders</li>
-      <li>🏆 Unlock opportunities for personal and academic growth</li>
-    </ul>
-
-    <p className="text-md text-purple-200 italic mt-4">
-      🌟 Start your journey today — because learning is better together.
-    </p>
-  </div>
-</div>
-
-
-      {/* RIGHT SIDE - Form */}
+      {/* Right side (registration form) */}
       <div className="flex w-full md:w-1/2 items-center justify-center p-8 bg-gray-50 bg-gradient-to-br from-purple-600 to-indigo-600">
-        <div className="bg-white shadow-lg rounded-2xl w-full max-w-md p-8">
-          <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
-            ✍️ Create Your Account
+        <div className="bg-white rounded-2xl shadow-xl p-10 w-full max-w-md transform transition-all hover:scale-[1.01]">
+          <h2 className="text-3xl font-bold text-center text-gray-800 mb-2">
+            Create Your Account
           </h2>
+          <p className="text-center text-gray-500 mb-6">
+            Start your personalized learning journey today
+          </p>
+
+          {error && (
+            <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Name */}
+            {/* Full Name */}
             <div>
-              <label className="block text-gray-700 font-semibold mb-2">
-                👤 Full Name
-              </label>
+              <label className="block text-gray-700 text-sm mb-1">👤 Full Name</label>
               <input
                 type="text"
                 name="name"
-                value={form.name}
+                value={formData.name}
                 onChange={handleChange}
-                placeholder="Enter your full name"
-                className="w-full px-4 py-2 border rounded-lg bg-gray-50 
-                           focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                 required
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 transition"
               />
             </div>
 
             {/* Email */}
             <div>
-              <label className="block text-gray-700 font-semibold mb-2">
-                📧 Email
-              </label>
+              <label className="block text-gray-700 text-sm mb-1">📧 Email</label>
               <input
                 type="email"
                 name="email"
-                value={form.email}
+                value={formData.email}
                 onChange={handleChange}
-                placeholder="Enter your email"
-                className="w-full px-4 py-2 border rounded-lg bg-gray-50 
-                           focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                 required
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 transition"
               />
             </div>
 
             {/* Password */}
             <div>
-              <label className="block text-gray-700 font-semibold mb-2">
-                🔑 Password
-              </label>
+              <label className="block text-gray-700 text-sm mb-1">🔑 Password</label>
               <input
                 type="password"
                 name="password"
-                value={form.password}
+                value={formData.password}
                 onChange={handleChange}
-                placeholder="Enter your password"
-                className="w-full px-4 py-2 border rounded-lg bg-gray-50 
-                           focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                 required
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 transition"
               />
             </div>
 
             {/* Role */}
             <div>
-              <label className="block text-gray-700 font-semibold mb-2">
-                🎓 Role
-              </label>
+              <label className="block text-gray-700 text-sm mb-1">🎓 Role</label>
               <select
                 name="role"
-                value={form.role}
+                value={formData.role}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border rounded-lg bg-gray-50 
-                           focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none cursor-pointer"
-                required
+                className="w-full px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-purple-400 transition cursor-pointer"
               >
-                <option value="student"> Student</option>
-                <option value="educator"> Educator</option>
-                <option value="manager"> Manager</option>
+                <option value="student">Student</option>
+                <option value="educator">Educator</option>
+                <option value="manager">Manager</option>
               </select>
             </div>
 
             {/* Submit */}
             <button
               type="submit"
-              className="w-full bg-purple-600 text-white font-semibold py-3 
-                         rounded-lg shadow-md hover:bg-purple-700 
-                         transform hover:scale-105 transition"
+              disabled={loading}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg font-semibold transition duration-200 shadow-md hover:shadow-lg"
             >
-              🚀 Register
+              {loading ? "Registering..." : "Register"}
             </button>
           </form>
 
-          <p className="text-center text-gray-600 mt-6">
+          {/* Already have account */}
+          <p className="text-center text-sm text-gray-600 mt-6">
             Already have an account?{" "}
-            <span
-              onClick={() => navigate("/login")}
-              className="text-purple-600 hover:underline cursor-pointer"
-            >
-              Login
-            </span>
+            <Link to="/login" className="text-purple-600 hover:underline">
+              Login here
+            </Link>
           </p>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default Register;

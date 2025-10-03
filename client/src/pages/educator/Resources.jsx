@@ -77,7 +77,7 @@ export default function Resources() {
     setPagination(prev => ({ ...prev, page: 1 }));
   }, [selectedCourse, selectedType, searchTerm]);
 
-  const loadResources = useCallback(async () => {
+  async function loadResources() {
     try {
       const result = await fetchResources(pagination.page, pagination.per_page);
       const list = Array.isArray(result.data) ? result.data : [];
@@ -93,7 +93,7 @@ export default function Resources() {
     } finally {
       setInitialLoading(false);
     }
-  }, [pagination.page, pagination.per_page]);
+  } 
 
   const loadCourses = async () => {
     try {
