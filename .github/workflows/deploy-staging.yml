@@ -1,12 +1,12 @@
-name: Deploy to Production
+name: Deploy to Staging
 
 on:
   push:
-    branches: [ main ]
+    branches: [ develop ]
   workflow_dispatch:
 
 jobs:
-  deploy-frontend:
+  deploy-staging-frontend:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -25,30 +25,30 @@ jobs:
           npm ci
           npm run build
         env:
-          VITE_API_URL: ${{ secrets.PRODUCTION_API_URL || 'https://jifunze-31gc.onrender.com' }}
+          VITE_API_URL: ${{ secrets.STAGING_API_URL || 'https://jifunze-staging-api.onrender.com' }}
           
       - name: Build verification
         working-directory: client
         run: |
-          echo "✅ Production build completed successfully"
+          echo "✅ Staging build completed successfully"
           ls -la dist/
           test -f dist/index.html
           echo "Build size: $(du -sh dist/ | cut -f1)"
           
-      - name: Deploy frontend to Render (Production)
+      - name: Deploy frontend to Render (Staging)
         if: github.event_name == 'push'
         env:
-          DEPLOY_HOOK: ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}
+          DEPLOY_HOOK: ${{ secrets.RENDER_STAGING_FRONTEND_DEPLOY_HOOK }}
         run: |
           if [ -n "$DEPLOY_HOOK" ]; then
             curl -X POST "$DEPLOY_HOOK"
-            echo "✅ Production frontend deployment triggered"
+            echo "✅ Staging frontend deployment triggered"
           else
-            echo "⚠️  RENDER_FRONTEND_DEPLOY_HOOK not configured"
-            echo "Production deployment will be manual until secrets are set"
+            echo "⚠️  RENDER_STAGING_FRONTEND_DEPLOY_HOOK not configured"
+            echo "Staging deployment will be manual until secrets are set"
           fi
 
-  deploy-backend:
+  deploy-staging-backend:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -62,39 +62,38 @@ jobs:
       - name: Verify backend files
         working-directory: server
         run: |
-          echo "✅ Backend files verified for production"
+          echo "✅ Backend files verified for staging"
           ls -la
           
-      - name: Deploy backend to Render (Production)
+      - name: Deploy backend to Render (Staging)
         if: github.event_name == 'push'
         env:
-          DEPLOY_HOOK: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
+          DEPLOY_HOOK: ${{ secrets.RENDER_STAGING_BACKEND_DEPLOY_HOOK }}
         run: |
           if [ -n "$DEPLOY_HOOK" ]; then
             curl -X POST "$DEPLOY_HOOK"
-            echo "✅ Production backend deployment triggered"
+            echo "✅ Staging backend deployment triggered"
           else
-            echo "⚠️  RENDER_BACKEND_DEPLOY_HOOK not configured"
-            echo "Production deployment will be manual until secrets are set"
+            echo "⚠️  RENDER_STAGING_BACKEND_DEPLOY_HOOK not configured"
+            echo "Staging deployment will be manual until secrets are set"
           fi
 
-  test-production-deployment:
+  test-staging-deployment:
     runs-on: ubuntu-latest
-    needs: [deploy-frontend, deploy-backend]
+    needs: [deploy-staging-frontend, deploy-staging-backend]
     if: always()
     steps:
-      - name: Production deployment status
+      - name: Staging deployment status
         env:
-          FRONTEND_URL: ${{ secrets.PRODUCTION_FRONTEND_URL || 'https://phase-5-group-4-jifunze.onrender.com' }}
-          BACKEND_URL: ${{ secrets.PRODUCTION_API_URL || 'https://jifunze-31gc.onrender.com' }}
+          FRONTEND_URL: ${{ secrets.STAGING_FRONTEND_URL || 'https://jifunze-staging.onrender.com' }}
+          BACKEND_URL: ${{ secrets.STAGING_API_URL || 'https://jifunze-staging-api.onrender.com' }}
         run: |
-          echo "🚀 Production deployment pipeline completed"
-          echo "📋 Production Environment:"
+          echo "🚀 Staging deployment pipeline completed"
+          echo "📋 Staging Environment:"
           echo "   Frontend: $FRONTEND_URL"
           echo "   Backend: $BACKEND_URL"
           echo ""
           echo "💡 Next steps:"
-          echo "1. Verify production deployment at the URLs above"
-          echo "2. Test all critical features"
-          echo "3. Monitor for any issues"
-          echo "4. Check Render logs if needed"
+          echo "1. Verify staging deployment at the URLs above"
+          echo "2. Test Attendance and Chat features"
+          echo "3. If tests pass, merge to main for production deployment"
