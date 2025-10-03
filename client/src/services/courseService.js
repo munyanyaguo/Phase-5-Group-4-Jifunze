@@ -1,6 +1,7 @@
 // src/services/courseService.js
+import { API_URL as BASE_URL } from '../config';
 
-const API_URL = "http://127.0.0.1:5000/api";
+const API_URL = `${BASE_URL}/api`;
 
 // Helper to get token
 const getToken = () => localStorage.getItem('token');

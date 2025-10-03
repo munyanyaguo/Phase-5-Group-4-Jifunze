@@ -2,24 +2,12 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { 
-  ArrowLeft, 
-  BookOpen, 
-  Users, 
-  FileText, 
-  ClipboardList,
-  School,
-  Calendar,
-  X,
-  Mail,
-  CheckCircle,
-  XCircle,
-  TrendingUp
-} from "lucide-react";
+import { ArrowLeft, Users, FileText, Calendar, User, Mail, CheckCircle, XCircle, Clock } from "lucide-react";
 import { fetchCourse } from "../../services/courseService";
 import { fetchCourseResources } from "../../services/resourceService";
+import { API_URL as CONFIG_URL } from '../../config';
 
-const API_URL = "http://127.0.0.1:5000/api";
+const API_URL = `${CONFIG_URL}/api`;
 
 export default function CourseDetails() {
   const { id } = useParams();

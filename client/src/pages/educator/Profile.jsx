@@ -1,8 +1,9 @@
 // src/pages/educator/Profile.jsx
 import React, { useState, useEffect } from "react";
 import { User, Mail, School, Calendar, Edit2, Save, X } from "lucide-react";
+import { API_URL as CONFIG_URL } from '../../config';
 
-const API_URL = "http://127.0.0.1:5000/api";
+const API_URL = `${CONFIG_URL}/api`;
 
 export default function Profile() {
   const [profile, setProfile] = useState(null);

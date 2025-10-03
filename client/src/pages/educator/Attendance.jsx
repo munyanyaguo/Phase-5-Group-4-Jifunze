@@ -3,8 +3,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Calendar, Users, CheckCircle, XCircle, Save, History, Eye, Filter, UserCheck, BookOpen, TrendingUp } from "lucide-react";
 import { AttendanceSkeleton } from "../../components/common/SkeletonLoader";
+import { API_URL as CONFIG_URL } from '../../config';
 
-const BASE_URL = "http://127.0.0.1:5000/api";
+const BASE_URL = `${CONFIG_URL}/api`;
 
 // Helper for authenticated requests
 export async function authFetch(url, options = {}) {
@@ -81,33 +82,6 @@ export default function Attendance() {
     }
     return token;
   };
-
-  // Fetch courses on component mount
-  useEffect(() => {
-    fetchCourses();
-  }, [fetchCourses]);
-
-  // Fetch students when course is selected
-  useEffect(() => {
-    if (selectedCourse) {
-      fetchStudents();
-      fetchExistingAttendance();
-    }
-  }, [selectedCourse, selectedDate, fetchStudents, fetchExistingAttendance]);
-  
-  // Fetch history when filters or view changes
-  useEffect(() => {
-    if (showHistory) {
-      fetchAttendanceHistory();
-    }
-  }, [historyView, historyFilter, showHistory, fetchAttendanceHistory]);
-  
-  // Fetch all courses and students for filters on mount
-  useEffect(() => {
-    if (showHistory && courses.length === 0) {
-      fetchCourses();
-    }
-  }, [showHistory, courses.length, fetchCourses]);
 
   const fetchCourses = useCallback(async () => {
     try {
@@ -373,6 +347,33 @@ export default function Attendance() {
       setHistoryLoading(false);
     }
   }, [historyView, historyFilter]);
+
+  // Fetch courses on component mount
+  useEffect(() => {
+    fetchCourses();
+  }, [fetchCourses]);
+
+  // Fetch students when course is selected
+  useEffect(() => {
+    if (selectedCourse) {
+      fetchStudents();
+      fetchExistingAttendance();
+    }
+  }, [selectedCourse, selectedDate, fetchStudents, fetchExistingAttendance]);
+  
+  // Fetch history when filters or view changes
+  useEffect(() => {
+    if (showHistory) {
+      fetchAttendanceHistory();
+    }
+  }, [historyView, historyFilter, showHistory, fetchAttendanceHistory]);
+  
+  // Fetch all courses and students for filters on mount
+  useEffect(() => {
+    if (showHistory && courses.length === 0) {
+      fetchCourses();
+    }
+  }, [showHistory, courses.length, fetchCourses]);
 
   const toggleAttendance = (userId) => {
     setAttendanceData(prev => {
