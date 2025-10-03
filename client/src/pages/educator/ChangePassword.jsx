@@ -1,9 +1,7 @@
 // src/pages/educator/ChangePassword.jsx
 import React, { useState } from "react";
 import { Lock, Eye, EyeOff, CheckCircle, XCircle, Shield } from "lucide-react";
-import { API_URL as BASE_URL } from '../../config';
-
-const API_URL = `${BASE_URL}/api`;
+import * as AuthService from "../../services/authServices";
 
 export default function ChangePassword() {
   const [formData, setFormData] = useState({
@@ -69,40 +67,25 @@ export default function ChangePassword() {
 
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_URL}/users/change-password`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          current_password: formData.currentPassword,
-          new_password: formData.newPassword,
-        }),
+      
+      await AuthService.changePassword(formData.currentPassword, formData.newPassword);
+      
+      setSuccess("Password changed successfully!");
+      setFormData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
       });
-
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        setSuccess("Password changed successfully!");
-        setFormData({
-          currentPassword: "",
-          newPassword: "",
-          confirmPassword: "",
-        });
-        setValidations({
-          length: false,
-          uppercase: false,
-          lowercase: false,
-          match: false,
-        });
-      } else {
-        setError(data?.message || "Failed to change password");
-      }
+      setValidations({
+        length: false,
+        uppercase: false,
+        lowercase: false,
+        number: false,
+        match: false,
+      });
     } catch (error) {
       console.error('Change password error:', error);
-      setError("Network error. Please try again.");
+      setError(error.message || "Failed to change password");
     } finally {
       setLoading(false);
     }
