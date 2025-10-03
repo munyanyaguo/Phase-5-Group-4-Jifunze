@@ -104,12 +104,14 @@ export default function Resources() {
   // Load courses once on mount
   useEffect(() => {
     loadCourses();
-  }, [loadCourses]);
+  }, []);
 
   useEffect(() => {
-    // Reset to page 1 when filters change
+  if (pagination.page !== 1) {
     setPagination(prev => ({ ...prev, page: 1 }));
-  }, [selectedCourse, selectedType, searchTerm]); 
+  }
+  // loadResources will be called by the pagination effect
+  }, [selectedCourse, selectedType, searchTerm]);
 
   const loadCourses = useCallback(async () => {
     try {
