@@ -14,12 +14,15 @@ export async function handleResponse(res) {
     result = await res.json();
   } catch (err) {
     console.error('Failed to parse response:', err);
-    throw new Error("Invalid server response");
+    console.error('Response status:', res.status);
+    console.error('Response statusText:', res.statusText);
+    throw new Error(`Server error (${res.status}): ${res.statusText}`);
   }
 
   if (!res.ok) {
+    console.error('API Error Response:', result);
     // Combine main message + validation errors if present
-    let errorMsg = result.message || "Request failed";
+    let errorMsg = result.message || result.error || "Request failed";
     if (result.errors) {
       errorMsg += " - " + JSON.stringify(result.errors);
     }
@@ -129,22 +132,43 @@ export function isAuthenticated() {
 // 🔹 Helper: Authenticated fetch
 export async function authFetch(endpoint, options = {}) {
   const token = getToken();
-  const res = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
-    },
-  });
-  return handleResponse(res);
+  
+  try {
+    console.log(`Making request to: ${API_URL}${endpoint}`);
+    const res = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options.headers,
+      },
+    });
+    return handleResponse(res);
+  } catch (error) {
+    console.error('Network error:', error);
+    if (error.message.includes('Failed to fetch')) {
+      throw new Error('Network error: Unable to connect to server. Please check your internet connection.');
+    }
+    throw error;
+  }
 }
 
 // 🔹 Update current user's profile
 export async function updateCurrentUser(updates) {
+  // Clean the updates object to avoid backend validation issues
+  const cleanUpdates = {};
+  if (updates.name && updates.name.trim()) {
+    cleanUpdates.name = updates.name.trim();
+  }
+  if (updates.email && updates.email.trim()) {
+    cleanUpdates.email = updates.email.trim();
+  }
+  
+  console.log('Updating user with:', cleanUpdates);
+  
   return authFetch("/users/me", {
     method: "PUT",
-    body: JSON.stringify(updates),
+    body: JSON.stringify(cleanUpdates),
   });
 }
 
