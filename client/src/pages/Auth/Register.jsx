@@ -65,7 +65,7 @@ const Register = () => {
     <div className="min-h-screen flex flex-col md:flex-row">
       {/* Left side (hero section) */}
       <div
-  className="hidden md:flex w-1/2 relative bg-gradient-to-br from-purple-600 to-indigo-700 text-white items-center"
+   className="hidden md:flex w-1/2 relative bg-gradient-to-br from-blue-600 to-indigo-700 text-white items-center justify-center p-12 bg-cover bg-center"
   style={{ backgroundImage: "url('/hero1.jpg')" }}
 >
 
