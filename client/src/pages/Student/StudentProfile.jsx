@@ -44,6 +44,24 @@ export default function StudentProfile() {
       setError("");
       setSuccess("");
 
+      // Basic validation
+      if (!formData.name || !formData.name.trim()) {
+        setError("Name is required");
+        return;
+      }
+      
+      if (!formData.email || !formData.email.trim()) {
+        setError("Email is required");
+        return;
+      }
+      
+      // Email format validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        setError("Please enter a valid email address");
+        return;
+      }
+
       await AuthService.updateCurrentUser(formData);
       
       setUser({ ...user, ...formData });
@@ -163,7 +181,8 @@ export default function StudentProfile() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-semibold"
-                    placeholder="Enter your name"
+                    placeholder="Enter your name *"
+                    required
                   />
                 ) : (
                   <p className="font-semibold text-gray-800">{user.name || 'N/A'}</p>
@@ -184,7 +203,8 @@ export default function StudentProfile() {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent font-semibold"
-                    placeholder="Enter your email"
+                    placeholder="Enter your email *"
+                    required
                   />
                 ) : (
                   <p className="font-semibold text-gray-800">{user.email || 'N/A'}</p>

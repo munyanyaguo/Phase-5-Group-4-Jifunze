@@ -53,6 +53,7 @@ export default function Resources() {
   const [resources, setResources] = useState([]);
   const [courses, setCourses] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [editingResource, setEditingResource] = useState(null);
   const [uploadLoading, setUploadLoading] = useState(false);
@@ -67,22 +68,17 @@ export default function Resources() {
     pages: 0
   });
 
-  // Load initial data
-  useEffect(() => {
-    loadResources();
-    loadCourses();
-  }, [pagination.page, loadResources]);
-
-  useEffect(() => {
-    // Reset to page 1 when filters change
-    setPagination(prev => ({ ...prev, page: 1 }));
-  }, [selectedCourse, selectedType, searchTerm]);
-
   const loadResources = useCallback(async () => {
     try {
+      setError(null);
       console.log('📚 Loading resources - page:', pagination.page, 'per_page:', pagination.per_page);
       const result = await fetchResources(pagination.page, pagination.per_page);
       console.log('📚 Resources result:', result);
+      
+      if (!result) {
+        throw new Error('No data received from server');
+      }
+      
       const list = Array.isArray(result.data) ? result.data : [];
       console.log('📚 Resources list:', list);
       setResources(list);
@@ -93,13 +89,29 @@ export default function Resources() {
       }));
     } catch (error) {
       console.error('Error loading resources:', error);
-      alert('Failed to load resources: ' + error.message);
+      setError(error.message || 'Failed to load resources');
+      setResources([]); // Set empty array on error
     } finally {
       setInitialLoading(false);
     }
-  }, [pagination.page, pagination.per_page]); 
+  }, [pagination.page, pagination.per_page]);
 
-  const loadCourses = async () => {
+  // Load initial data and handle pagination changes
+  useEffect(() => {
+    loadResources();
+  }, [loadResources]);
+
+  // Load courses once on mount
+  useEffect(() => {
+    loadCourses();
+  }, [loadCourses]);
+
+  useEffect(() => {
+    // Reset to page 1 when filters change
+    setPagination(prev => ({ ...prev, page: 1 }));
+  }, [selectedCourse, selectedType, searchTerm]); 
+
+  const loadCourses = useCallback(async () => {
     try {
       console.log('📖 Loading courses...');
       const result = await fetchEducatorCourses();
@@ -108,13 +120,8 @@ export default function Resources() {
     } catch (error) {
       console.error('Error loading courses:', error);
     }
-  };
+  }, []);
 
-  // Load initial data
-  useEffect(() => {
-    loadResources();
-    loadCourses();
-  }, [loadResources]);
 
   // Handle resource upload
   const handleUpload = useCallback(async (data) => {
@@ -150,15 +157,47 @@ export default function Resources() {
 
   // Filter resources based on search and filters
   const filteredResources = (Array.isArray(resources) ? resources : []).filter(resource => {
-    const matchesSearch = resource.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCourse = !selectedCourse || resource.course_id.toString() === selectedCourse;
-    const matchesType = !selectedType || resource.type === selectedType;
+    if (!resource || typeof resource !== 'object') return false;
+    
+    const title = resource.title || '';
+    const courseId = resource.course_id || '';
+    const type = resource.type || '';
+    
+    const matchesSearch = title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCourse = !selectedCourse || courseId.toString() === selectedCourse;
+    const matchesType = !selectedType || type === selectedType;
     
     return matchesSearch && matchesCourse && matchesType;
   });
 
   if (initialLoading) {
     return <ResourcesSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+            <div className="text-red-600 mb-4">
+              <File className="w-16 h-16 mx-auto mb-4" />
+            </div>
+            <h2 className="text-xl font-semibold text-red-800 mb-2">Error Loading Resources</h2>
+            <p className="text-red-600 mb-4">{error}</p>
+            <button
+              onClick={() => {
+                setError(null);
+                setInitialLoading(true);
+                loadResources();
+              }}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -52,6 +52,24 @@ export default function Profile() {
       setError("");
       setSuccess("");
 
+      // Basic validation
+      if (!formData.name || !formData.name.trim()) {
+        setError("Name is required");
+        return;
+      }
+      
+      if (!formData.email || !formData.email.trim()) {
+        setError("Email is required");
+        return;
+      }
+      
+      // Email format validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        setError("Please enter a valid email address");
+        return;
+      }
+
       // Use the AuthService for consistency
       await AuthService.updateCurrentUser(formData);
       
@@ -173,7 +191,8 @@ export default function Profile() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter your name"
+                    placeholder="Enter your name *"
+                    required
                   />
                 ) : (
                   <div className="px-4 py-3 bg-gray-50 rounded-xl text-gray-800 font-medium">
@@ -194,7 +213,8 @@ export default function Profile() {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    placeholder="Enter your email"
+                    placeholder="Enter your email *"
+                    required
                   />
                 ) : (
                   <div className="px-4 py-3 bg-gray-50 rounded-xl text-gray-800 font-medium">
