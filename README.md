@@ -313,6 +313,16 @@ Phase-5-Group-4-Jifunze/
   - Auto-deploy on branch updates
 - **Documentation**: See `/documents/deployment.md` and `/documents/cicd_flow.md`
 
+## Screenshots
+![owner_dashboard](./Images/owner_dashboard.png)
+
+![student_dashboard](./Images/student_dashboard.png)
+
+![educator_dashboard](./Images/educator_dashboard.png)
+
+![register](./Images/register.png)
+
+
 ## 🤝 How to Contribute
 
 1️⃣ Fork the Repository
