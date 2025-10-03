@@ -65,9 +65,10 @@ const Register = () => {
     <div className="min-h-screen flex flex-col md:flex-row">
       {/* Left side (hero section) */}
       <div
-        className="hidden md:flex w-1/2 relative bg-gradient-to-br from-purple-600 to-indigo-700 text-white items-center justify-center p-12 bg-cover bg-center"
-        style={{ backgroundImage: "url('/hero1.jpg')" }}
-      >
+  className="hidden md:flex w-1/2 relative bg-gradient-to-br from-purple-600 to-indigo-700 text-white items-center"
+  style={{ backgroundImage: "url('/hero1.jpg')" }}
+>
+
         <div className="absolute inset-0 bg-black bg-opacity-50"></div>
         <div className="relative text-center space-y-6 max-w-md z-10">
           <h1 className="text-4xl font-bold drop-shadow-lg">Join Jifunze 🚀</h1>
