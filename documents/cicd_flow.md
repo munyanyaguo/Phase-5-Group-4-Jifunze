@@ -8,58 +8,7 @@ Jifunze application implements a comprehensive CI/CD pipeline using GitHub Actio
 
 ## CI/CD Architecture
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                        Developer Workflow                         │
-└──────────────────────────────────────────────────────────────────┘
-                                 │
-                                 ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                    Pull Request to develop/main                   │
-└──────────────────────────────────────────────────────────────────┘
-                                 │
-                    ┌────────────┴────────────┐
-                    ▼                         ▼
-         ┌──────────────────┐      ┌──────────────────┐
-         │  Frontend CI     │      │   Backend CI     │
-         │  - Lint (flake8)   │      │   - Lint (flake8)│
-         │  - Vitest Tests  │      │   - Pytest Tests │
-         │  - Coverage      │      │   - Coverage     │
-         │  - Build Check   │      │   - PostgreSQL   │
-         └──────────────────┘      └──────────────────┘
-                    │                         │
-                    └────────────┬────────────┘
-                                 ▼
-                    ┌────────────────────────┐
-                    │   Tests Pass/Fail?     │
-                    └────────────────────────┘
-                                 │
-                    ┌────────────┴────────────┐
-                    ▼                         ▼
-              ✅ PASS                      ❌ FAIL
-         Allow PR Merge              Block PR Merge
-                    │
-                    ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                         Merge to Branch                           │
-└──────────────────────────────────────────────────────────────────┘
-                                 │
-                    ┌────────────┴────────────┐
-                    ▼                         ▼
-         ┌──────────────────┐      ┌──────────────────┐
-         │  develop branch  │      │   main branch    │
-         │  → Staging       │      │   → Production   │
-         └──────────────────┘      └──────────────────┘
-                    │                         │
-                    ▼                         ▼
-         ┌──────────────────┐      ┌──────────────────┐
-         │ Staging Deploy   │      │ Production Deploy│
-         │ - Frontend       │      │ - Frontend       │
-         │ - Backend        │      │ - Backend        │
-         └──────────────────┘      └──────────────────┘
-```
-
----
+![CICD](./CICD.png)
 
 ## Workflow Files
 
@@ -339,8 +288,8 @@ Located in `server/tests/conftest.py`:
    ▼
 3. Status checks reported to PR
    │
-   ├─► ✅ All pass → Allow merge
-   └─► ❌ Any fail → Block merge
+   ├─►  All pass → Allow merge
+   └─►  Any fail → Block merge
    │
    ▼
 4. PR merged
@@ -531,20 +480,6 @@ When updating workflows:
 **Solution**:
 - Increase health check intervals
 - Add wait step before tests
-
----
-
-## Future Enhancements
-
-### Planned Improvements
-- [ ] Add end-to-end tests (Playwright/Cypress)
-- [ ] Implement automated security scanning
-- [ ] Add performance testing
-- [ ] Set up staging environment smoke tests
-- [ ] Add Slack/Discord notifications for deployments
-- [ ] Implement blue-green deployments
-- [ ] Add database backup automation
-
 ---
 
 ## Resources
