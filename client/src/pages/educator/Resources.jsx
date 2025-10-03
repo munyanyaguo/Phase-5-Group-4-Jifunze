@@ -1,5 +1,6 @@
 // src/pages/educator/Resources.jsx
 import React, { useState, useEffect, useCallback } from 'react';
+import { API_URL } from '../../config';
 import { 
   Upload, 
   Search, 
@@ -66,6 +67,38 @@ export default function Resources() {
     pages: 0
   });
 
+  const loadResources = useCallback(async () => {
+    try {
+      console.log('📚 Loading resources - page:', pagination.page, 'per_page:', pagination.per_page);
+      const result = await fetchResources(pagination.page, pagination.per_page);
+      console.log('📚 Resources result:', result);
+      const list = Array.isArray(result.data) ? result.data : [];
+      console.log('📚 Resources list:', list);
+      setResources(list);
+      setPagination(prev => ({
+        ...prev,
+        total: result.total || 0,
+        pages: result.pages || 0
+      }));
+    } catch (error) {
+      console.error('Error loading resources:', error);
+      alert('Failed to load resources: ' + error.message);
+    } finally {
+      setInitialLoading(false);
+    }
+  }, [pagination.page, pagination.per_page]);
+
+  const loadCourses = async () => {
+    try {
+      console.log('📖 Loading courses...');
+      const result = await fetchEducatorCourses();
+      console.log('📖 Courses result:', result);
+      setCourses(result.data || []);
+    } catch (error) {
+      console.error('Error loading courses:', error);
+    }
+  };
+
   // Load initial data
   useEffect(() => {
     loadResources();
@@ -94,15 +127,6 @@ export default function Resources() {
       setInitialLoading(false);
     }
   } 
-
-  const loadCourses = async () => {
-    try {
-      const result = await fetchEducatorCourses();
-      setCourses(result.data || []);
-    } catch (error) {
-      console.error('Error loading courses:', error);
-    }
-  };
 
   // Handle resource upload
   const handleUpload = async (data) => {
@@ -322,7 +346,7 @@ export default function Resources() {
                     onClick={() => {
                       const url = resource.url.startsWith('http') 
                         ? resource.url 
-                        : `http://127.0.0.1:5000${resource.url}`;
+                        : `${API_URL}${resource.url}`;
                       window.open(url, '_blank');
                     }}
                     className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg transition-colors font-medium text-sm"
@@ -396,7 +420,7 @@ export default function Resources() {
                       onClick={() => {
                         const url = resource.url.startsWith('http') 
                           ? resource.url 
-                          : `http://127.0.0.1:5000${resource.url}`;
+                          : `${API_URL}${resource.url}`;
                         window.open(url, '_blank');
                       }}
                       className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg transition-colors font-medium text-sm"

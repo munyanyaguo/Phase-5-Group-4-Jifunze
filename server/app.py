@@ -2,10 +2,10 @@
 Flask application entry point for Render deployment.
 This file provides a direct app reference for gunicorn.
 """
-from wsgi import app
+from wsgi import app as application
 
-# Export the app for gunicorn
-application = app
+# Make 'app' available for gunicorn app:app syntax
+app = application
 
 if __name__ == "__main__":
     app.run()

@@ -87,7 +87,8 @@ def create_app(config_name=None):
                         "http://localhost:5178",
                         "http://127.0.0.1:5178",
                         "http://localhost:5179",
-                        "http://127.0.0.1:5179"
+                        "http://127.0.0.1:5179",
+                        "https://phase-5-group-4-jifunze.onrender.com"
                     ]
                 }
             },
