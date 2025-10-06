@@ -1,167 +1,164 @@
-// src/pages/Students.jsx
+// src/pages/owner/Students.jsx
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import UserForm from "../../components/owner/UserForm";
-import { UserPlus, Trash2, Eye, X } from "lucide-react";
-import { fetchOwnerStudents, createStudent, deleteUser } from "../../api";
+import { UserPlus, Trash2, GraduationCap } from "lucide-react";
+import {
+  fetchOwnerStudents,
+  deleteUser,
+  apiAssignUser,
+  fetchOwnerSchools,
+} from "../../api";
 
 export default function Students() {
   const location = useLocation();
   const [students, setStudents] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [schools, setSchools] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState(null);
-
-  // Load students
-  const loadStudents = async () => {
-    setLoading(true);
-    try {
-      const res = await fetchOwnerStudents();
-      setStudents(res.students || []);
-    } catch (err) {
-      console.error("Failed to load students:", err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [formData, setFormData] = useState({ email: "", school_id: "" });
 
   useEffect(() => {
-    loadStudents();
-  }, [location.pathname]); // Re-fetch when navigating back to this page
+    const load = async () => {
+      try {
+        const data = await fetchOwnerStudents();
+        let normalized = [];
+        if (Array.isArray(data)) normalized = data;
+        else if (data?.students && Array.isArray(data.students))
+          normalized = data.students;
+        else if (data) normalized = [data];
+        setStudents(normalized);
 
-  // Add student
-  const handleAddStudent = async (data) => {
+        // Fetch schools
+        const schoolData = await fetchOwnerSchools();
+        let schoolsArray = [];
+        if (Array.isArray(schoolData)) schoolsArray = schoolData;
+        else if (schoolData?.schools && Array.isArray(schoolData.schools))
+          schoolsArray = schoolData.schools;
+        setSchools(schoolsArray);
+      } catch (err) {
+        console.error("Failed to load data:", err);
+      }
+    };
+    load();
+  }, [location]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
-      const newStudent = await createStudent({ ...data, role: "student" });
-      setStudents((prev) => [...prev, newStudent]);
+      await apiAssignUser(formData.school_id, "student", formData.email);
+      // Reload students
+      const data = await fetchOwnerStudents();
+      let normalized = [];
+      if (Array.isArray(data)) normalized = data;
+      else if (data?.students && Array.isArray(data.students))
+        normalized = data.students;
+      else if (data) normalized = [data];
+      setStudents(normalized);
+      setFormData({ email: "", school_id: "" });
       setShowForm(false);
     } catch (err) {
-      alert(err.message);
+      console.error("Failed to assign student:", err);
+      alert("Failed to assign student: " + (err.message || ""));
     }
   };
 
-  // Delete student
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this student?")) return;
     try {
       await deleteUser(id);
       setStudents((prev) => prev.filter((s) => s.id !== id));
     } catch (err) {
-      alert(err.message);
+      console.error("Failed to delete student:", err);
     }
   };
 
+  // Find school name by ID
+  const getSchoolName = (id) =>
+    schools.find((s) => s.id === id)?.name || "Not assigned";
+
   return (
-    <div className="space-y-6 p-6 max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold text-gray-800">Students</h2>
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg shadow hover:bg-green-700 transition"
-        >
-          <UserPlus className="w-5 h-5" /> Add Student
-        </button>
-      </div>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-6 text-gray-800">🎓 Students</h1>
 
-      {/* Students List */}
-      {loading ? (
-        <p className="text-gray-500">Loading students...</p>
-      ) : students.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-lg">
-          <p className="text-gray-500">No students found.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {students.map((s) => (
-            <div
-              key={s.id}
-              className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition relative"
-            >
-              {/* Avatar */}
-              <div className="w-12 h-12 flex items-center justify-center rounded-full bg-green-100 text-green-700 font-bold mb-3">
-                {s.name ? s.name.charAt(0).toUpperCase() : "S"}
-              </div>
+      <button
+        onClick={() => setShowForm((prev) => !prev)}
+        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md shadow hover:bg-green-700"
+      >
+        <UserPlus size={18} /> Add Student
+      </button>
 
-              {/* Info */}
-              <h3 className="text-lg font-semibold">{s.name}</h3>
-              <p className="text-xs text-gray-500">{s.email}</p>
-              <p className="text-sm text-gray-400 mt-2">Class: {s.className || "N/A"}</p>
-              <p className="text-sm text-gray-400">School: {s.school || "N/A"}</p>
-
-              {/* Actions */}
-              <div className="absolute top-3 right-3 flex gap-2">
-                <button
-                  onClick={() => setSelectedStudent(s)}
-                  className="text-blue-500 hover:text-blue-700"
-                >
-                  <Eye />
-                </button>
-                <button
-                  onClick={() => handleDelete(s.id)}
-                  className="text-red-500 hover:text-red-700"
-                >
-                  <Trash2 />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Add student modal */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white p-6 rounded-xl w-full max-w-md relative animate-[fadeIn_0.2s_ease-out]">
-            <button
-              onClick={() => setShowForm(false)}
-              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
-            >
-              <X />
-            </button>
-            <h3 className="text-xl font-semibold mb-4">Add Student</h3>
-            <UserForm
-              role="student"
-              onAdd={handleAddStudent}
-              onCancel={() => setShowForm(false)}
-            />
-          </div>
-        </div>
+        <form
+          onSubmit={handleSubmit}
+          className="mt-4 p-4 bg-white rounded-xl shadow-md border border-gray-200"
+        >
+          <input
+            type="email"
+            placeholder="Student email"
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            required
+            className="border p-2 rounded w-full mb-3"
+          />
+
+          <select
+            value={formData.school_id}
+            onChange={(e) =>
+              setFormData({ ...formData, school_id: e.target.value })
+            }
+            required
+            className="border p-2 rounded w-full mb-3"
+          >
+            <option value="">Select School</option>
+            {schools.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+
+          <button
+            type="submit"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Save
+          </button>
+        </form>
       )}
 
-      {/* View student modal */}
-      {selectedStudent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white p-6 rounded-xl w-full max-w-md relative animate-[fadeIn_0.2s_ease-out]">
-            <button
-              onClick={() => setSelectedStudent(null)}
-              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+      <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {students.length === 0 ? (
+          <p className="text-gray-600">No students found.</p>
+        ) : (
+          students.map((student) => (
+            <div
+              key={student.id}
+              className="bg-white shadow-md rounded-xl p-4 border border-gray-200 hover:shadow-lg transition-shadow"
             >
-              <X />
-            </button>
-            <h3 className="text-xl font-semibold mb-4">Student Details</h3>
-            <div className="space-y-2 text-sm">
-              <p><strong>Name:</strong> {selectedStudent.name}</p>
-              <p><strong>Email:</strong> {selectedStudent.email}</p>
-              <p><strong>Class:</strong> {selectedStudent.className || "N/A"}</p>
-              <p><strong>School:</strong> {selectedStudent.school || "N/A"}</p>
-              <p><strong>Phone:</strong> {selectedStudent.phone || "N/A"}</p>
-              <p>
-                <strong>Registered:</strong>{" "}
-                {selectedStudent.createdAt
-                  ? new Date(selectedStudent.createdAt).toLocaleDateString()
-                  : "N/A"}
-              </p>
+              <div className="flex items-center gap-3 mb-3">
+                <GraduationCap className="text-blue-600" />
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-800">
+                    {student.email}
+                  </h2>
+                  <p className="text-sm text-gray-600">
+                    School:{" "}
+                    <span className="font-medium text-gray-900">
+                      {student.school?.name ||
+                        getSchoolName(student.school_id) ||
+                        "Not assigned"}
+                    </span>
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => handleDelete(student.id)}
+                className="flex items-center gap-2 text-red-600 hover:text-red-800 mt-2"
+              >
+                <Trash2 size={16} /> Remove
+              </button>
             </div>
-            <button
-              onClick={() => setSelectedStudent(null)}
-              className="mt-6 bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+          ))
+        )}
+      </div>
     </div>
   );
 }

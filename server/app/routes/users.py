@@ -517,3 +517,28 @@ class UserPasswordResetResource(Resource):
         except Exception as e:
             db.session.rollback()
             return error_response("Something went wrong", {"error": str(e)}, status_code=500)
+class ValidateUserEmailResource(Resource):
+    @jwt_required()
+    def post(self):
+        """Validate if a user email exists (optionally by role)"""
+        try:
+            data = request.get_json() or {}
+            email = data.get("email")
+            role = data.get("role")  # optional: 'student' or 'educator'
+
+            if not email:
+                return error_response("Email is required", status_code=400)
+
+            user = User.query.filter_by(email=email).first()
+
+            if not user:
+                return {"valid": False, "message": "No user with that email"}, 404
+
+            if role and user.role != role:
+                return {"valid": False, "message": f"User is not a {role}"}, 400
+
+            return {"valid": True, "user_id": user.id, "role": user.role}, 200
+
+        except Exception as e:
+            db.session.rollback()
+            return error_response("Something went wrong", {"error": str(e)}, status_code=500)
