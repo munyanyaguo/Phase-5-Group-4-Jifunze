@@ -29,84 +29,257 @@ Jifunze addresses the following requirements:
 
 [Client](https://phase-5-group-4-jifunze.onrender.com)
 
-## 📦 Installation
+## 📦 Installation & Setup
 
 ### Prerequisites
-- `Node.js (v18+)`
-- `Python (v3.12)`
+Ensure you have the following installed:
+- **Node.js** (v22) - [Download](https://nodejs.org/)
+- **Python** (v3.12) - [Download](https://www.python.org/)
+- **PostgreSQL** (v15 or higher) - [Download](https://www.postgresql.org/)
+- **Git** - [Download](https://git-scm.com/)
+- **pipenv** - Install via `pip install pipenv`
 
-### Frontend Setup
+### Clone the Repository
 ```bash
-   cd client
-   npm ci || npm run build
-   cp .env.example .env
-   npm run dev
+git clone https://github.com/munyanyaguo/Phase-5-Group-4-Jifunze.git
+cd Phase-5-Group-4-Jifunze
 ```
 
 ### Backend Setup
-```bash
+
+1. **Navigate to server directory:**
+   ```bash
    cd server
-   pipenv install
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   pip install pipenv
+   pipenv install --dev
+   ```
+
+3. **Activate virtual environment:**
+   ```bash
    pipenv shell
-   cp .env.example .env
-   pipenv run flask run
+   ```
+
+4. **Set up environment variables:**
+   ```bash
+   # Create .env file
+   touch .env
+   ```
+   
+   Add the following to `.env`:
+   ```env
+   DATABASE_URL=postgresql://username:password@localhost:5432/jifunze_db
+   SECRET_KEY=your-secret-key-here
+   JWT_SECRET_KEY=your-jwt-secret-key-here
+   FLASK_ENV=development
+   ```
+   
+   To generate secure keys:
+   ```bash
+   python generate_keys_safe.py
+   ```
+
+5. **Create database:**
+   ```bash
+   # Using PostgreSQL CLI
+   createdb jifunze_db
+   
+   # Or using psql
+   psql -U postgres
+   CREATE DATABASE jifunze_db;
+   \q
+   ```
+
+6. **Run database migrations:**
+   ```bash
+   flask db upgrade
+   ```
+
+7. **Seed the database (optional):**
+   ```bash
+   python -c "from app.seed import seed_database; seed_database()"
+   ```
+
+### Frontend Setup
+
+1. **Navigate to client directory:**
+   ```bash
+   cd ../client
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm ci
+   ```
+
+3. **Set up environment variables:**
+   ```bash
+   # Create .env file
+   touch .env
+   ```
+   
+   Add the following to `.env`:
+   ```env
+   VITE_API_URL=http://localhost:5000
+   ```
+
+##  Running the Application
+
+### Start Backend Server
+```bash
+cd server
+pipenv shell
+pipenv run flask run
+# Server runs on http://localhost:5000
 ```
 
-## 📁Folder structure
+### Start Frontend Development Server
+```bash
+cd client
+npm run dev
+# App runs on http://localhost:5173
 ```
-jifunze/
+
+### Access the Application
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:5000
+- **API Documentation**: See `/documents/api_documentation.md`
+
+##  Running Tests
+
+### Backend Tests
+```bash
+cd server
+pipenv shell
+pipenv run pytest
+
+# Run with coverage
+pytest tests/ -v --cov=app --cov-report=term-missing
+
+# Run specific test file
+pytest tests/test_routes/test_auth_routes.py 
+```
+
+### Frontend Tests
+```bash
+cd client
+
+# Run all tests
+npm run test
+
+# Run with coverage
+npm test -- --coverage
+
+# Run in watch mode
+npm test -- --watch
+```
+
+## 📁 File Structure
+```                
+Phase-5-Group-4-Jifunze/
 ├── .github/
-│   └── workflows/             
-│       ├── backend-ci.yml     
-│       ├── frontend-ci.yml    
-│       └── deploy-production.yml       
+│   └── workflows/
+│       ├── backend-ci.yml
+│       ├── frontend-ci.yml
+│       ├── deploy-staging.yml
+│       └── deploy-production.yml
 │
-├── client/                     
+├── client/
 │   ├── src/
-│   │   ├── components/         
-│   │   ├── pages/            
-│   │   ├── tests/             
-│   │   │   └── app.test.jsx 
-│   │   ├── api.js  
-│   │   ├── App.jsx   
-│   │   ├── config.js          
-│   │   └── main.jsx  
+│   │   ├── components/
+│   │   ├── ui/
+│   │   ├── Navbar.jsx
+│   │   ├── Sidebar.jsx
+│   │   └── ...
+│   │   ├── pages/
+│   │   ├── Dashboard.jsx
+│   │   ├── Attendance.jsx
+│   │   ├── Courses.jsx
+│   │   ├── Chat.jsx
+│   │   └── ...
+│   │   ├── layouts/
+│   │   ├── services/
+│   │   ├── store/
+│   │   ├── tests/
+│   │   │   └── app.test.jsx
+│   │   ├── api.js
+│   │   ├── config.js
+│   │   ├── App.jsx
+│   │   └── main.jsx
+│   ├── components.json
 │   ├── eslint.config.js
 │   ├── index.html
-│   ├── package-lock.json          
-│   ├── package.json 
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── postcss.config.js
 │   ├── setupTests.js
-│   ├── vite.config.js          
-│   └── vitest.config.js         
+│   ├── tailwind.config.js
+│   ├── vite.config.js
+│   └── vitest.config.js
 │
-├── documents/ 
-│   ├── api_documentation.md  
-│   ├── gitflow.md     
-│   ├── schema.md 
-│   ├── schema.png                        
-│   └── system_architecture.md       
+├── documents/
+│   ├── api_documentation.md
+│   ├── cicd_flow.md
+│   ├── deployment.md
+│   ├── gitflow.md
+│   └── schema.md
+│   └── Schema.png
+│   └── system_architecture.md
 │
-├── server/                     
+├── server/
 │   ├── app/
-│   │   ├── models/            
-│   │   ├── routes/           
-│   │   └── __init__.py        
-│   ├── migrations/            
-│   ├── tests/                 
-│   │   └── test_app.py        
-│   ├── .flake8             
-│   ├── app.py                 
-│   ├── Pipfile  
+│   │   ├── models/
+│   │   │   ├── __init__.py
+│   │   │   ├── user.py
+│   │   │   ├── school.py
+│   │   │   ├── course.py
+│   │   │   ├── attendance.py
+│   │   │   ├── message.py
+│   │   │   └── resource.py
+│   │   ├── routes/
+│   │   │   ├── __init__.py
+│   │   │   ├── auth.py
+│   │   │   ├── users.py
+│   │   │   ├── schools.py
+│   │   │   ├── courses.py
+│   │   │   ├── attendance.py
+│   │   │   ├── messages.py
+│   │   │   ├── resources.py
+│   │   │   └── enrollments.py
+│   │   ├── schemas/
+│   │   ├── utils/
+│   │   ├── __init__.py
+│   │   ├── extensions.py
+│   │   └── seed.py
+│   ├── migrations/
+│   │   ├── versions/
+│   │   ├── alembic.ini
+│   │   └── env.py
+│   ├── tests/
+│   │   ├── test_models/
+│   │   ├── test_routes/
+│   │   ├── test_schemas/
+│   │   ├── conftest.py
+│   │   └── __init__.py
+│   ├── .flake8
+│   ├── Pipfile
 │   ├── Pipfile.lock
-│   ├── Procfile             
-│   └── runtime.txt         
+│   ├── Procfile
+│   ├── runtime.txt
+│   ├── wsgi.py
+│   └── manage.py
 │
-├── .gitignore                                
-├── LICENSE                  
-└── README.md               
+├── .gitignore
+├── LICENSE
+├── README.md
+└── render.yaml
+
 ```
 
-## 🛠 Tech Stack
+##  Tech Stack
 
 #### Frontend
 
@@ -129,8 +302,26 @@ jifunze/
 
 ### CI/CD & Deployment
 
-- GitHub Actions for CI/CD
-- Render for hosting
+- **CI/CD**: GitHub Actions
+  - Automated testing on PRs
+  - PostgreSQL test database
+  - Code coverage reporting
+  - Automated deployments
+- **Hosting**: Render
+  - Staging environment (develop branch)
+  - Production environment (main branch)
+  - Auto-deploy on branch updates
+- **Documentation**: See `/documents/deployment.md` and `/documents/cicd_flow.md`
+
+## Screenshots
+![owner_dashboard](./Images/owner_dashboard.png)
+
+![student_dashboard](./Images/student_dashboard.png)
+
+![educator_dashboard](./Images/educator_dashboard.png)
+
+![register](./Images/register.png)
+
 
 ## 🤝 How to Contribute
 
@@ -195,9 +386,18 @@ jifunze/
 - Require at least one code review
 - Maintain up-to-date documentation
 
-##  Collaborators
+## Additional Documentation
 
-For questions, support, or contributions regarding this project, please feel free to reach out to the development team:
+- **[API Documentation](./documents/api_documentation.md)** - Complete API reference
+- **[Deployment Guide](./documents/deployment.md)** - How to deploy the application
+- **[CI/CD Flow](./documents/cicd_flow.md)** - CI/CD pipeline documentation
+- **[Git Workflow](./documents/gitflow.md)** - Branch strategy and workflow
+- **[Database Schema](./documents/schema.md)** - Database structure and relationships
+- **[System Architecture](./documents/system_architecture.md)** - High-level architecture overview
+
+## 👥 Authors & Acknowledgements
+
+Contributors to this project:
 
 | Team Member | Email Address |
 |-------------|---------------|
