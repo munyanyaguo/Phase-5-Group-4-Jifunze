@@ -4,7 +4,12 @@ const API_URL = `${BASE_URL}/api`;
 
 // 🔹 Helper: Get stored token
 export function getToken() {
-  return localStorage.getItem("token");
+  const token = localStorage.getItem("token");
+  if (!token || token === "null" || token === "undefined") {
+    localStorage.removeItem("token");
+    return null;
+  }
+  return token;
 }
 
 // 🔹 Helper: Handle API responses safely
@@ -25,6 +30,15 @@ export async function handleResponse(res) {
     let errorMsg = result.message || result.error || "Request failed";
     if (result.errors) {
       errorMsg += " - " + JSON.stringify(result.errors);
+    }
+    // Handle expired or invalid token
+    if (
+      errorMsg.toLowerCase().includes("signature has expired") ||
+      errorMsg.toLowerCase().includes("token has expired") ||
+      errorMsg.toLowerCase().includes("missing authorization header")
+    ) {
+      localStorage.clear();
+      window.location.href = "/login";
     }
     throw new Error(errorMsg);
   }

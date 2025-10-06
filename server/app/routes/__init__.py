@@ -4,10 +4,10 @@ from .courses import CourseListResource, CourseResource
 from .attendance import AttendanceListResource, AttendanceResource
 from .auth import RegisterResource, LoginResource, LogoutResource, ResetPasswordResource 
 from .users import (UserResource, UserListResource, 
-    UserProfileResource, UsersBySchoolResource, UserDashboardResource)
+    UserProfileResource, UsersBySchoolResource, UserDashboardResource, ValidateUserEmailResource)
 from .schools import (SchoolResource, SchoolListResource, SchoolStatsResource,
     SchoolUsersResource, SchoolCoursesResource, SchoolDashboardResource,
-    EducatorsByManagerResource, ManagerStudentsResource, ManagerUsersResource)
+    EducatorsByManagerResource, ManagerStudentsResource, ManagerUsersResource, SchoolAssignUserResource)
 from .messages import MessageListResource, MessageResource
 from .resources import ResourceListApi, ResourceDetailApi
 from .enrollment import EnrollmentListResource, EnrollmentResource
@@ -40,6 +40,7 @@ api.add_resource(UserResource, "/users/me", "/users/<int:user_id>")
 api.add_resource(UserProfileResource, "/users/profile")
 api.add_resource(UserDashboardResource, "/users/dashboard")
 api.add_resource(UsersBySchoolResource, "/schools/<int:school_id>/users")
+api.add_resource(ValidateUserEmailResource, "/users/validate-email/<string:email>")
 
 # -------------------
 # School endpoints
@@ -50,6 +51,7 @@ api.add_resource(SchoolStatsResource, "/schools/stats", "/schools/<int:school_id
 api.add_resource(SchoolUsersResource, "/schools/<int:school_id>/users")
 api.add_resource(SchoolCoursesResource, "/schools/<int:school_id>/courses")
 api.add_resource(SchoolDashboardResource, "/schools/dashboard", "/schools/<int:school_id>/dashboard")
+api.add_resource(SchoolAssignUserResource, "/schools/<int:school_id>/assign/<string:role>")
 
 # -------------------
 # Manager-specific endpoints

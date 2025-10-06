@@ -480,51 +480,71 @@ class SchoolAssignmentResource(Resource):
 
         db.session.commit()
         return success_response(f"{role.capitalize()} assigned successfully", {"school": school_schema.dump(school)})  
-    
 class SchoolAssignUserResource(Resource):
     @jwt_required()
     def post(self, school_id, role):
+        """
+        Assign a user (student or educator) to a school by email.
+        Checks if the email exists and belongs to the correct role.
+        """
         try:
+            # Validate role
             if role not in ["student", "educator"]:
                 return error_response("Role must be 'student' or 'educator'", status_code=400)
 
+            # Identify current user
+            current_user_public_id = get_jwt_identity()
             current_user_claims = get_jwt()
-            current_user_id = get_jwt_identity()
-            current_user = User.query.filter_by(public_id=current_user_id).first()
+            current_user = User.query.filter_by(public_id=current_user_public_id).first()
+
+            if not current_user:
+                return error_response("User not found", status_code=404)
 
             # Only managers can assign users
             if current_user_claims.get("role") != "manager":
                 return error_response("Only managers can assign users", status_code=403)
 
-            # Manager can only assign to their own school
+            # Ensure manager owns the school
             school = School.query.get(school_id)
             if not school or school.owner_id != current_user.id:
                 return error_response("You can only assign users to your own school", status_code=403)
 
             # Get email from request
-            data = request.get_json()
-            email = data.get("email")
+            data = request.get_json() or {}
+            email = data.get("email", "").strip().lower()
             if not email:
                 return error_response("Email is required", status_code=400)
 
-            # Find user by email
-            user = User.query.filter_by(email=email.lower()).first()
+            # Check if the user exists and has correct role
+            user = User.query.filter_by(email=email).first()
             if not user:
                 return error_response("User not found", status_code=404)
 
-            # Assign user to this school
-            if role == "student" and user.role != "student":
-                return error_response("Cannot assign non-student as student", status_code=400)
-            if role == "educator" and user.role != "educator":
-                return error_response("Cannot assign non-educator as educator", status_code=400)
+            if user.role != role:
+                return error_response(f"User is not a {role}", status_code=400)
 
-            user.school_id = school.id
+            # Handle assignment based on role
+            if role == "student":
+                if user.school_id and user.school_id != school.id:
+                    return error_response("Student is already assigned to another school", status_code=400)
+                user.school_id = school.id
+
+            elif role == "educator":
+                # Many-to-many: educators can teach in multiple schools
+                if school not in user.schools:
+                    user.schools.append(school)
+
             db.session.commit()
 
-            return success_response(f"{role.capitalize()} assigned to school successfully", {"user": user_schema.dump(user)})
+            return success_response(
+                f"{role.capitalize()} assigned successfully",
+                {"user": user_schema.dump(user), "school": school_schema.dump(school)}
+            )
 
         except Exception as e:
             db.session.rollback()
+            import traceback
+            traceback.print_exc()
             return error_response("Something went wrong", {"error": str(e)}, status_code=500)
 
 class EducatorsByManagerResource(Resource):
@@ -661,3 +681,4 @@ class ManagerUsersResource(Resource):
             import traceback
             traceback.print_exc()
             return error_response("Failed to fetch users", {"error": str(e)}, status_code=500)
+        
